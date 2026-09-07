@@ -605,7 +605,7 @@ class BaseController extends Controller
     {
         $porcentaje = 0;
         $company = Company::find(Auth::user()->company_id);
-        $value = CreditFolderDetail::find($id);
+        $value = CreditFolderDetail::where('company_id', Auth::user()->company_id)->findOrFail($id);
         $date1 = Carbon::createFromFormat('Y-m-d', $value->date_vencimiento);
         $date2 = Carbon::createFromFormat('Y-m-d', date('Y-m-d'));
         $diasMora = $date1->diffInDays($date2);
@@ -617,9 +617,9 @@ class BaseController extends Controller
                     ->first();
 
                 if ($reglaInteres) {
-                    $creditoHeader = CreditFolderHeader::where('code', $value->code_folder_header)->first();
-                    $prestamo = Prestamos::find($creditoHeader->tipo_prestamo);
-                    $recurrenciaPrestamo = RecurrenciaPrestamos::find($prestamo->periodo_id);
+                    $creditoHeader = CreditFolderHeader::where('company_id', Auth::user()->company_id)->where('code', $value->code_folder_header)->firstOrFail();
+                    $prestamo = Prestamos::where('company_id', Auth::user()->company_id)->findOrFail($creditoHeader->tipo_prestamo);
+                    $recurrenciaPrestamo = RecurrenciaPrestamos::where('company_id', Auth::user()->company_id)->findOrFail($prestamo->periodo_id);
                     switch ($recurrenciaPrestamo->code) {
                         case 'M':
                             if (!$reglaInteres->porcentaje) {

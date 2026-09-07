@@ -12,6 +12,23 @@ Route::get('mi-cuenta', 'Customer\CustomerPortalController@index')
     ->middleware(['auth', \App\Http\Middleware\CheckInactivity::class])->name('portal.index');
 
 // Buscador de clientes de la barra superior.
+Route::prefix('mi-cuenta')->name('portal.')->middleware(['auth', \App\Http\Middleware\CheckInactivity::class])->group(function () {
+    Route::get('cuentas/{account}/movimientos', 'Customer\PortalActionsController@movements')->name('movements');
+    Route::get('acreditaciones', 'Customer\PortalActionsController@requests')->name('requests');
+    Route::get('acreditaciones/{id}/comprobante', 'Customer\PortalActionsController@requestAttachment')->name('requests.attachment');
+    Route::post('acreditaciones', 'Customer\PortalActionsController@saveRequest')->name('requests.save');
+    Route::delete('acreditaciones/{id}', 'Customer\PortalActionsController@deleteRequest')->name('requests.delete');
+    Route::get('transferencias', 'Customer\PortalActionsController@transfers')->name('transfers');
+    Route::post('transferencias', 'Customer\PortalActionsController@transfer')->middleware('throttle:10,1')->name('transfers.send');
+    Route::get('prestamos/{id}', 'Customer\PortalActionsController@credit')->name('credit');
+    Route::get('prestamos/{id}/cuotas/{detail}/comprobante', 'Customer\PortalActionsController@creditAttachment')->name('credit.attachment');
+    Route::get('prestamos/{id}/archivos/{file}', 'Customer\PortalActionsController@creditFile')->name('credit.file');
+    Route::post('prestamos/{id}/cuotas/{detail}/pago', 'Customer\PortalActionsController@pay')->name('credit.pay');
+    Route::match(['get', 'post'], 'password', 'Customer\PortalActionsController@password')->middleware('throttle:10,1')->name('password');
+    Route::match(['get', 'post'], 'simulador', 'Customer\PortalActionsController@simulator')->name('simulator');
+    Route::match(['get', 'post'], 'terminos', 'Customer\PortalActionsController@terms')->name('terms');
+});
+
 Route::get('clientes/buscar-global', 'Customer\CustomerSearchController@index')
     ->middleware(['auth', \App\Http\Middleware\CheckInactivity::class])
     ->name('clientes.buscar-global');

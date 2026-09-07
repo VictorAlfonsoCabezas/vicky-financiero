@@ -33,8 +33,8 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="password">Password</label>
-                    <input class="form-control" type="password" name="password" id="password" placeholder="Automático" readonly="" value="{{$user->token}}" data-parsley-required="true">
-                    <small>Contraseña es igual al Usuario</small>
+                    <input class="form-control" type="password" name="password" id="password" placeholder="Dejar vac?o para conservar la contrase?a" autocomplete="new-password" minlength="8">token}}" data-parsley-required="true">
+                    <small>Completa este campo solo si deseas cambiar la contrase?a.</small>
                 </div>
             </div>
             <hr class="my-10">

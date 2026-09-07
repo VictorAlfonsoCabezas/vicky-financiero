@@ -25,7 +25,7 @@ class CustomerPortalAccess
         $request->session()->put('auth.portal', 'customer');
         $request->attributes->set('portal_customer', $customer);
         if ($request->is('/', 'home', 'onix') && $request->isMethod('GET')) return redirect()->route('portal.index');
-        if (!$request->is('login', 'login2') && !in_array($request->route()->getName(), ['portal.index', 'logout', 'logout2'], true)) abort(403);
+        if (!$request->is('login', 'login2') && !$request->routeIs('portal.*') && !in_array($request->route()->getName(), ['logout', 'logout2'], true)) abort(403);
         return $next($request);
     }
 }

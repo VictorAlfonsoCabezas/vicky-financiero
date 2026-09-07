@@ -18,7 +18,7 @@ class CustomerPortalController extends Controller
             ->where('company_id', $customer->company_id)->where('customer_id', $customer->id)
             ->orderByDesc('id')->paginate(10, ['*'], 'cuentas_page');
         $credits = CreditFolderHeader::where('company_id', $customer->company_id)->where('customer_id', $customer->id)
-            ->orderByDesc('id')->paginate(10, ['code', 'valor_solicitado', 'status', 'date_created'], 'creditos_page');
+            ->orderByDesc('id')->paginate(10, ['id', 'code', 'valor_solicitado', 'status', 'date_created'], 'creditos_page');
         return view('portal.index', compact('customer', 'accounts', 'credits'));
     }
 }

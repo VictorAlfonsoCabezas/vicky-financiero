@@ -22,6 +22,7 @@ class Handler extends ExceptionHandler
      * @var array
      */
     protected $dontFlash = [
+        'actual',
         'password',
         'password_confirmation',
     ];
@@ -49,7 +50,7 @@ class Handler extends ExceptionHandler
         if ($this->isHttpException($e)) {
             $code = $e->getStatusCode();
             if ($code == '404') {
-                return response()->view('error/404');
+                return response()->view('error/404', [], 404);
             }
         }
         return parent::render($request, $e);

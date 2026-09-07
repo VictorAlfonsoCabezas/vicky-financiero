@@ -69,5 +69,9 @@ class UserListingTest extends TestCase
         $controller->update($request, 2);
         $this->assertSame(1, DB::table('usuario_rol')->where('user_id', 2)->count());
         $this->assertEquals(1, DB::table('usuario_rol')->where('user_id', 2)->value('rol_id'));
+        $hash = DB::table('users')->where('id', 2)->value('password');
+        $request->merge(['password' => '']);
+        $controller->update($request, 2);
+        $this->assertSame($hash, DB::table('users')->where('id', 2)->value('password'));
     }
 }

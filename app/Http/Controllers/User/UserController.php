@@ -159,9 +159,11 @@ class UserController extends Controller
         $user->username = request('username');
         $user->ruc = request('ruc');
         $user->email = request('email');
-        $user->password = Hash::make(request('password'));
-        $user->remember_token = bcrypt(request('password'));
-        $user->token = request('password');
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->input('password'));
+            $user->remember_token = \Illuminate\Support\Str::random(60);
+            $user->token = '';
+        }
         $user->status = true;
         $user->save();
         if ($request->file('photo') !== null) {
