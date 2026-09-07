@@ -36,13 +36,13 @@
                                     </td>
                                     <td class="text-center">
 
-                                        <a onclick="agregarIngreso('{!! $fondo->id !!}')" class="badge badge-success" style="color: white">
+                                        <a onclick="agregarIngreso('{!! $fondo->id !!}')" class="badge bg-success" style="color: white">
                                             <i class="fas fa-plus"></i> Ingreso
                                         </a>
-                                        <a onclick="agregarEgreso('{!! $fondo->id !!}')" class="badge badge-danger" style="color: white">
+                                        <a onclick="agregarEgreso('{!! $fondo->id !!}')" class="badge bg-danger" style="color: white">
                                             <i class="fas fa-minus"></i> Egreso
                                         </a>
-                                        <a onclick="verDetalles('{!! $fondo->id !!}')" class="badge badge-info" style="color: white">
+                                        <a onclick="verDetalles('{!! $fondo->id !!}')" class="badge bg-info" style="color: white">
                                             <i class="fas fa-eye"></i> Detalles
                                         </a>
                                     </td>
@@ -66,7 +66,7 @@
     $(function () {
         $("#table_fondos").DataTable({
             "responsive": true, "lengthChange": false, "autoWidth": false,
-            "buttons": ["copy", "excel", "pdf", "print", "colvis"],
+            "buttons": ["copy", "excel", "pdf", "print"],
             "language": {
                 "emptyTable": "No hay datos disponibles en la tabla.",
                 "info": "Del _START_ al _END_ de _TOTAL_ ",
@@ -159,10 +159,10 @@
                     var customers = '';
                     $.each(res, function (key, value) {
                         customers += '<tr>';
-                        if (value.type_transaction_name == 'INGRESOS') {
-                            customers += '     <td><span class="badge badge-info">' + value.type_transaction_name + '</span></td>';
+                        if (value.type_transaction_action == 'S') {
+                            customers += '     <td><span class="badge bg-info">' + value.type_transaction_name + '</span></td>';
                         } else {
-                            customers += '     <td><span class="badge badge-danger">' + value.type_transaction_name + '</span></td>';
+                            customers += '     <td><span class="badge bg-danger">' + value.type_transaction_name + '</span></td>';
 
                         }
                         customers += '     <td>' + value.valor + '</td>';

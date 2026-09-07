@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title')Menus @stop
+@section('title')Usuarios @stop
 @section('breadcrumbs1')Usuarios @stop
 @section('breadcrumbs2')Usuarios @stop
 @section('content')
 <div class="panel panel-inverse">
     <!-- BEGIN panel-heading -->
     <div class="panel-heading">
-        <h4 class="panel-title">Lista de Clientes</h4>
+        <h4 class="panel-title">Lista de Usuarios</h4>
         <div class="panel-heading-btn">
             <a href="javascript:;" class="btn btn-xs btn-icon btn-default" data-toggle="panel-expand"><i class="fa fa-expand"></i></a>
             <a href="javascript:;" class="btn btn-xs btn-icon btn-success" data-toggle="panel-reload"><i class="fa fa-redo"></i></a>
@@ -30,7 +30,7 @@
             <thead>
                 <tr id="busqueda">
                     <th class="filtre">#</th>
-                    <th class="text-nowrap">Nombre</th>
+                    <th class="text-nowrap filtre">Nombre</th>
                     <th class="text-nowrap filtre">Username</th>
                     <th class="text-nowrap filtre">Email</th>
                     <th data-orderable="false"></th>
@@ -69,8 +69,7 @@
             "ajax": {
                 url: "{{URL::to('usuarios/verDatos')}}",
                 "dataType": "json",
-                "type": "GET",
-                "async": false
+                "type": "GET"
             },
             columns: [
                 {data: 'id'},

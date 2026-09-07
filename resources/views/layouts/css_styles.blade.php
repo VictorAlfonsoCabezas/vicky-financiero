@@ -17,3 +17,6 @@
 {!! Html::style( asset('plugins/treeview/css/metisMenu.css')) !!}
 {!! Html::style( asset('/assets/plugins/sortable/sortable.css')) !!}
 
+
+<link rel="stylesheet" href="{{ asset('plugins/sweetalert2/sweetalert2.min.css') }}">
+<link rel="stylesheet" href="{{ asset('css/onix-bs5.css') }}">

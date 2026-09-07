@@ -13,9 +13,6 @@ class Product extends Model {
         'name',
         'description',
         'description_larga',
-        'category_product_id',
-        'unit_measure_id',
-        'unidad_name',
         'tipo_iva',
         'costo',
         'precio_a',
@@ -36,9 +33,4 @@ class Product extends Model {
     public function company() {
         return $this->belongsTo('App\Models\Company', 'company_id');
     }
-
-    public function unitMeasure() {
-        return $this->belongsTo('App\Models\Category', 'unit_measure_id');
-    }
-
 }

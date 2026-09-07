@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class AddCuentaContableIdToCreditFolderHeadersTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('credit_folder_headers', function (Blueprint $table) {
+            $table->unsignedBigInteger('cuenta_contable_id')->nullable()->after('porcentaje_interes_prestamo');
+            
+            $table->foreign('cuenta_contable_id')
+                      ->references('id')
+                      ->on('plan_cuentas')
+                      ->onDelete('set null');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('credit_folder_headers', function (Blueprint $table) {
+            $table->dropForeign(['cuenta_contable_id']);
+
+            $table->dropColumn('cuenta_contable_id');
+        });
+    }
+}

@@ -9,9 +9,10 @@ class Country extends Model
     protected $table = 'country';
     protected $fillable = [
         'id',
-        'name',
-        'iso',
-        'code',
+        'nombre',
+        'defecto',
+        'codigo_pais',
+        'codigo_llamada',
         'status'
     ];
 }

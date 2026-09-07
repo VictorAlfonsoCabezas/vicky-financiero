@@ -49,11 +49,11 @@
                     </td>
                     <td>{{$value->title}}</td>
                     <td>{{$value->description}}</td>
-                    <td style="text-align: center;"><span class="badge badge-primary">{{$value->type_name}}</span></td>
+                    <td style="text-align: center;"><span class="badge bg-primary">{{$value->type_name}}</span></td>
                     @if($value->status)
-                    <td><span class="badge badge-warning">Activo</span></td>
+                    <td><span class="badge bg-warning">Activo</span></td>
                     @else
-                    <td><span class="badge badge-danger">Inactiva</span></td>
+                    <td><span class="badge bg-danger">Inactiva</span></td>
                     @endif
                     <td>
                         <form action="{{URL::to('category/'.$value->id)}}" method="POST">

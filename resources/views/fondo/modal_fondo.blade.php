@@ -3,7 +3,7 @@
         <div class="modal-content">
             <div class="modal-header">
 
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
@@ -33,7 +33,7 @@
                             </div>
 
                             <div class="modal-footer justify-content-between">
-                                <a type="button" class="btn btn-default" data-dismiss="modal">Cerrar</a>
+                                <a type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</a>
                                 <a type="button" class="btn btn-primary" href="javascript:guardarFondoTransaction()" style="color: white">Guardar</a>
                             </div>
                         </form>

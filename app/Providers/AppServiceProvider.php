@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \App\Models\CreditFolderHeader::observe(\App\Observers\CreditFolderHeaderObserver::class);
+        \App\Models\CreditFolderDetail::observe(\App\Observers\CreditFolderDetailObserver::class);
         View::composer("layouts.app", function ($view) {
             $menus = Menu::getMenu(true);
             foreach ($menus as $key => $value) {

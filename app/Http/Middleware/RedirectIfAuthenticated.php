@@ -18,6 +18,7 @@ class RedirectIfAuthenticated
     public function handle($request, Closure $next, $guard = null)
     {
         if (Auth::guard($guard)->check()) {
+            if (\App\Support\CustomerPortal::customer(Auth::guard($guard)->user())) return redirect()->route('portal.index');
             return redirect('/home');
         }
 

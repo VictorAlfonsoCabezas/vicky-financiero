@@ -95,10 +95,11 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::find($id);
-        $user->rol = UsuarioRol::where('user_id', $id)->first()->rol_id;
+        $user = User::findOrFail($id);
+        $user->rol = UsuarioRol::where('user_id', $id)->value('rol_id');
         $roles = Rol::all();
         $empresa = Company::where('status', true)->get();
+        $data = [];
         if ($user->company_varias !== null && $user->company_varias !== '') {
             $empresas = explode(",", $user->company_varias);
             foreach ($empresa as $value) {
@@ -135,6 +136,11 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'rol' => 'required|integer|exists:rol,id',
+            'empresa' => 'required|array|min:1',
+            'empresa.*' => 'required|integer|exists:company,id',
+        ]);
         foreach ($request->input('empresa') as $key => $value) {
             if ($key == 0) {
                 $empresa = $value;
@@ -172,8 +178,11 @@ class UserController extends Controller
             $user->photo = $nombre;
             $user->save();
         }
-        $rol = UsuarioRol::where('user_id', $id)->first();
-        $rol->rol_id = request('rol');
+        $rol = UsuarioRol::firstOrNew(['user_id' => $id]);
+        $rol->rol_id = $request->input('rol');
+        if (!$rol->exists) {
+            $rol->status = true;
+        }
         $rol->save();
         return redirect('/usuarios')->with('mensaje', 'Usuario Editado exitosamente');
     }
@@ -231,100 +240,45 @@ class UserController extends Controller
 
     public function verDatos(Request $request)
     {
-        $columns = array(
-            0 => 'id',
-            1 => 'name',
-            2 => 'username',
-            3 => 'email',
-            4 => 'rol_name',
-            5 => 'status',
-            6 => 'acciones',
-        );
-        $users = User::where('username', '!=', null);
-        $totalData = $users->count();
-        $totalFiltered = $totalData;
-        $limit = $request->input('length');
-        $start = $request->input('start');
-        $order = $columns[$request->input('order.0.column')];
-        $dir = $request->input('order.0.dir');
-        foreach ($request->input('columns') as $columna) {
-            switch ($columna['data']) {
-                case 'id':
-                    $search = $columna['search']['value'];
-                    if (empty($search)) {
-                        $posts = $users->offset($start)
-                            ->limit($limit)
-                            ->orderBy('id', 'DESC')
-                            ->get();
-                    } else {
-                        $posts = $users->where('id', 'LIKE', "%{$search}%")
-                            ->offset($start)
-                            ->limit($limit)
-                            ->orderBy('id', 'DESC')
-                            ->get();
-                        $totalFiltered = $users->where('id', 'LIKE', "%{$search}%")->count();
-                    }
-                    break;
-                case 'name':
-                    $search = $columna['search']['value'];
-                    if (empty($search)) {
-                        $posts = $users->offset($start)
-                            ->limit($limit)
-                            ->orderBy('id', 'DESC')
-                            ->get();
-                    } else {
-                        $posts = $users->where('name', 'LIKE', "%{$search}%")
-                            ->offset($start)
-                            ->limit($limit)
-                            ->orderBy('name', 'DESC')
-                            ->get();
-                        $totalFiltered = $users->where('name', 'LIKE', "%{$search}%")->count();
-                    }
-                    break;
-                case 'username':
-                    $search = $columna['search']['value'];
-                    if (empty($search)) {
-                        $posts = $users->offset($start)
-                            ->limit($limit)
-                            ->orderBy('id', 'DESC')
-                            ->get();
-                    } else {
-                        $posts = $users->where('username', 'LIKE', "%{$search}%")
-                            ->offset($start)
-                            ->limit($limit)
-                            ->orderBy('username', 'DESC')
-                            ->get();
-                        $totalFiltered = $users->where('username', 'LIKE', "%{$search}%")->count();
-                    }
-                    break;
-                case 'email':
-                    $search = $columna['search']['value'];
-                    if (empty($search)) {
-                        $posts = $users->offset($start)
-                            ->limit($limit)
-                            ->orderBy('id', 'DESC')
-                            ->get();
-                    } else {
-                        $posts = $users->where('email', 'LIKE', "%{$search}%")
-                            ->offset($start)
-                            ->limit($limit)
-                            ->orderBy('email', 'DESC')
-                            ->get();
-                        $totalFiltered = $users->where('email', 'LIKE', "%{$search}%")->count();
-                    }
-                    break;
+        $users = User::whereNotNull('username');
+        $totalData = (clone $users)->count();
+        foreach ((array) $request->input('columns', []) as $column) {
+            $search = trim((string) data_get($column, 'search.value', ''));
+            $field = data_get($column, 'data');
+            if ($search === '') { continue; }
+            if ($field === 'name') {
+                foreach (preg_split('/\s+/', $search) as $term) {
+                    $users->where(function ($query) use ($term) {
+                        $query->where('firstname', 'like', "%{$term}%")->orWhere('lastname', 'like', "%{$term}%");
+                    });
+                }
+            } elseif (in_array($field, ['id', 'username', 'email'], true)) {
+                $users->where($field, 'like', "%{$search}%");
             }
         }
+        $search = trim((string) $request->input('search.value', ''));
+        if ($search !== '') {
+            $users->where(function ($query) use ($search) {
+                foreach (['firstname', 'lastname', 'username', 'email'] as $field) {
+                    $query->orWhere($field, 'like', "%{$search}%");
+                }
+            });
+        }
+        $totalFiltered = (clone $users)->count();
+        $columns = ['id', 'firstname', 'username', 'email'];
+        $order = $columns[(int) $request->input('order.0.column', 0)] ?? 'id';
+        $dir = strtolower($request->input('order.0.dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $limit = max(1, min(100, (int) $request->input('length', 10)));
+        $posts = $users->with('roles')->orderBy($order, $dir)
+            ->offset(max(0, (int) $request->input('start', 0)))->limit($limit)->get();
         $data = array();
         if (!empty($posts)) {
             foreach ($posts as $state) {
                 $nestedData['id'] = $state->id;
-                $nestedData['name'] = $state->firstname . ' ' . $state->lastname;
-                $nestedData['username'] = $state->username;
-                $nestedData['email'] = $state->email;
-                $rol = UsuarioRol::where('user_id', $state->id)->first();
-                $rol_name = Rol::find($rol->rol_id);
-                $nestedData['rol_name'] = ($rol_name != null && $rol_name != '') ? $rol_name->nombre : '';
+                $nestedData['name'] = e(trim($state->firstname . ' ' . $state->lastname));
+                $nestedData['username'] = e($state->username);
+                $nestedData['email'] = e($state->email);
+                $nestedData['rol_name'] = e($state->roles->pluck('nombre')->implode(', ') ?: 'Sin rol');
                 if ($state->status) {
                     $estado = '<label class="badge bg-info rounded-pill">Activo</label>';
                 } else {

@@ -3,28 +3,71 @@ $(document).ready(function () {
     var menu = $('ul.nav-sidebar').find('a.active').parents('li.has-treeview');
     menu.addClass('menu-open');
     menu.children('a').addClass('active');
-});
 
-var contadorAfk = 0;
-$(document).ready(function () {
-    //Cada minuto se lanza la función ctrlTiempo
-    var contadorAfk = setInterval(ctrlTiempo, 60000);
-    //Si el usuario mueve el ratón cambiamos la variable a 0.
-    $(this).mousemove(function (e) {
-        window.contadorAfk = 0;
-        contadorAfk = 0;
+    //Livewire evento escucha cerrar modal
+    window.addEventListener('closeModal', event => {
+        $('#modalGeneral').modal('hide');
+        $('#modalGeneral1').modal('hide');
+        $('#modalGeneral2').modal('hide');
+        $('#modalGeneral3').modal('hide');
+        $('#modalGeneral4').modal('hide');
+        $('#modalGeneral5').modal('hide');
+        $('#modalGeneral6').modal('hide');
+        $('#modalGeneral7').modal('hide');
+        $('#modalGeneral8').modal('hide');
+        $('#modalGeneral9').modal('hide');
+        $('#modalGeneral10').modal('hide');
+    });
+
+    // Modal Utilidades
+    window.addEventListener('close-modal', event => {
+        var modalId = event.detail.modalId;
+        if (modalId) {
+            $('#' + modalId).modal('hide');
+        }
+    });
+
+    // Modal Ejecutar Pago Automatico Forzado
+    window.addEventListener('openConfigWarningModal', event => {
+        $('#modalAdvertenciaConfig').modal('show');
+    });
+
+    window.addEventListener('closeConfigWarningModal', event => {
+        $('#modalAdvertenciaConfig').modal('hide');
+    });
+
+    //Livewire evento alertas
+    window.addEventListener('alerta', function(event) {
+        var data = event.detail;
+        $(document).Toasts('create', {
+            class: 'bg-' + data.color,
+            title: data.titulo,
+            body: data.mensaje,
+            autohide: true,
+            delay: 6000
+        });
+    });
+
+    //Livewire evento SWALL
+    window.addEventListener('alertaGrande', function(event) {
+        var data = event.detail;
+        Swal.fire({
+            type: "warning",
+            html: `
+                ${data.titulo}<br>${data.mensaje}
+            `,
+            confirmButtonText: "ACEPTAR"
+        });
+        // var data = event.detail;
+        // $(document).Toasts('create', {
+        //     class: 'bg-' + data.color,
+        //     title: data.titulo,
+        //     body: data.mensaje,
+        //     autohide: true,
+        //     delay: 6000
+        // });
     });
 });
-
-function ctrlTiempo() {
-    //Se aumenta en 1 la variable.
-    contadorAfk++;
-    //Se comprueba si ha pasado del tiempo que designemos.
-    if (contadorAfk > 59) { // Más de 59 minutos, lo detectamos como ausente o inactivo.
-        //La función o código que necesites para cerrar la sesión del usuario.
-        document.getElementById('logout-form').submit();
-    }
-}
 var MensajeVerde = function () {
     return {
         validacionGeneral: function (id, reglas, mensajes) {
@@ -70,7 +113,7 @@ var MensajeVerde = function () {
                 newestOnTop: true,
                 positionClass: 'toast-top-right',
                 preventDuplicates: true,
-                timeOut: '5000'
+                timeOut: '8000'
             };
             if (tipo == 'error') {
                 toastr.error(mensaje, titulo);
@@ -78,8 +121,6 @@ var MensajeVerde = function () {
                 toastr.success(mensaje, titulo);
             } else if (tipo == 'info') {
                 toastr.info(mensaje, titulo);
-            } else if (tipo == 'danger') {
-                toastr.danger(mensaje, titulo);
             } else if (tipo == 'warning') {
                 toastr.warning(mensaje, titulo);
             }
@@ -130,26 +171,3 @@ function __URL() {
     var url_final = url[0] + '//' + url[2] + '/';
     return url_final;
 }
-
-var alerta = function () {
-    return {
-        toast: function (titulo = null, mensaje, tipo) {
-            toastr.options = {
-                closeButton: true,
-                newestOnTop: true,
-                positionClass: 'toast-top-right',
-                preventDuplicates: false,
-                timeOut: '1000'
-            };
-            if (tipo == 'error') {
-                toastr.error(mensaje, titulo);
-            } else if (tipo == 'success') {
-                toastr.success(mensaje, titulo);
-            } else if (tipo == 'info') {
-                toastr.info(mensaje, titulo);
-            } else if (tipo == 'warning') {
-                toastr.warning(mensaje, titulo);
-        }
-        },
-    }
-}();

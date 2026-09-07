@@ -2,11 +2,12 @@
 
 return [
     'ROUTS_IMAGES' => [
-        'PATH_BANNERS' => 'public/uploads/banners/'
+        'PATH_BANNERS' => 'public/uploads/banners/',
+        'PATH_VOUCHER' => 'uploads/egresos/',
+        'PATH_COMPROBANTE' => 'uploads/comprobante/'
     ],
-    'RUTAS_PUBLICAS' => [
-        'PATH_FILE' => 'public_image/',
-        'PATH_FILE_ORDER' => 'public_image/ordenes/'
+    'ROUTES' => [
+        'PATH_DOCUMENTS_CREDIT' => 'uploads/credit/'
     ],
     'MESES' => [
         'ENERO' => ['type' => '01', 'label' => 'ENERO'],
@@ -38,21 +39,38 @@ return [
     ],
     'SOLOMESES' => ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'],
     'PARENTESCO' => [
-        'ESPOSO/A',
-        'PADRE',
-        'MADRE',
-        'SUEGRO/A',
-        'HIJO/A',
-        'YERNO',
-        'NUERA',
-        'ABUELO/A',
-        'NIETO/A',
-        'HERMANO/A',
-        'CUÑADO/A',
-        'BISABUELO/A',
-        'BIZNIETO/A',
-        'TIO/A',
-        'SOBRINO/A'
+//        'ESPOSO/A',
+//        'PADRE',
+//        'MADRE',
+//        'SUEGRO/A',
+//        'HIJO/A',
+//        'YERNO',
+//        'NUERA',
+//        'ABUELO/A',
+//        'NIETO/A',
+//        'HERMANO/A',
+//        'CUÑADO/A',
+//        'BISABUELO/A',
+//        'BIZNIETO/A',
+//        'TIO/A',
+//        'SOBRINO/A',
+        'FAMILIAR',
+        'AMIGO/A',
+//        'CONOCIDO/A'
     ],
-    'NEGADO_PARENTESIS' => ["'", '"'],
+    'ESTOS_CIVIL' => [
+        '1' => ['code' => 'SOLTERO/A', 'name' => 'SOLTERO/A'],
+        '2' => ['code' => 'CASADO/A', 'name' => 'CASADO/A'],
+        '3' => ['code' => 'UNION LIBRE', 'name' => 'UNION LIBRE'],
+        '4' => ['code' => 'VIUDO/A', 'name' => 'VIUDO/A'],
+    ],
+    'STATUS_PRESTAMO' => [
+        'PENDIENTE' => ['label' => 'PENDIENTE', 'color' => 'warning', 'type_trans' => 'S'],
+        'APROBADO' => ['label' => 'APROBADO', 'color' => 'success', 'type_trans' => 'S'],
+        'ENPRUEBA' => ['label' => 'EN PRUEBA', 'color' => 'primary', 'type_trans' => 'S'],
+        'NEGADO' => ['label' => 'NEGADO', 'color' => 'danger', 'type_trans' => 'S'],
+        'ENTREGADO' => ['label' => 'ENTREGADO', 'color' => 'info', 'type_trans' => 'S'],
+        'NOVACION' => ['label' => 'NOVACION', 'color' => 'info', 'type_trans' => 'S'],
+        'PAGADO' => ['label' => 'PAGADO', 'color' => 'success', 'type_trans' => 'S'],
+    ],
 ];

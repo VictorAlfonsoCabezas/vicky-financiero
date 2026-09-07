@@ -39,10 +39,28 @@ class User extends Authenticatable
     }
 
     protected $fillable = [
-        'company_id', 'firstname', 'lastname', 'username', 'ruc', 'email', 'password', 'token', 'admin',
+        'company_id',
+        'sede_id',
+        'firstname',
+        'lastname',
+        'username',
+        'ruc',
+        'email',
+        'password',
+        'token',
+        'admin',
+        'permiso_credito_aprobar',
+        'permiso_caja_valor',
+        'reversar_movimientos',
+        'reversar_cajas',
+        'cierre_caja',
+        'permiso_reversar_creditos',
+        'permiso_numero_cuentas',
+        'eliminar_creditos',
     ];
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
     protected $casts = [
         'email_verified_at' => 'datetime',

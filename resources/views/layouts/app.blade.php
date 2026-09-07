@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="utf-8" />
-    <title>SIGCRM | @yield('title')</title>
-    <link rel="icon" href="{{URL::to('intelho/logo_mini.png')}}" type="image/png" />
+    <title>Vicky Financiero | @yield('title', 'Onix')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ asset('codev/negro.png') }}" type="image/png" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
-    <meta content="" name="sistema crm" />
-    <meta content="" name="johntellojohn" />
+    <meta content="" name="vicky-financiero" />
+    <meta content="" name="VictorAlfonsoCabezas" />
     <!-- ================== BEGIN core-css ================== -->
     @include('layouts.css_styles')
     @yield('custom_css')
+    @yield('custom_css_rules')
+    @stack('styles')
+    @livewireStyles
     <!-- ================== END core-css ================== -->
 </head>
 
 <body>
+    <div id="cargando" class="onix-loading" style="display:none" role="status"><span class="spinner-border text-light"></span><span class="text-light ms-3">Procesando…</span></div>
     <!-- BEGIN #loader -->
     <div id="loader" class="app-loader">
         <span class="spinner"></span>
@@ -26,7 +31,7 @@
         <div id="header" class="app-header">
             <!-- BEGIN navbar-header -->
             <div class="navbar-header">
-                <a href="{{URL::to('/')}}" class="navbar-brand"><img src="{{URL::to('intelho/logo_mini.png')}}" style="width: 20px; height: 20px;"><b>IG</b> CRM</a>
+                <a href="{{URL::to('/')}}" class="navbar-brand"><img src="{{ URL::asset('/codev/negro.png') }}" style="width: 20px; height: 20px;"><b>Vicky</b> Financiero</a>
                 <button type="button" class="navbar-mobile-toggler" data-toggle="app-sidebar-mobile">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
@@ -38,10 +43,10 @@
             <!-- BEGIN header-nav -->
             <div class="navbar-nav">
                 <div class="navbar-item navbar-form">
-                    <form action="" method="POST" name="search">
+                    <form action="{{ route('clientes.buscar-global') }}" method="GET" id="customer-search-form" role="search">
                         <div class="form-group">
-                            <input type="text" class="form-control" placeholder="Ingrese una palabra" />
-                            <button type="submit" class="btn btn-search"><i class="fa fa-search"></i></button>
+                            <input type="search" name="q" id="customer-search-input" class="form-control" placeholder="Identificación o nombres" aria-label="Buscar clientes por identificación, código, nombres o apellidos" minlength="2" maxlength="120" autocomplete="off" required />
+                            <button type="submit" class="btn btn-search" aria-label="Buscar clientes"><i class="fa fa-search" aria-hidden="true"></i></button>
                         </div>
                     </form>
                 </div>
@@ -138,7 +143,7 @@
                             <div class="menu-icon">
                                 <i class="fa fa-th-large"></i>
                             </div>
-                            <div class="menu-text">Home</div>
+                            <div class="menu-text">Inicio</div>
                         </a>
                     </div>
                     <div class="menu">
@@ -148,6 +153,9 @@
                         @endif
                         @include("layouts.menu-item", ["item" => $item])
                         @endforeach
+                    </div>
+                    <div class="menu-item {{ request()->is('onix') ? 'active' : '' }}">
+                        <a href="{{ route('onix.dashboard') }}" class="menu-link"><div class="menu-icon"><i class="fa fa-chart-line"></i></div><div class="menu-text">Panel financiero</div></a>
                     </div>
                     <!-- BEGIN minify-button -->
                     <div class="menu-item d-flex">
@@ -177,7 +185,7 @@
             <!-- END page-header -->
 
             <!-- BEGIN panel -->
-            <div class="app">
+            <div class="onix-content">
                 @yield('content')
             </div>
             <!-- END panel -->
@@ -192,7 +200,11 @@
 
     <!-- ================== BEGIN core-js ================== -->
     @include('layouts.js_library')
+    @include('layouts.customer-search')
+    <script src="{{ asset('js/customer-search.js') }}"></script>
+    @livewireScripts
     @yield('scripts')
+    @stack('scripts')
     <!-- ================== END core-js ================== -->
 </body>
 

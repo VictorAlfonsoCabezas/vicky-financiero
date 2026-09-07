@@ -19,4 +19,4 @@
       <span id="mostrar-icono" class="fa fa-fw {{old('icono')}}"></span>
     </div>
 </div>
-                  
+

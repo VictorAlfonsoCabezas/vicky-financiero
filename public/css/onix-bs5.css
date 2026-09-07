@@ -1,0 +1,22 @@
+/* Presentation adapters for the migrated Onix module content in Color Admin BS5. */
+.onix-loading { position:fixed; inset:0; z-index:2000; background:#172b4dcc; align-items:center; justify-content:center; }
+.onix-loading[style*="block"] { display:flex!important; }
+.app-content .form-group { margin-bottom:1rem; }
+.app-content .card { margin-bottom:1rem; }
+.app-content .card-outline { border-top:3px solid var(--bs-primary); }
+.app-content .card-title { font-size:1rem; margin-bottom:0; }
+.app-content .card-tools { float:right; display:flex; gap:.4rem; }
+.app-content .input-group-append,.app-content .input-group-prepend { display:flex; }
+.app-content .close { border:0; background:transparent; font-size:1.5rem; margin-left:auto; color:inherit; }
+.app-content .info-box { display:flex; padding:1rem; background:var(--bs-body-bg,#fff); border-radius:.4rem; margin-bottom:1rem; gap:1rem; }
+.app-content .info-box-icon { width:3.5rem; min-height:3.5rem; display:grid; place-items:center; border-radius:.3rem; font-size:1.5rem; }
+.app-content .info-box-content { display:flex; flex-direction:column; justify-content:center; }
+.app-content .img-circle { border-radius:50%; }
+.app-content .table-responsive { overflow-x:auto; }
+.app-content .custom-control { min-height:1.5rem; padding-left:1.5rem; }
+.app-content .custom-control-input { margin-left:-1.5rem; margin-right:.4rem; }
+.app-content .btn-block { display:block; width:100%; }
+.app-content .text-xs { font-size:.75rem; }
+.app-content .text-sm { font-size:.875rem; }
+.app-content .modal-header { align-items:center; }
+@media(max-width:767px) { .app-content .card-header { flex-wrap:wrap; } .app-content .table { min-width:36rem; } }

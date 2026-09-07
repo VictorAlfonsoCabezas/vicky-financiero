@@ -33,10 +33,10 @@ class ArbolController extends Controller
 
     public function destroy($id)
     {
-        $roles = Rol::find($id);
+        $roles = Rol::findOrFail($id);
         $roles->status = false;
         $roles->save();
-        dd($id);
+        return Response::json(true);
     }
 
     public function tree($role_id)
