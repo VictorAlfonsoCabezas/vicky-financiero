@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $customerLogin ? 'Acceso de clientes' : 'Acceso administrativo' }} | Vicky Financiero</title>
-    <link rel="icon" href="{{ asset('intelho/logo_mini.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('codev/negro.png') }}" type="image/png">
     <link href="{{ asset('assets/css/vendor.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/default/app.min.css') }}" rel="stylesheet">
 </head>
@@ -23,7 +23,7 @@
         <div class="login-container">
             <div class="login-header">
                 <div class="brand">
-                    <div class="d-flex align-items-center"><img src="{{ asset('intelho/logo_mini.png') }}" alt="" width="30" height="30" class="me-2"><b>Vicky</b>&nbsp;Financiero</div>
+                    <div class="d-flex align-items-center"><img src="{{ asset('codev/negro.png') }}" alt="" width="30" height="30" class="me-2"><b>Vicky</b>&nbsp;Financiero</div>
                     <small>{{ $customerLogin ? 'Clientes · Caja Web' : 'Administración' }}</small>
                 </div>
                 <div class="icon"><i class="fa {{ $customerLogin ? 'fa-user' : 'fa-lock' }}" aria-hidden="true"></i></div>
