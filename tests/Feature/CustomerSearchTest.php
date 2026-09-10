@@ -18,6 +18,7 @@ class CustomerSearchTest extends TestCase
         ]]);
         Schema::create('customer', function (Blueprint $table) {
             $table->increments('id');
+            $table->timestamp('created_at')->nullable();
             $table->integer('company_id');
             $table->string('code');
             $table->string('nombres');
@@ -48,6 +49,54 @@ class CustomerSearchTest extends TestCase
     public function testSearchRequiresAuthentication()
     {
         $this->getJson('/clientes/buscar-global?q=Ana')->assertUnauthorized();
+    }
+
+    public function testProfileSearchAndSelectionRespectTheCompany()
+    {
+        $this->loginToCompany();
+        $id = $this->customer();
+        $foreignId = $this->customer(20);
+        $component = new \App\Http\Livewire\Clientes\ClientesComponent();
+        foreach (['Ana', 'Torres', '099123', ''] as $term) {
+            $component->search = $term;
+            $this->assertEquals([$id], $component->customerSearchQuery()->get()->pluck('id')->all());
+        }
+        $component->page = 3;
+        $component->updatingSearch();
+        $this->assertSame(1, $component->page);
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $component->seleccionarCliente($foreignId);
+    }
+
+    public function testProfileTabsOnlyOpenExistingClientSections()
+    {
+        $component = new \App\Http\Livewire\Clientes\ClientesComponent();
+        $component->selectTab('archivos');
+        $this->assertSame('activity', $component->activeTab);
+        $component->id_seleccionado = 1;
+        $component->selectTab('archivos');
+        $this->assertSame('archivos', $component->activeTab);
+        $component->selectTab('invalid');
+        $this->assertSame('archivos', $component->activeTab);
+        $component->selectTab('timeline');
+        $this->assertSame('timeline', $component->activeTab);
+    }
+
+    public function testCreditClientSearchKeepsAllAlternativesWithinTheCompany()
+    {
+        $this->loginToCompany();
+        $id = $this->customer();
+        $foreignId = $this->customer(20);
+        $component = new \App\Http\Livewire\Creditos\CreditosComponet();
+        foreach (['Ana', 'Torres', '099123', ''] as $term) {
+            $component->search = $term;
+            $this->assertEquals([$id], $component->customerSearchQuery()->pluck('id')->all());
+        }
+        $component->page = 4;
+        $component->updatingSearch();
+        $this->assertSame(1, $component->page);
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $component->seleccionarCliente($foreignId);
     }
 
     public function testSearchFindsNamesDocumentsAndCodesWithinTheActiveCompany()

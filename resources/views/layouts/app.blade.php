@@ -26,7 +26,7 @@
     </div>
     <!-- END #loader -->
     <!-- BEGIN #app -->
-    <div id="app" class="app app-header-fixed app-sidebar-fixed">
+    <div id="app" class="app app-header-fixed app-sidebar-fixed @yield('sidebar_state')">
         <!-- BEGIN #header -->
         <div id="header" class="app-header">
             <!-- BEGIN navbar-header -->

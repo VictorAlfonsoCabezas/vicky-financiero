@@ -1,75 +1,26 @@
-<div>
-    <div class="col-3 mt-2 mb-2">
-        <button wire:click="tipoAhorro(0)" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral" class="btn btn-block btn-default btn-flat"><i class="fa fa-plus"></i> Nuevo</button>
+<div class="savings-module">
+    <div class="savings-heading"><div><div class="text-muted small mb-1">CONFIGURACI&Oacute;N / AHORROS</div><h1>Tipos de ahorro</h1><p>Configura productos, intereses y reglas de tus cuentas.</p></div><button wire:click="tipoAhorro(0)" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral" class="btn btn-primary"><i class="fa fa-plus me-2"></i>Nuevo tipo de ahorro</button></div>
+    <div class="card">
+        <div class="card-header savings-filters"><div><h2 class="h5 mb-1">Cat&aacute;logo de productos</h2><span class="text-muted">{{ $tipos->total() }} resultados</span></div><div class="d-flex gap-2 flex-wrap"><input type="search" wire:model.debounce.350ms="search" class="form-control" placeholder="Buscar por nombre" aria-label="Buscar tipo de ahorro"><select wire:model="estado" class="form-select" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="1">Activos</option><option value="0">Inactivos</option></select></div></div>
+        <div wire:loading.delay class="px-4 py-2 text-primary" role="status">Actualizando productos...</div>
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Producto</th><th>Modalidad</th><th>Inter&eacute;s</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody>
+        @forelse ($tipos as $tip)
+            <tr wire:key="saving-type-{{ $tip->id }}"><td><strong>{{ $tip->name }}</strong><div class="text-muted small savings-description">{{ $tip->description ?: 'Sin descripción' }}</div></td><td><span class="badge bg-light text-dark">{{ $tip->programado ? 'Programado' : ($tip->cuenta_certificado ? 'Certificado' : ($tip->cuenta_encaje ? 'Encaje' : 'Ahorro')) }}</span></td><td>{{ $tip->interes }} %</td><td><button type="button" wire:click="cambioEstado({{ $tip->id }})" class="btn btn-sm {{ $tip->status ? 'btn-outline-success' : 'btn-outline-secondary' }}" title="Cambiar estado">{{ $tip->status ? 'Activo' : 'Inactivo' }}</button></td><td><div class="d-flex justify-content-end gap-1 flex-wrap">
+            <button wire:click="tipoAhorro({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral" class="btn btn-sm btn-outline-primary"><i class="fa fa-pen me-1"></i>Editar</button>
+            <button wire:click="ver({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral2" class="btn btn-sm savings-secondary-action" title="Configurar valores"><i class="fa fa-list me-1"></i>Valores</button>
+            @if ($tip->programado)<button wire:click="calculadora({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral3" class="btn btn-sm savings-secondary-action" title="Configurar plazos e intereses"><i class="fa fa-calculator me-1"></i>Plazos</button>@endif
+            <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar tipo de ahorro" aria-label="Eliminar {{ $tip->name }}" onclick="if (confirm('Eliminar este tipo de ahorro?')) { @this.call('borrarTipo', {{ $tip->id }}) }"><i class="fa fa-trash-alt"></i></button>
+            </div></td></tr>
+        @empty<tr><td colspan="5" class="text-center p-5 text-muted"><i class="fa fa-search d-block fs-2 mb-3"></i>No se encontraron tipos de ahorro con estos filtros.</td></tr>@endforelse
+        </tbody></table></div><div class="card-footer">{{ $tipos->links() }}</div>
     </div>
-    <div class="row">
-        <div class="col-12">
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Tipos de ahorros</h3>
-                    <div class="card-tools">
-                        <div class="input-group input-group-sm" style="width: 250px;">
-                            <input type="text" wire:model="search" id="search" class="form-control float-end" placeholder="Buscar">
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-default">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body table-responsive p-0" style="height: 300px;">
-                    <table class="table table-head-fixed text-nowrap table-hover" style="font-size: 15px;">
-                        <thead>
-                            <tr>
-                                <th style="width: 1%;">#</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Acciones</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($tipos as $tip)
-                            <tr>
-                                <td>{{ $tip->id }}</td>
-                                <td>{{ $tip->name }}</td>
-                                <td>{{ $tip->description }}</td>
-                                <td>
-                                    <button wire:click="tipoAhorro({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral" type="button" class="btn bg-light btn-xs"><i class="fa fa-pen"></i></button>
-                                    <button wire:click="ver({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral2" type="button" class="btn bg-light btn-xs"><i class="fa fa-bars"></i></button>
-                                    @if ($tip->programado)
-                                    <button wire:click="calculadora({{ $tip->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral3" type="button" class="btn bg-light btn-xs"><i class="fa fa-calculator" aria-hidden="true"></i></button>
-                                    @endif
-                                    <button wire:click="borrarTipo({{ $tip->id }})" class="btn bg-light btn-xs"><i class="fa fa-trash"></i></button>
-                                </td>
-                                <td>
-                                    @if ($tip->status)
-                                    <small class="badge bg-primary" wire:click="cambioEstado({{ $tip->id }})"></i>Activo</small>
-                                    @else
-                                    <small class="badge bg-danger" wire:click="cambioEstado({{ $tip->id }})"></i>Desactivado</small>
-                                    @endif
-                                </td>
-
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    {{ $tipos->links() }}
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- MODAL --}}
     <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Tipos de Ahorros.</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="store">
                     <div class="modal-body">
@@ -82,11 +33,11 @@
                         </div>
                         @endif
                         <div class="row mb-4">
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Nombre</label>
                                 <input type="text" class="form-control" placeholder="Nombre" wire:model="name" id="name">
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Edad</label>
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control" wire:model="edad_min" id="edad_min">
@@ -95,7 +46,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Edad</label>
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control" wire:model="edad_max" id="edad_max">
@@ -104,17 +55,27 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-2">
-                                <label>Color</label>
-                                <select class="form-control" wire:model="class" id="class">
-                                    <option disabled>-Seleccione-</option>
-                                    <option value="info">Celeste</option>
-                                    <option value="success">Verde</option>
-                                    <option value="warning">Amarillo</option>
-                                    <option value="danger">Rojo</option>
-                                </select>
+                            <div class="col-12">
+                                <fieldset>
+                                    <legend class="fs-6 fw-bold">Color de las cuentas</legend>
+                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                        <input type="color" id="savings-color" class="form-control form-control-color savings-color-picker" wire:model="class" aria-label="Elegir cualquier color">
+                                        <div><label for="savings-color">Selecciona el color que prefieras</label><div class="small text-muted">Haz clic en la muestra para abrir la paleta.</div><output class="small fw-bold">{{ $class }}</output></div>
+                                    </div>
+                                    @error('class')<div class="text-danger mt-2">Selecciona un color v&aacute;lido.</div>@enderror
+                                </fieldset>
+                                <div class="savings-color-preview mt-3">
+                                    <div class="savings-account" style="{{ \App\Support\SavingsPalette::style($class) }}">
+                                        <div class="savings-account-select">
+                                            <span class="savings-account-name"><i class="fa fa-wallet me-2"></i>{{ $name ?: 'Nombre del tipo de ahorro' }}</span>
+                                            <span class="text-muted small">Vista previa · Cuenta de ejemplo</span>
+                                            <strong class="savings-balance">$ 1,250.00</strong>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mt-2 mb-0">Al guardar, este color se aplicará a todas las cuentas de este tipo.</p>
+                                </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Interés</label>
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control" placeholder="0.00" wire:model="interes" id="interes">
@@ -123,7 +84,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Cantidad</label>
                                 <select class="form-control" wire:model="rango_valor" id="rango_valor">
                                     <option disabled>-Seleccione-</option>
@@ -134,7 +95,7 @@
                                     <option value="5">5</option>
                                 </select>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Tiempo</label>
                                 <select class="form-control" wire:model="rango_tiempo" id="rango_tiempo">
                                     <option disabled>-Seleccione-</option>
@@ -145,25 +106,25 @@
                                 </select>
                             </div>
                             <hr>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="programado" wire:change="desactivarCuentaEncaje">
                                     <label class="form-check-label">Ahorro programado</label>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="descargo_creditos" wire:change="desactivarCuentaEncaje">
                                     <label class="form-check-label">Cuenta descargo créditos</label>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="cuenta_certificado" wire:change="desactivarCuentaEncaje">
                                     <label class="form-check-label">Certificados de aportación</label>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="ahorro_prestamo" wire:change="desactivarCuentaEncaje">
                                     <label class="form-check-label">Cuenta ahorro de prestamos</label>
@@ -178,7 +139,7 @@
                             </div>
                             <hr>
 
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Porcentaje Retención encaje</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control" wire:model="porcentaje_encaje" step="0.01" @if( !$this->cuenta_encaje) disabled @endif>
@@ -188,7 +149,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Valor Máximo (Certificados Aportacion)</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control" wire:model="cuenta_certificado_valor_max" step="0.01">
@@ -197,7 +158,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <label>Valor Periódico Mensual</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control" wire:model="valor_periodico" step="0.01">
@@ -216,13 +177,13 @@
                         </div>
                         <hr>
                         <div class="row">
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="cuentaPrincipal">
                                     <label class="form-check-label">Cuenta Principal</label>
                                 </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" wire:model="cuentaTransaccional">
                                     <label class="form-check-label">Cuentas Débitos</label>
@@ -232,13 +193,13 @@
                         <hr>
                         @if ($this->mostrarReglas)
                         <div class="row">
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Concepto</label>
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control form-control-sm" wire:model="concepto">
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>%. / V Transacción</label>
                                 <select class="form-control form-control-sm" wire:model="porcentaje_recaudacion" id="porcentaje_recaudacion">
                                     <option value=""> --Seleccione-- </option>
@@ -246,25 +207,25 @@
                                     <!-- <option value="1">Porcentaje</option>--> 
                                 </select>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>V. Transacción</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control form-control-sm" wire:model="valor_recaudacion" step="0.01">
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Día Mensual transacción</label>
                                 <input type="number" class="form-control form-control-sm" placeholder="Día Débito Mensual" wire:model="dia_mes" id="dia_mes">
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Días gracia</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control form-control-sm" wire:model="dias_multa" step="0.01">
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>%. / V Multa</label>
                                 <select class="form-control form-control-sm" wire:model="porcentaje_multa" id="porcentaje_multa">
                                     <option value=""> --Seleccione-- </option>
@@ -272,13 +233,13 @@
                                     <!-- <option value="1">Porcentaje</option> -->
                                 </select>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>V. Multa</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control form-control-sm" wire:model="valor_multa" step="0.01">
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-12 col-md-3">
                                 <label>Banco</label>
                                 <select class="form-control form-control-sm" wire:model="banco_id">
                                     <option value=""> --Seleccione-- </option>
@@ -364,7 +325,7 @@
                     </div>
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="store"><span wire:loading.remove wire:target="store">Guardar cambios</span><span wire:loading wire:target="store">Guardando...</span></button>
                     </div>
                 </form>
             </div>
@@ -377,9 +338,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Valores Iniciales</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -396,7 +355,7 @@
                                 <div class="card">
                                     <div class="card-header">
                                         <div class="row">
-                                            <div class="col-2">
+                                            <div class="col-12 col-md-2">
                                                 <label>Tipo</label>
                                                 <select class="form-control" wire:model="detalle_tipo">
                                                     <option value="0">-Seleccione-</option>
@@ -404,25 +363,25 @@
                                                     <option value="C">CLIENTES</option>
                                                 </select>
                                             </div>
-                                            <div class="col-3">
+                                            <div class="col-12 col-md-3">
                                                 <label>Nombre</label>
                                                 <input type="text" class="form-control" placeholder="Nombre" wire:model="detalle_nombre">
                                             </div>
-                                            <div class="col-2">
+                                            <div class="col-12 col-md-2">
                                                 <label>Valor</label>
                                                 <input type="number" class="form-control" placeholder="0.00" wire:model="detalle_valor">
                                             </div>
-                                            <div class="col-2">
+                                            <div class="col-12 col-md-2">
                                                 <label>Abreviación</label>
                                                 <input type="text" class="form-control" placeholder="APT" wire:model="detalle_siglas">
                                             </div>
-                                            <div class="col-1">
+                                            <div class="col-12 col-md-1">
                                                 <div class="form-check mt-5">
                                                     <input class="form-check-input" type="checkbox" wire:model="detalle_bloqueado">
                                                     <label class="form-check-label">Bloqueado</label>
                                                 </div>
                                             </div>
-                                            <div class="col-1">
+                                            <div class="col-12 col-md-1">
                                                 <div class="form-check mt-5">
                                                     <input class="form-check-input" type="checkbox" wire:model="detalle_suma">
                                                     <label class="form-check-label">Suma</label>
@@ -496,9 +455,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Calculadora de Ahorro Programado</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -516,15 +473,15 @@
                                     <div class="card-header">
                                         <div class="row">
 
-                                            <div class="col-4">
+                                            <div class="col-12 col-md-4">
                                                 <label>Interes</label>
                                                 <input type="number" class="form-control" placeholder="0.00" wire:model="interes_programado">
                                             </div>
-                                            <div class="col-4">
+                                            <div class="col-12 col-md-4">
                                                 <label>Rango Min. (días)</label>
                                                 <input type="number" class="form-control" placeholder="min" wire:model="rango_min">
                                             </div>
-                                            <div class="col-3">
+                                            <div class="col-12 col-md-3">
                                                 <label>Rango Max. (días)</label>
                                                 <input type="text" class="form-control" placeholder="max" wire:model="rango_max">
                                             </div>

@@ -1,5 +1,8 @@
 @extends('layouts.app')
-@section('custom_css_rules')@stop
+@section('title', 'Tipos de ahorro')
+@section('custom_css_rules')
+<link href="{{ asset('css/savings.css') }}" rel="stylesheet">
+@stop
 @section('content')
     <livewire:tipo-ahorros.tipo-ahorros-component />
 @endsection

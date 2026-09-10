@@ -17,6 +17,11 @@ class PrestamosComponent extends Component
     use WithFileUploads;
     protected $paginationTheme = 'bootstrap';
 
+    public $search = '';
+    public $tipoFiltro = '';
+    public function updatingSearch() { $this->resetPage(); }
+    public function updatingTipoFiltro() { $this->resetPage(); }
+
     public $seleccionado = '';
     public $name = '';
     public $interes = '';
@@ -260,7 +265,7 @@ class PrestamosComponent extends Component
     public function render()
     {
         $company = Company::find(Auth::user()->company_id);
-        $prestamos = Prestamos::where('status', 'A')->where('company_id', Auth::user()->company_id)->get();
+        $prestamos = Prestamos::where('status', 'A')->where('company_id', Auth::user()->company_id)->where('name', 'like', '%' . trim($this->search) . '%')->when(in_array($this->tipoFiltro, ['A', 'F'], true), function ($query) { $query->where('tipo', $this->tipoFiltro); })->orderBy('name')->orderBy('id')->paginate(10);
         $recurrencia = RecurrenciaPrestamos::where('company_id', Auth::user()->company_id)->get();
         // Obtener todas las cuentas marcadas como préstamo (pueden ser padres o hijos)
         $cuentasMarcadas = PlanCuentas::where('company_id', Auth::user()->company_id)

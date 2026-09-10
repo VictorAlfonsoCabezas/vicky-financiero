@@ -139,7 +139,7 @@
                                         <br><b># Cuenta: {{ $det->customerTipoAhorros->codigo }}</b>
                                     </td>
                                     <td> <small
-                                            class="badge badge-{{ $det->customerTipoAhorros->tipoAhorros->class }}">{{ $det->customerTipoAhorros->tipoAhorros->name }}</small>
+                                            class="badge" style="{{ \App\Support\SavingsPalette::legacyStyle($det->customerTipoAhorros->tipoAhorros->class) }}">{{ $det->customerTipoAhorros->tipoAhorros->name }}</small>
                                     </td>
                                     <td>${{ $det->valor_saldo }}</td>
                                     <td>

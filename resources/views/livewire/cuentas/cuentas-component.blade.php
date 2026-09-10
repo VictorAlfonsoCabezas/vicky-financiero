@@ -1,13 +1,13 @@
-<div>
+<div class="savings-module">
+    <div class="savings-heading"><div><div class="text-muted small mb-1">SOCIOS / AHORROS</div><h1>Cuentas de ahorro</h1><p>Consulta saldos y administra las operaciones de cada socio.</p></div><a href="/tipo-ahorros" class="btn btn-outline-primary"><i class="fa fa-sliders-h me-2"></i>Tipos de ahorro</a></div>
+    <div wire:loading.delay class="savings-loading" role="status">Actualizando datos...</div>
     <div class="row">
         @if(session('message'))
-        <script>
-            alert("{{ session('message') }}");
-        </script>
+        <div class="alert alert-success" role="status">{{ session('message') }}</div>
         @endif
-        <div class="col-md-3">
+        <div class="col-12 col-xl-3 savings-sidebar">
             <div class="input-group input-group-sm mb-2 mt-2">
-                <input type="text" wire:model="search" id="search" class="form-control" placeholder="Buscar Socio">
+                <input type="text" wire:model.debounce.350ms="search" aria-label="Buscar socio por nombre o documento" id="search" class="form-control" placeholder="Buscar Socio">
                 <div class="input-group-append">
                     <div class="btn btn-primary">
                         <i class="fas fa-search"></i>
@@ -20,9 +20,9 @@
                 </div>
                 <div class="card-body p-0" style="display: block;">
                     <ul class="nav nav-pills flex-column">
-                        @foreach ($customer as $cus)
-                        <li class="nav-item active">
-                            <a wire:click="seleccionarCliente({{ $cus->id }})" class="nav-link"
+                        @forelse ($customer as $cus)
+                        <li class="nav-item" wire:key="customer-{{ $cus->id }}">
+                            <button type="button" wire:click="seleccionarCliente({{ $cus->id }})" class="nav-link savings-customer {{ $customer_selec == $cus->id ? 'is-selected' : '' }}" aria-pressed="{{ $customer_selec == $cus->id ? 'true' : 'false' }}"
                                 style="font-size: 14px;">
                                 <i class="fas fa-user"></i> <b>{{ $cus->apellidos }}</b> {{ $cus->nombres }}
                                 @if ($cus->nuevo)
@@ -31,17 +31,22 @@
                                 <br>
                                 <small>{{ $cus->numero_documento }}</small>
                                 <span class="badge bg-primary float-end">{{ $cus->total_tipos_ahorro }}</span>
-                            </a>
+                                @if ($customer_selec == $cus->id)
+                                <span class="savings-customer-selected"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>Socio seleccionado</span>
+                                @endif
+                            </button>
                         </li>
-                        @endforeach
+                        @empty
+                        <li class="p-4 text-muted">No se encontraron socios.</li>
+                        @endforelse
                     </ul>
                     {{ $customer->links() }}
                 </div>
             </div>
         </div>
-        <div class="col-md-9">
+        <div class="col-12 col-xl-9">
             <div class="card card-primary card-outline mt-2">
-                <div class="card-header" style="display: flex; align-items: center; gap: 300px;">
+                <div class="card-header savings-customer-heading">
                     <h3 class="card-title">Información</h3>
                     <div class="card-title" style="display: flex; align-items: center; gap: 20px;">
                         <h3 class="card-title">Contrato Apertura</h3>
@@ -90,49 +95,23 @@
                             <i style="font-size:20px;" class="fa fa-fw fa-sitemap"></i>
                         </a>
                     </div>
-                    <div class="row ms-2 me-2 mt-2 mb-2">
-                        <div class="col-md-2 d-flex align-items-center">
-                            <a wire:click="abrirModalTipo()" class="btn btn-app"
-                                style="position: relative; right: -18px;" data-bs-toggle="modal"
-                                data-bs-target="#modalGeneral">
-                                <i class="fas fa-plus"></i> Agregar
-                            </a>
-                        </div>
+                    <div class="savings-accounts">
+                        <button type="button" wire:click="abrirModalTipo" class="savings-add" data-bs-toggle="modal" data-bs-target="#modalGeneral"><i class="fa fa-plus mb-2"></i><span>Abrir cuenta</span></button>
                         @foreach ($cuentas as $cue)
-                        <div class="col-md-3" wire:click="cuentaSeleccionada({{ $cue->id }})">
-                            <div class="info-box bg-{{ $cue->tipoAhorros->class }}" style="height: 105px;">
-                                @if ($this->cuenta_selec == $cue->id)
-                                <i class="fas fa-check"></i>
-                                @endif
-                                <span class="info-box-icon">
-                                    @if ($cue->tipoAhorros->cuenta_certificado)
-                                    <i class="fa fa-lock"></i>
-                                    @elseif($cue->tipoAhorros->programado)
-                                    <i class="fa fa-calculator"></i>
-                                    @else
-                                    <i class="fa fa-sim-card"></i>
-                                    @endif
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">{{ $cue->tipoAhorros->name }}</span>
-                                    <span class="info-box-number">{{ $cue->codigo }}</span>
-                                    <span class="progress-description">
-                                        {{ $cue->saldo }}$
-                                    </span>
-                                    @if ($cue->dias_plazo)
-                                    <span class="progress-description" style="font-size: 12px;">
-                                        {{ $cue->dias_plazo . ' días al ' . $cue->porcentaje . ' %' }}
-                                    </span>
-                                    @endif
-                                </div>
-                            </div>
+                        <div class="savings-account {{ $cuenta_selec == $cue->id ? 'is-selected' : '' }}" style="{{ \App\Support\SavingsPalette::style(optional($cue->tipoAhorros)->class) }}" wire:key="account-{{ $cue->id }}">
+                            <button type="button" wire:click="cuentaSeleccionada({{ $cue->id }})" class="savings-account-select" aria-pressed="{{ $cuenta_selec == $cue->id ? 'true' : 'false' }}">
+                                <span class="savings-account-name"><i class="fa fa-wallet me-2"></i>{{ optional($cue->tipoAhorros)->name ?: 'Tipo no disponible' }}</span>
+                                <span class="text-muted small">{{ $cue->codigo }}</span>
+                                <strong class="savings-balance">$ {{ number_format($cue->saldo, 2) }}</strong>
+                                @if ($cue->dias_plazo)<span class="text-muted small">{{ $cue->dias_plazo }} d&iacute;as &middot; {{ $cue->porcentaje }} %</span>@endif
+                                @if ($cuenta_selec == $cue->id)<span class="text-primary small mt-2"><i class="fa fa-check-circle me-1"></i>Cuenta seleccionada</span>@endif
+                            </button>
+                            <button type="button" class="btn btn-sm text-danger savings-account-delete" title="Eliminar cuenta" aria-label="Eliminar cuenta {{ $cue->codigo }}" onclick="if (confirm('Eliminar esta cuenta? Solo se permite si no tiene movimientos.')) { @this.call('eliminarCuenta', {{ $cue->id }}) }"><i class="fa fa-trash-alt"></i></button>
                         </div>
-                        <button wire:click="eliminarCuenta({{ $cue->id }})" type="button" class="close"
-                            style="position: relative;top: -53px;">×</button>
                         @endforeach
                     </div>
                     @if ($this->cuenta_selec > 0)
-                    <div class="col-md-12 d-flex justify-content-center">
+                    <div class="savings-actions">
                         @if($this->programado)
                         @if ($this->cumplimiento)
                         <small class="btn btn-outline-primary btn-block"
@@ -185,12 +164,12 @@
                     @endif
 
                     @if ($this->cuenta_selec > 0)
-                    <table class="table table-sm table-striped">
+                    <div class="table-responsive savings-movements"><table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th colspan="7" style="text-align: center;font-size: 21px;">
                                     @if ($this->numeroCartolaActiva != '') CARTOLA # {{$this->numeroCartolaActiva}}@else
-                                    SINCARTOLA @endif
+                                    Sin cartola activa @endif
                                 </th>
                             </tr>
                             <tr>
@@ -249,14 +228,13 @@
                                     <a class="btn btn-default btn-sm"
                                         href="/customer/certificadoAhorroProgramado/{{ $det->id }}" title="Transacción"
                                         style="color: white;">
-                                        <i class="fas fa-file" style="color: black;"></i>
+                                        <i class="fas fa-file" style="color: black;"></i></a>
 
                                         <a wire:click="pagosProgramados({{ $det->id }})" class="btn btn-success btn-sm"
                                             style="color: white;" data-bs-toggle="modal" data-bs-target="#modalGeneral6">
                                             <i class="fa fa-dollar-sign"></i>
                                             <span class="badge bg-white">{{ $det->total }}</span>
                                         </a>
-                                    </a>
                                     @endif
                                     <a wire:click="llenarChat({{ $det->id }})" class="btn btn-success btn-sm"
                                         style="color: white;" data-bs-toggle="modal" data-bs-target="#modalGeneral3">
@@ -285,7 +263,7 @@
                             </tr>
                             @endforelse
                         </tbody>
-                    </table>
+                    </table></div>
                     @endif
                     @else
                     <h5 class="text-center"><i class="fa fa-sack-dollar"></i> Cuentas</h5>
@@ -305,9 +283,7 @@
             <div class="modal-content">
                 <div class="modal-header {{ $this->tipoAhorroColor !== 0 ? 'bg-' . $this->tipoAhorroColor : '' }}">
                     <h4 class="modal-title"> Crear Cuenta </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCuenta">
                     <div class="modal-body">
@@ -348,12 +324,12 @@
                             <div class="col-12">
                                 <h5>Calculadora de Ahorro Programado <i class="fa fa-calculator"></i></h5>
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Valor</label>
                                         <input type="number" class="form-control" placeholder="0.00"
                                             wire:model="cuenta_valor">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Tasa</label>
                                         <select class="form-control" wire:model="tipo_ahorros_programados_detalle_id">
                                             <option selected>- Seleccione -</option>
@@ -364,7 +340,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Pago</label>
                                         <select id="pagoPlazo" wire:model="cuenta_pago" class="form-control">
                                             <option value=""> --SELECCIONE-- </option>
@@ -373,7 +349,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Forma de Pago</label>
                                         <select class="form-control" wire:model="forma_pago_id">
                                             <option value="">- Seleccione -</option>
@@ -384,11 +360,11 @@
                                     </div>
                                     <!-- Para FP en Ahorro Programado -->
                                     @if ($pagoTipoBanco)
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label># Comprobante</label>
                                         <input type="text" class="form-control" placeholder="# Comprobante" wire:model="comprobante" id="comprobante">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Bancos</label>
                                         <select class="form-control" wire:model="banco_id">
                                             <option value="">- Seleccione -</option>
@@ -397,7 +373,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label># Deposito</label>
                                         <input type="text" class="form-control" placeholder="# Deposito" wire:model="numero_deposito" id="numero_deposito">
                                     </div>
@@ -405,7 +381,7 @@
 
                                 </div>
                                 <div class="row">
-                                    <div class="col-3"> <!-- Contenedor para el input y el checkbox -->
+                                    <div class="col-12 col-md-3"> <!-- Contenedor para el input y el checkbox -->
                                         <label class="small">Plazo Manual </label>
                                         <div class="input-group input-group-sm">
                                             @if ($this->activarManual)
@@ -423,7 +399,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Beneficiario</label>
                                         <select id="garante" wire:model="beneficiarioProgramado"
                                             class="form-control form-control-sm">
@@ -440,7 +416,7 @@
                             </div>
                             @endif
                             @if($this->tipoAhorroCuenta !== '')
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <div class="form-group">
                                     <label># Cuenta
                                         {!! (Auth::user()->permiso_numero_cuentas) ? '<i class="fa fa-edit" style="color: #c58787;"></i>' : '' !!}</label>
@@ -471,9 +447,7 @@
                 {{-- <div class="modal-content {{ $this->tipo_transaccion == 'IN' ? 'bg-primary' : 'bg-danger' }}"> --}}
                 <div class="modal-header">
                     <h4 class="modal-title"> {{ $this->tipo_transaccion == 'IN' ? 'AHORROS' : 'RETIROS' }}</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeAhorroRetiro">
                     <div class="modal-body">
@@ -497,13 +471,13 @@
                             </div>
                             @endif
                             <div class="row mb-4">
-                                <div class="col-8">
+                                <div class="col-12 col-md-8">
                                     <label>Valor</label>
                                     <input type="text" class="form-control" placeholder="0.00"
                                         wire:model="valor_transaccion" id="valor_transaccion">
                                 </div>
                                 @if ($this->tipo_transaccion == 'EG')
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label>Nota Débito</label>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" wire:model="nota_debito"
@@ -514,7 +488,7 @@
                                 @endif
                             </div>
                             <div class="row mb-4">
-                                <div class="col-6">
+                                <div class="col-12 col-md-6">
                                     <label>Forma de Pago</label>
 
                                     <select class="form-control" wire:model="forma_pago_id"
@@ -525,7 +499,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-12 col-md-6">
                                     <label># Comprobante</label>
                                     <input type="text" class="form-control" placeholder="# Comprobante"
                                         wire:model="comprobante" id="comprobante">
@@ -535,7 +509,7 @@
                             <!-- Para FP tipo Banco -->
                             @if ($pagoTipoBanco)
                             <div class="row mb-4">
-                                <div class="col-6">
+                                <div class="col-12 col-md-6">
                                     <label>Bancos</label>
                                     <select class="form-control" wire:model="banco_id">
                                         <option value="">- Seleccione -</option>
@@ -544,7 +518,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-12 col-md-6">
                                     <label># Depósito</label>
                                     <input type="text" class="form-control" placeholder="# Deposito"
                                         wire:model="numero_deposito" id="numero_deposito">
@@ -589,9 +563,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Envios de Whatsapp</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="modal-body">
@@ -666,9 +638,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Archivos</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -684,14 +654,14 @@
                             <div class="col-12">
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputEmail1">Nombre Archivo</label>
                                                 <input type="text" class="form-control" wire:model="descrpcion"
                                                     placeholder="Nombre del Archivo">
                                             </div>
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputFile">Archivo</label>
                                                 <div class="input-group">
@@ -792,9 +762,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Cartolas</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -810,7 +778,7 @@
                             <div class="col-12">
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputEmail1">NÚMERO CARTOLA</label>
                                                 <label class="small">
@@ -886,9 +854,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Pagos Plazo Fijo</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 @if ($errors->any())
                 <div class="callout callout-warning">
@@ -1002,9 +968,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Historial de cuentas</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
                 <div class="modal-body">
@@ -1071,9 +1035,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Novar Plazo Fijo </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 @if ($errors->any())
                 <div class="callout callout-warning">
@@ -1181,19 +1143,19 @@
                                 </div>
                             </div>
                             <div class="row  mt-3">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label>Valor Sugerido</label>
                                     <input type="number" class="form-control" placeholder="0.00"
                                         wire:model="valorCalculadoPrestamoFijo" id="valorCalculadoPrestamoFijo"
                                         disabled>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label>Valor Acreditar/Retirar</label>
                                     <input type="number" class="form-control" placeholder="0.00"
                                         wire:model="valor_acreditar_retirar" id="valor_acreditar_retirar"
                                         wire:blur="actualizarValorNovacion">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label>Total</label>
                                     <input type="number" class="form-control" placeholder="0.00"
                                         wire:model="valor_total_acreditar_retirar"
@@ -1207,7 +1169,7 @@
                             <div class="col-12">
                                 <h5>Calculadora de Ahorro Programado <i class="fa fa-calculator"></i></h5>
                                 <div class="row">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label>Tasa de Interés</label>
                                         <select class="form-control"
                                             wire:model="tipo_ahorros_programados_detalle_id_novacion">
@@ -1219,7 +1181,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label>Pago</label>
                                         <select id="pagoPlazoNOvacion" wire:model="cuenta_pago_novacion"
                                             class="form-control">
@@ -1230,7 +1192,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-3"> <!-- Contenedor para el input y el checkbox -->
+                                    <div class="col-12 col-md-3"> <!-- Contenedor para el input y el checkbox -->
                                         <label class="small">Plazo Manual </label>
                                         <div class="input-group input-group-sm">
                                             @if ($this->activarManualNovacion)
@@ -1251,7 +1213,7 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label>Beneficiario</label>
                                         <select id="beneficiarioProgramadoNovar"
                                             wire:model="beneficiarioProgramadoNovar"
@@ -1291,9 +1253,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">LIQUIDACION ENCAJE </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 @if ($errors->any())
                 <div class="callout callout-warning">
@@ -1371,9 +1331,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">LIQUIDACION ENCAJE </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 @if ($errors->any())
                 <div class="callout callout-warning">
@@ -1440,9 +1398,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Ticket </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">

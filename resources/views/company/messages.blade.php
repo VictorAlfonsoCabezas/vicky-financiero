@@ -1,0 +1,2 @@
+@if(session('mensaje'))<div class="alert alert-success d-flex align-items-center gap-2" role="status"><i class="fa fa-check-circle" aria-hidden="true"></i>{{ session('mensaje') }}</div>@endif
+@if($errors->any())<div class="alert alert-danger" role="alert" tabindex="-1" id="company-errors"><strong>Revisa los campos indicados antes de guardar.</strong><ul class="mb-0 mt-2">@foreach($errors->getMessages() as $field => $messages)<li><a href="#{{ $field }}" class="alert-link">{{ $messages[0] }}</a></li>@endforeach</ul></div>@endif

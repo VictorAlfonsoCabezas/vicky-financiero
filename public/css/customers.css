@@ -1,0 +1,41 @@
+.customers-module .customer-tabs { gap:.5rem; flex-wrap:wrap; }
+.customers-module .customer-tabs .nav-link { padding:.75rem 1rem; border-radius:8px; color:#334155; background:#edf2f7; font-weight:600; }
+.customers-module .customer-tabs .nav-link.active { background:#245bb2; color:#fff; }
+.customers-module .customer-editor>.card>.card-header { border-bottom:1px solid #e2e8f0; padding:1rem!important; }
+.customers-module .customer-editor>.card>.card-body { padding:1.5rem; }
+.customers-module .post>h5,.customers-module .post>div>h5 { color:#243b53; font-size:1.05rem; font-weight:700; margin-top:1.5rem; padding-bottom:.6rem; border-bottom:1px solid #dbe4ef; }
+.customers-module .post>.row { row-gap:1rem; margin-bottom:1.5rem; }
+.customers-module label { font-weight:600; color:#475569; margin-bottom:.4rem; }
+.customers-module .form-control,.customers-module .form-select { min-height:38px; border-radius:6px; border-color:#cbd5e1; }
+.customers-module .user-block { display:flex; flex-wrap:wrap; align-items:center; gap:.65rem; margin-bottom:1rem; }
+.customers-module .user-block .username,.customers-module .user-block .description { margin:0; color:#334155; }
+.customers-module .user-block img { width:42px; height:42px; border-radius:50%; }
+.customers-module .btn.btn-default { background:#edf2f7; border:1px solid #94a3b8; color:#243b53!important; }
+.customers-module .btn.bg-warning { color:#263449!important; }
+.customers-module .btn.btn-app { margin:0; border-radius:8px; cursor:pointer; }
+.customers-module .callout-warning { padding:1rem; border-left:4px solid #ca8a04; background:#fff8db; margin-bottom:1rem; }
+.customers-module .customer-location .box-profile { display:block; padding:1rem; }
+.customers-module .customer-columns>aside,.customers-module .customer-columns>div { min-width:0; }
+.customers-module .customer-columns>.customer-location>.card { margin-top:0; }
+.customers-module .customer-location .profile-username { font-size:1.1rem; margin-top:.75rem; overflow-wrap:anywhere; }
+.customers-module .customer-location #mapid { max-width:100%; }
+@media(min-width:992px) and (max-width:1599px) { .customers-module .customer-editor .panel-body .row>.col-md-3,.customers-module .customer-editor .panel-body .row>.col-md-4 { flex:0 0 50%; max-width:50%; } .customers-module .customer-editor>.card>.card-body { padding:1rem; } }
+.customers-module .customer-location #mapaContenedor { grid-column:1 / -1; border-radius:10px; overflow:hidden; }
+.customers-module .customer-location .profile-user-img { width:72px; height:72px; border-radius:50%; }
+.customers-module .customer-location .list-group { grid-column:1 / -1; }
+.customers-module .customer-location .list-group a:hover { background:#f0f6ff; }
+.customers-module .tab-pane .table { font-variant-numeric:tabular-nums; }
+.customers-module .tab-pane { overflow:visible; }
+.customers-module .customer-detail-panel { border:1px solid #dbe4ef; border-radius:10px; margin-bottom:1rem; background:#fff; overflow:visible; }
+.customers-module .customer-detail-panel>summary { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem; background:#edf3fa; color:#243b53; font-weight:700; border-radius:10px; cursor:pointer; list-style:none; }
+.customers-module .customer-detail-panel>summary::-webkit-details-marker { display:none; }
+.customers-module .customer-detail-panel[open]>summary { border-radius:10px 10px 0 0; border-bottom:1px solid #dbe4ef; }
+.customers-module .customer-detail-panel:not([open])>summary i { transform:rotate(-90deg); }
+.customers-module .customer-detail-panel>summary:focus-visible { outline:3px solid #348fe2; outline-offset:2px; }
+.customers-module .customer-detail-panel>.panel-body { padding:1.2rem; }
+.customers-module .customer-detail-panel .row { row-gap:1rem; }
+.customers-module .customer-detail-panel .dropdown-menu { z-index:1050; }
+.customers-module .customer-quick-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; padding:1rem; background:#fff; border:1px solid #dbe4ef; border-radius:10px; }
+.customers-module #customer-location { scroll-margin-top:80px; }
+.customers-module .select2-container { max-width:100%; }
+@media(max-width:767px) { .customers-module .customer-editor>.card>.card-body { padding:1rem; } .customers-module .customer-tabs .nav-item { flex:1; text-align:center; } .customers-module .customer-tabs .nav-link { padding:.7rem; } .customers-module .customer-location .box-profile { display:block; } .customers-module .post>div[style] { flex-wrap:wrap; gap:.75rem; } }

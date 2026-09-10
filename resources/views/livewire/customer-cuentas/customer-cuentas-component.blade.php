@@ -14,7 +14,7 @@
                     <div class="row ms-2 me-2 mt-2 mb-2">
                         @foreach ($cuentas as $cue)
                         <div class="col-md-3" wire:click="cuentaSeleccionada({{ $cue->id }})">
-                            <div class="info-box bg-{{ $cue->tipoAhorros->class }}" style="height: 105px;">
+                            <div class="info-box" style="height: 105px; {{ \App\Support\SavingsPalette::legacyStyle($cue->tipoAhorros->class) }}">
                                 @if ($this->cuenta_selec == $cue->id)
                                 <i class="fas fa-check"></i>
                                 @endif

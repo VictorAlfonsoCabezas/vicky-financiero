@@ -1,6 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Clientes')
-@section('custom_css_rules')@stop
+@section('sidebar_state', 'app-sidebar-minified')
+@section('custom_css_rules')
+<link href="{{ asset('css/savings.css') }}" rel="stylesheet">
+<link href="{{ asset('css/customers.css') }}" rel="stylesheet">
+@stop
 @section('content')
 <livewire:clientes.clientes-component :customer_id="$id" />
 @endsection

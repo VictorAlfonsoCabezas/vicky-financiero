@@ -1,67 +1,19 @@
-<div>
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="card mt-1">
-                <div class="card-header border-0">
-                    <div class="input-group input-group-sm">
-                        <input type="search" wire:model="search" class="form-control form-control-sm" placeholder="Buscar">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-sm btn-default">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-striped table-valign-middle">
-                        <tbody>
-                            @foreach ($clientes as $cli)
-                            <tr wire:click="seleccionarCliente({{ $cli->id }})">
-                                <td class="small">
-                                    {{ $cli->nombres }}
-                                    {{ $cli->apellidos }}<br><b>{{ $cli->numero_documento }}<b>
-                                </td>
-                                <td>
-                                    <a wire:click="seleccionarCliente({{ $cli->id }})" class="text-muted">
-                                        <i class="fa fa-arrow-right"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    {{ $clientes->links() }}
-                </div>
-            </div>
+<div class="savings-module loans-module">
+    <div class="savings-heading"><div><div class="text-muted small mb-1">SOCIOS / CR&Eacute;DITOS</div><h1>Cr&eacute;ditos de clientes</h1><p>Selecciona un cliente para simular un pr&eacute;stamo o consultar sus cr&eacute;ditos.</p></div><a href="/prestamos" class="btn btn-outline-primary"><i class="fa fa-sliders-h me-2"></i>Tipos de pr&eacute;stamo</a></div>
+    <div class="row g-3">
+        <div class="col-12 col-xl-3 savings-sidebar">
+            <div class="card"><div class="card-header"><h2 class="h5 mb-3">Lista de clientes</h2><input type="search" wire:model.debounce.350ms="search" class="form-control" placeholder="Nombre o documento" aria-label="Buscar cliente por nombre o documento"></div>
+            <div class="card-body p-0"><div wire:loading.delay wire:target="search,seleccionarCliente,gotoPage" class="p-3 text-primary" role="status">Cargando clientes...</div><ul class="nav nav-pills flex-column">
+            @forelse ($clientes as $cli)
+            <li class="nav-item" wire:key="credit-customer-{{ $cli->id }}"><button type="button" wire:click="seleccionarCliente({{ $cli->id }})" class="nav-link savings-customer {{ $id_seleccionado == $cli->id ? 'is-selected' : '' }}" aria-pressed="{{ $id_seleccionado == $cli->id ? 'true' : 'false' }}"><i class="fa fa-user me-1"></i><strong>{{ $cli->apellidos }} {{ $cli->nombres }}</strong><br><small>{{ $cli->numero_documento }}</small>@if($id_seleccionado == $cli->id)<span class="savings-customer-selected"><i class="fa fa-check-circle me-1"></i>Cliente seleccionado</span>@endif</button></li>
+            @empty<li class="p-4 text-muted">No se encontraron clientes.</li>@endforelse
+            </ul>{{ $clientes->links() }}</div></div>
         </div>
-
+        @if (!$id_seleccionado)<div class="col-12 col-xl-9"><div class="card p-5 text-center text-muted"><i class="fa fa-user-circle fs-1 mb-3"></i><h2 class="h5">Selecciona un cliente</h2><p class="mb-0">Busca por nombre, apellido o documento para consultar sus cr&eacute;ditos.</p></div></div>@endif
         @if ($this->id_seleccionado !== 0)
-        <div class="col-lg-9 mt-6">
+        <div class="col-12 col-xl-9">
             <div class="card">
-                <div class="card-header p-2">
-                    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-                        <ul class="navbar-nav">
-                            <li class="nav-item d-none d-sm-inline-block">
-                                <a type="button" wire:click="abrirCreditos" class="nav-link {{ $this->styleMostrarSimulador }}" style="color: {{ $this->styleMostrarSimulador == '' ? 'black' : 'white' }}">
-                                    Simulador y Creditos
-                                </a>
-                            </li>
-
-                            <!--<li class="nav-item d-none d-sm-inline-block">
-                                <a type="button" wire:click="abrirCalificacion" class="nav-link {{ $this->StyleMostrarCalificacion }}" style="color: {{ $this->StyleMostrarCalificacion == '' ? 'black' : 'white' }}">
-                                    Información Socio Mensual
-                                </a>
-                            </li>-->
-
-                            <li class="nav-item d-none d-sm-inline-block">
-                                <a type="button" wire:click="abrirListaCreditos" class="nav-link {{ $this->StyleMostrarListaCreditos }}" style="color: {{ $this->StyleMostrarListaCreditos == '' ? 'black' : 'white' }}">
-                                    Lista de Creditos
-                                </a>
-                            </li>
-
-                        </ul>
-                    </nav>
-                </div>
+                <div class="card-header"><div class="loan-customer-summary"><div><span class="text-muted small">CLIENTE SELECCIONADO</span><h2 class="h5 mt-1 mb-1">{{ $apellidos }} {{ $nombres }}</h2><span class="text-muted">{{ optional($cliente)->numero_documento }} &middot; {{ $telefono ?: 'Sin teléfono' }}</span></div><span class="badge bg-primary">{{ $totalCreditos }} cr&eacute;ditos</span></div><div class="loan-tabs mt-3"><button type="button" wire:click="abrirCreditos" class="btn {{ $mostrarSimulador ? 'btn-primary' : 'savings-secondary-action' }}" aria-pressed="{{ $mostrarSimulador ? 'true' : 'false' }}"><i class="fa fa-calculator me-2"></i>Simulador</button><button type="button" wire:click="abrirListaCreditos" class="btn {{ $mostrarListaCreditos ? 'btn-primary' : 'savings-secondary-action' }}" aria-pressed="{{ $mostrarListaCreditos ? 'true' : 'false' }}"><i class="fa fa-list me-2"></i>Lista de cr&eacute;ditos</button></div></div>
                 @if ($this->mostrarSimulador)
                 <div class="card-body" style="background-color: #ededf3;">
                     <div class="tab-content">
@@ -95,19 +47,19 @@
                                 </span>
                             </div>
                             <div class="row  mt-3">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Valor</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valor_simulador" type="number" wire:model="valor_simulador" class="form-control" placeholder="Valor">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Cuotas</label>
                                     <div class="input-group input-group-sm">
                                         <input id="cuotas_simulador" type="number" wire:model="cuotas_simulador" class="form-control" placeholder="Número de Cuotas">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Fecha Prestamo</label>
                                     <div class="input-group input-group-sm">
                                         <input id="fecha_prestamo" type="date" wire:model="fecha_prestamo" class="form-control" placeholder="Fecha Prestamo">
@@ -116,7 +68,7 @@
 
                             </div>
                             <div class="row  mt-3">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Tipo </label>
                                     <select id="tipo_simulador" wire:model="tipo_simulador" class="form-control form-control-sm" wire:change="obtenerDatos" wire:key="tipo_simulador">
                                         <option value=""> --SELECCIONE--</option>
@@ -124,7 +76,7 @@
                                         <option value="A">ALEMANA (CAPITAL FIJO)</option>
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Prestamo </label>
                                     <select id="prestamo_simulador" wire:model="prestamo_simulador" class="form-control form-control-sm" wire:change="obtenerDatosCredito" wire:key="prestamo_simulador">
                                         <option value=""> --SELECCIONE--</option>
@@ -133,13 +85,13 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Valor Ahorrar</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valor_ahorrar_credito" type="number" wire:model="valor_ahorrar_credito" class="form-control" placeholder="Valor">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Generar </label>
                                     <select wire:model="generar" class="form-control form-control-sm" wire:change="obtenerDatosFamilares" wire:key="generar">
                                         <option value=""> --SELECCIONE--</option>
@@ -152,7 +104,7 @@
                             <hr>
                             <label class="small">GARANTES </label>
                             <div class="form-group">
-                                <table style="width: 50%;">
+                                <table style="width: 100%;">
                                     <tr>
                                         <td style="width: 80%;">
                                             <div class="form-group">
@@ -528,19 +480,19 @@
                         @endif
                         <div class="post">
                             <div class="row  mt-3">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Ingresos Fijo</label>
                                     <div class="input-group input-group-sm">
                                         <input id="ingresos_netos" type="number" wire:model="ingresos_netos" class="form-control" placeholder="Ingresos Netos">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Gastos Fijos</label>
                                     <div class="input-group input-group-sm">
                                         <input id="gastos_mensuales" type="number" wire:model="gastos_mensuales" class="form-control" placeholder="Gastos Mensuales">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Activos</label>
                                     <div class="input-group input-group-sm">
                                         <input id="activos" type="number" wire:model="activos" class="form-control" placeholder="Activos">
@@ -548,13 +500,13 @@
                                 </div>
                             </div>
                             <div class="row  mt-3">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Pasivos</label>
                                     <div class="input-group input-group-sm">
                                         <input id="pasivos" type="number" wire:model="pasivos" class="form-control" placeholder="Pasivos">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Prestamo </label>
                                     <select id="tasa_interes" wire:model="tasa_interes" class="form-control form-control-sm">
                                         <option value=""> --SELECCIONE--</option>
@@ -563,7 +515,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Plazo Prestamo</label>
                                     <div class="input-group input-group-sm">
                                         <input id="plazo_prestamo" type="number" wire:model="plazo_prestamo" class="form-control" placeholder="Plazo Prestamo">
@@ -601,9 +553,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Letras del Crédito <b>{{ $this->headerPagoCode }}</b></h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -935,13 +885,11 @@
 
     {{-- MODAL ARCHIVOS --}}
     <div wire:ignore.self class="modal fade" id="modalGeneral1" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Archivos</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -957,13 +905,13 @@
                             <div class="col-12">
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputEmail1">Nombre Archivo</label>
                                                 <input type="text" class="form-control" wire:model="descripcion" placeholder="Nombre del Archivo">
                                             </div>
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputFile">Archivo</label>
                                                 <div class="input-group">
@@ -1049,9 +997,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> EDITAR CREDITO {{ $this->codigoEdit }}</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -1065,19 +1011,19 @@
                         @endif
                         <div class="row">
                             <div class="row col-12">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Valor</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valorEditar" type="number" wire:model="valorEditar" class="form-control" placeholder="Valor">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Cuotas</label>
                                     <div class="input-group input-group-sm">
                                         <input id="cuotasEditar" type="number" wire:model="cuotasEditar" class="form-control" placeholder="Número de Cuotas">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Fecha Prestamo</label>
                                     <div class="input-group input-group-sm">
                                         <input id="fechaEditar" type="date" wire:model="fechaEditar" class="form-control" placeholder="Fecha Prestamo">
@@ -1086,7 +1032,7 @@
 
                             </div>
                             <div class="row col-12">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Tipo </label>
                                     <select id="tipoCreditoEditar" wire:model="tipoCreditoEditar" class="form-control form-control-sm" wire:change="obtenerDatos" wire:key="tipoCreditoEditar">
                                         <option value=""> --SELECCIONE--</option>
@@ -1094,7 +1040,7 @@
                                         <option value="A">ALEMANA</option>
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Prestamo </label>
                                     <select id="prestamoEditar" wire:model="prestamoEditar" class="form-control form-control-sm">
                                         <option value="" selected> --SELECCIONE--</option>
@@ -1103,7 +1049,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Porcentaje interes</label>
                                     <div class="input-group input-group-sm">
                                         <input id="porcentajeEditar" type="number" wire:model="porcentajeEditar" class="form-control" placeholder="0.00" step="0.01">
@@ -1128,9 +1074,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> GENERAR NOVACION DEL CREDITO {{$this->creditoIdnovacionDatos}}</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -1144,19 +1088,19 @@
                         @endif
                         <div class="row">
                             <div class="row col-12">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Valores Vencidos</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valorVencido" type="number" wire:model="valorVencido" class="form-control" placeholder="Valor Vencido">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Valores Cumplidos</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valorCumplido" type="number" wire:model="valorCumplido" class="form-control" placeholder="valor cumplido">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Capital Amortizado</label>
                                     <div class="input-group input-group-sm">
                                         <input id="valorCapitalAmortizado" type="number" wire:model="valorCapitalAmortizado" class="form-control" placeholder="valor amortizado">
@@ -1183,9 +1127,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> GENERAR NUEVO CREDITO DE NOVACION CON LOS VALORES {{$this->valorprestamoNova }}</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -1199,13 +1141,13 @@
                         @endif
                         <div class="row">
                             <div class="row col-12">
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Cuotas</label>
                                     <div class="input-group input-group-sm">
                                         <input id="cuotasNovaNuew" type="number" wire:model="cuotasNovaNuew" class="form-control" placeholder="">
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Tipo </label>
                                     <select id="tipoNovaCredito" wire:model="tipoNovaCredito" class="form-control form-control-sm" wire:change="obtenerDatosNova" wire:key="tipoNovaCredito">
                                         <option value=""> --SELECCIONE--</option>
@@ -1213,7 +1155,7 @@
                                         <option value="A">ALEMANA</option>
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-12 col-md-4">
                                     <label class="small">Prestamo </label>
                                     <select id="prestamoNova" wire:model="prestamoNova" class="form-control form-control-sm">
                                         <option value=""> --SELECCIONE--</option>
@@ -1242,9 +1184,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> GENERAR NUEVO CREDITO DE NOVACION CON LOS VALORES {{$this->valorprestamoNova }}</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -1258,7 +1198,7 @@
                         @endif
 
                         <div class="row">
-                            <div class="col-8">
+                            <div class="col-12 col-md-8">
                                 <div class="card-body p-0">
                                     <!--<div class="card-body p-0" style="height: 50vh; overflow: auto;">-->
                                     <table id="credit_detalle_table" class="table table-striped">
@@ -1298,7 +1238,7 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <form id="frmLiquidar">
                                     <div class="row col col-lg-12">
                                         <input type="hidden" id="carpeta_liquidar" value="0">
@@ -1461,9 +1401,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> ENTREGAR EL DINERO DEL PRESTAMO </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -1476,7 +1414,7 @@
                         </div>
                         @endif
                         <div class="row">
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <div class="card-body p-0">
                                     <div class="col-12">
                                         <label class="small">Forma Acreditación</label>
@@ -1489,7 +1427,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <div class="card-body p-0">
                                     <div class="col-12">
                                         <label class="small">Bancos</label>
@@ -1502,7 +1440,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-12 col-md-4">
                                 <div class="card-body p-0">
                                     <div class="col-12">
                                         <label class="small">Cuenta a acreditar</label>
@@ -1518,7 +1456,7 @@
                         </div>
                         @if($this->obligarCuentaInterna == 0 )
                         <div class="row">
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <label class="small">Documento Transacción</label>
                                 <div class="input-group input-group-sm">
                                     <input id="documento_desembolso" type="number" wire:model="documento_desembolso" class="form-control" placeholder="Documento Transacción">
@@ -1544,9 +1482,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Ticket </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">

@@ -45,14 +45,14 @@ Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
     Route::get('usuarios/indexData', 'User\UserController@indexData')->name('indexData');
     Route::get('/usuarios/darUsername/{nombre}/{apellido}', 'User\UserController@darUsername')->name('usuarios.darUsername');
     Route::get('usuarios/profile', 'User\UserController@profile')->name('profile');
-    Route::resource('usuarios', 'User\UserController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'edit',
-  4 => 'update',
-  5 => 'destroy',
-));
+    Route::resource('usuarios', 'User\UserController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'edit',
+        4 => 'update',
+        5 => 'destroy',
+    ));
     Route::post('usuarios/actualizarPassword', 'User\UserController@actualizarPassword')->name('usuarios.actualizarPassword');
 });
 
@@ -71,103 +71,86 @@ Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
 // ROL
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
     Route::resource('rol', 'Rol\RolController')->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-
 });
 
 // MENU ROL
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('menu-rol', 'MenuRol\MenuRolController')->only(array (
-  0 => 'index',
-));
+    Route::resource('menu-rol', 'MenuRol\MenuRolController')->only(array(
+        0 => 'index',
+    ));
     Route::post('menu-rol', 'MenuRol\MenuRolController@guardar')->name('guardar_menu_rol');
-});
-
-// COMPANY
-Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-
-
-    Route::get('/company/changeCompany/{id}', 'Company\CompanyController@changeCompany')->name('company.changeCompany');
-    Route::resource('company', 'Company\CompanyController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'edit',
-  4 => 'update',
-  5 => 'destroy',
-));
 });
 
 //PRODUCTOS
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('product', 'Product\ProductController')->only(array (
-  0 => 'index',
-));
-
+    Route::resource('product', 'Product\ProductController')->only(array(
+        0 => 'index',
+    ));
 });
 
 /// CATEGORY
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('category', 'Category\CategoryController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'edit',
-  4 => 'update',
-  5 => 'destroy',
-));
+    Route::resource('category', 'Category\CategoryController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'edit',
+        4 => 'update',
+        5 => 'destroy',
+    ));
 });
 
 //CUSTOMER
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
     Route::get('customer/cartilla/{code}', 'Customer\CustomerController@cartilla')->name('customer.cartilla');
     Route::get('customer/cartilla/imprimir/{code}', 'Customer\CustomerController@cartillaImprimir')->name('customer.cartillaImprimir');
-    Route::resource('customer', 'Customer\CustomerController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'show',
-  4 => 'edit',
-  5 => 'update',
-  6 => 'destroy',
-));
+    Route::resource('customer', 'Customer\CustomerController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'show',
+        4 => 'edit',
+        5 => 'update',
+        6 => 'destroy',
+    ));
 });
 
 //ARBOL
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
     Route::put('arbolrole/cambioMenu/{id}', 'Arbol\ArbolController@cambioMenu')->name('arbol.cambioMenu');
     Route::get('/arbolrole/tree/{rol_id}', 'Arbol\ArbolController@tree')->name('general.tree');
-    Route::resource('arbolrole', 'Arbol\ArbolController')->only(array (
-  0 => 'index',
-  1 => 'store',
-  2 => 'destroy',
-));
+    Route::resource('arbolrole', 'Arbol\ArbolController')->only(array(
+        0 => 'index',
+        1 => 'store',
+        2 => 'destroy',
+    ));
 });
 
 //COUNTRIES
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('country', 'Country\CountryController')->only(array (
-  0 => 'index',
-));
+    Route::resource('country', 'Country\CountryController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CITIES
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('city', 'City\CityController')->only(array (
-  0 => 'index',
-  1 => 'store',
-  2 => 'edit',
-  3 => 'update',
-));
+    Route::resource('city', 'City\CityController')->only(array(
+        0 => 'index',
+        1 => 'store',
+        2 => 'edit',
+        3 => 'update',
+    ));
 });
 
 //REGIONS
 Route::group(['middleware' => 'App\Http\Middleware\Authenticate'], function () {
-    Route::resource('region', 'Region\RegionController')->only(array (
-  0 => 'index',
-  1 => 'store',
-  2 => 'edit',
-  3 => 'update',
-));
+    Route::resource('region', 'Region\RegionController')->only(array(
+        0 => 'index',
+        1 => 'store',
+        2 => 'edit',
+        3 => 'update',
+    ));
 });
 
 Route::delete('company/desactivarCompany/{id}', 'Company\CompanyController@desactivarCompany')->middleware('auth')->name('company.desactivarCompany');
@@ -198,36 +181,36 @@ Route::get('/simulador-publico', 'SimuladorPublico\SimuladorPublicoController@in
 
 // COMPANY
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('company', 'Company\CompanyController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'edit',
-  4 => 'update',
-  5 => 'destroy',
-));
+    Route::patch('company/{company}/estado', 'Company\CompanyController@status')->name('company.status');
+    Route::resource('company', 'Company\CompanyController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'edit',
+        4 => 'update',
+        5 => 'destroy',
+    ));
     Route::get('/company/changeCompany/{id}', 'Company\CompanyController@changeCompany')->name('company.changeCompany');
 });
 
 
 //PRODUCTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('product', 'Product\ProductController')->only(array (
-  0 => 'index',
-));
-
+    Route::resource('product', 'Product\ProductController')->only(array(
+        0 => 'index',
+    ));
 });
 
 /// CATEGORY
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('category', 'Category\CategoryController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'edit',
-  4 => 'update',
-  5 => 'destroy',
-));
+    Route::resource('category', 'Category\CategoryController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'edit',
+        4 => 'update',
+        5 => 'destroy',
+    ));
 });
 
 //CUSTOMER
@@ -237,22 +220,21 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
     Route::get('customer/buscarCedulas/{dato}', 'Customer\CustomerController@buscarCedulas')->name('customer.buscarCedulas');
     Route::get('customer/buscarApiDatos/{dato}', 'Customer\CustomerController@buscarApiDatos')->name('customer.buscarApiDatos');
     Route::get('customer/certificadoAhorroProgramado/{id}', 'Customer\CustomerController@certificadoAhorroProgramado')->name('customer.certificadoAhorroProgramado');
-    Route::resource('customer', 'Customer\CustomerController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'show',
-  4 => 'edit',
-  5 => 'update',
-  6 => 'destroy',
-));
+    Route::resource('customer', 'Customer\CustomerController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'show',
+        4 => 'edit',
+        5 => 'update',
+        6 => 'destroy',
+    ));
 });
 
 // NOTIFICACIONES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::get('/notify/getNotify', 'Notify\NotifyController@getNotify')->name('notify.getNotify');
-    Route::resource('notify', 'Notify\NotifyController')->only(array (
-));
+    Route::resource('notify', 'Notify\NotifyController')->only(array());
 });
 
 //ARBOL
@@ -267,122 +249,122 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
 //TIPO AHORROS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-ahorros', 'TipoAhorros\TipoAhorrosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-ahorros', 'TipoAhorros\TipoAhorrosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // UTILIDADES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('utilidades', 'Utilidades\UtilidadesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('utilidades', 'Utilidades\UtilidadesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //PARENTEZCO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('parentezco', 'Parentezco\ParentezcoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('parentezco', 'Parentezco\ParentezcoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //GENERO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('genero', 'Genero\GeneroController')->only(array (
-  0 => 'index',
-));
+    Route::resource('genero', 'Genero\GeneroController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO DE CUENTA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-cuenta', 'TipoCuenta\TipoCuentaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-cuenta', 'TipoCuenta\TipoCuentaController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO DOCUMENTO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-documento', 'TipoDocumento\TipoDocumentoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-documento', 'TipoDocumento\TipoDocumentoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //MESES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('meses', 'Meses\MesesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('meses', 'Meses\MesesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO CUSTOMER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-customer', 'TipoCustomer\TipoCustomerController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-customer', 'TipoCustomer\TipoCustomerController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //INTERES REGLAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('int-reglas', 'IntReglas\IntReglasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('int-reglas', 'IntReglas\IntReglasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //INTERES CALCULO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('int-calculo', 'IntCalculo\IntCalculoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('int-calculo', 'IntCalculo\IntCalculoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CUSTOMER-USER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-user', 'CustomerUser\CustomerUserController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-user', 'CustomerUser\CustomerUserController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CAJAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('cajas', 'Cajas\CajasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cajas', 'Cajas\CajasController')->only(array(
+        0 => 'index',
+    ));
     Route::get('/cajas/caja-comprobante/{id}', 'Cajas\CajasController@cajasComprobante');
 });
 
 //CAJAS MANAGER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('cajas-manager', 'Cajas\CajasManagerController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cajas-manager', 'Cajas\CajasManagerController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CUSTOMER-MOVIMIENTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-movimientos', 'CustomerMovimientos\CustomerMovimientosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-movimientos', 'CustomerMovimientos\CustomerMovimientosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CUSTOMER-MOVIMIENTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-cuentas', 'CustomerCuentas\CustomerCuentasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-cuentas', 'CustomerCuentas\CustomerCuentasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // EMPRESA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('empresa', 'Empresa\EmpresaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('empresa', 'Empresa\EmpresaController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // ACCIONES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('acciones', 'Acciones\AccionesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('acciones', 'Acciones\AccionesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // ACCIONES DETALLE
@@ -394,58 +376,58 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
 // CARTERA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('cartera', 'Cartera\CarteraController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cartera', 'Cartera\CarteraController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CARTERA REGLAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('cartera-reglas', 'Cartera\CarteraReglasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cartera-reglas', 'Cartera\CarteraReglasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // DENOMINACION-BILLETES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('denominacion-billetes', 'DenominacionBilletes\DenominacionBilletesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('denominacion-billetes', 'DenominacionBilletes\DenominacionBilletesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // ACCIONES-VALORES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('acciones-valores', 'AccionesValores\AccionesValoresController')->only(array (
-  0 => 'index',
-));
+    Route::resource('acciones-valores', 'AccionesValores\AccionesValoresController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // COMANDOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('comandos', 'Comandos\ComandosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('comandos', 'Comandos\ComandosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER-PRESTAMOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-prestamos', 'CustomerPrestamos\CustomerPrestamosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-prestamos', 'CustomerPrestamos\CustomerPrestamosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER-TRANSFERENCIAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-transferencias', 'CustomerTransferencias\CustomerTransferenciasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-transferencias', 'CustomerTransferencias\CustomerTransferenciasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER-SIMULADOR
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-simulador', 'CustomerSimulador\CustomerSimuladorController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-simulador', 'CustomerSimulador\CustomerSimuladorController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CUENTAS
@@ -456,87 +438,87 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
 // COUNTRY
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('country', 'Country\CountryController')->only(array (
-  0 => 'index',
-));
+    Route::resource('country', 'Country\CountryController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // PROVINCIA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('provincia', 'Provincia\ProvinciaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('provincia', 'Provincia\ProvinciaController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // PARROQUIA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('parroquia', 'Parroquia\ParroquiaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('parroquia', 'Parroquia\ParroquiaController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CIUDAD
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('ciudad', 'Ciudad\CiudadController')->only(array (
-  0 => 'index',
-));
+    Route::resource('ciudad', 'Ciudad\CiudadController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // PLAN-CUENTAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('plan-cuentas', 'PlanCuentas\PlanCuentasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('plan-cuentas', 'PlanCuentas\PlanCuentasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CONCILIACION
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('conciliacion', 'Conciliacion\ConciliacionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('conciliacion', 'Conciliacion\ConciliacionController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CONFIGURACION-CUENTA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('configuracion-cuenta', 'ConfiguracionCuenta\ConfiguracionCuentaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('configuracion-cuenta', 'ConfiguracionCuenta\ConfiguracionCuentaController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // ASIENTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('asientos', 'Asientos\AsientosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('asientos', 'Asientos\AsientosController')->only(array(
+        0 => 'index',
+    ));
     Route::get('/asientos/comprobante/{id}', 'Asientos\AsientosController@comprobante');
 });
 
 // LIBRO-MAYOR
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('libro-mayor', 'LibroMayor\LibroMayorController')->only(array (
-  0 => 'index',
-));
+    Route::resource('libro-mayor', 'LibroMayor\LibroMayorController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // REPORTES-RESULTADOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reportes-resultados', 'ReportesResultados\ReportesResultadosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reportes-resultados', 'ReportesResultados\ReportesResultadosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // BALANCE-GENERAL
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('balance-general', 'BalanceGeneral\BalanceGeneralController')->only(array (
-  0 => 'index',
-));
+    Route::resource('balance-general', 'BalanceGeneral\BalanceGeneralController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // PROFORMA-HEADER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('proforma-header', 'ProformaHeader\ProformaHeaderController')->only(array (
-  0 => 'index',
-));
+    Route::resource('proforma-header', 'ProformaHeader\ProformaHeaderController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CLIENTES
@@ -554,112 +536,112 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
 // ESTADO-CIVIL
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('estado-civil', 'EstadoCivil\EstadoCivilController')->only(array (
-  0 => 'index',
-));
+    Route::resource('estado-civil', 'EstadoCivil\EstadoCivilController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CLASIFICACION FORMAS-PAGO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('clasificacion-formas-pago', 'ClasificacionFormasPago\ClasificacionFormasPagoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('clasificacion-formas-pago', 'ClasificacionFormasPago\ClasificacionFormasPagoController')->only(array(
+        0 => 'index',
+    ));
 });
 // FORMAS-PAGO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('formas-pago', 'FormasPago\FormasPagoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('formas-pago', 'FormasPago\FormasPagoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // GASTOS-GENERADOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('gastos-generados', 'GastosGenerados\GastosGeneradosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('gastos-generados', 'GastosGenerados\GastosGeneradosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // AJUSTES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('ajustes', 'Ajustes\AjustesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('ajustes', 'Ajustes\AjustesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO-TRANSACIONES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('type-transactions', 'TypeTransactions\TypeTransactionsController')->only(array (
-  0 => 'index',
-));
+    Route::resource('type-transactions', 'TypeTransactions\TypeTransactionsController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // BANCOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('bancos', 'Bancos\BancosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('bancos', 'Bancos\BancosController')->only(array(
+        0 => 'index',
+    ));
 });
 // BOVEDAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('bovedas', 'Bovedas\BovedasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('bovedas', 'Bovedas\BovedasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // OPERACIONES DESCARGO BOVEDAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('operaciones-descargo-bovedas', 'OperacionesDescargoBovedas\OperacionesDescargoBovedasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('operaciones-descargo-bovedas', 'OperacionesDescargoBovedas\OperacionesDescargoBovedasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // DESCARGO BOVEDAS HEADER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('descargo-bovedas-header', 'DescargoBovedasHeader\DescargoBovedasHeaderController')->only(array (
-  0 => 'index',
-));
+    Route::resource('descargo-bovedas-header', 'DescargoBovedasHeader\DescargoBovedasHeaderController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CALCULADORA PLAZO FIJO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('calculadora-plazo-fijo', 'CalculadoraPlazoFijo\CalculadoraPlazoFijoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('calculadora-plazo-fijo', 'CalculadoraPlazoFijo\CalculadoraPlazoFijoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // USER BOVEDAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('user-bovedas', 'UserBovedas\UserBovedasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('user-bovedas', 'UserBovedas\UserBovedasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER TIPO AHORROS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-tipo-ahorros', 'CustomerTipoAhorros\CustomerTipoAhorrosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-tipo-ahorros', 'CustomerTipoAhorros\CustomerTipoAhorrosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // DESCARGO BOVEDA HISTORIAL
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('descargo-bovedas-historial', 'DescargoBovedasHistorial\DescargoBovedasHistorialController')->only(array (
-  0 => 'index',
-));
+    Route::resource('descargo-bovedas-historial', 'DescargoBovedasHistorial\DescargoBovedasHistorialController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // DEBITO AUTOMATICO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('debito-automatico', 'DebitoAutomatico\DebitoAutomaticoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('debito-automatico', 'DebitoAutomatico\DebitoAutomaticoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER MOVIMIENTO SOLICITUD
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-movimiento-solicitud', 'CustomerMovimientoSolicitud\CustomerMovimientoSolicitudController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-movimiento-solicitud', 'CustomerMovimientoSolicitud\CustomerMovimientoSolicitudController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // SOLICITUD PAGOS CREDITOS
@@ -668,198 +650,198 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
         'solicitud-pagos-creditos/comprobante/{id}',
         'SolicitudPagosCreditos\SolicitudPagosCreditosController@comprobante'
     )->name('solicitud-pagos-creditos.comprobante');
-    Route::resource('solicitud-pagos-creditos', 'SolicitudPagosCreditos\SolicitudPagosCreditosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('solicitud-pagos-creditos', 'SolicitudPagosCreditos\SolicitudPagosCreditosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // SOLICITUD PAGOS LIQUIDACION
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('solicitud-pagos-liquidacion', 'SolicitudPagosLiquidacion\SolicitudPagosLiquidacionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('solicitud-pagos-liquidacion', 'SolicitudPagosLiquidacion\SolicitudPagosLiquidacionController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // CUSTOMER MOVMIENTO APROBACION
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-movimiento-aprobacion', 'CustomerMovimientoAprobacion\CustomerMovimientoAprobacionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-movimiento-aprobacion', 'CustomerMovimientoAprobacion\CustomerMovimientoAprobacionController')->only(array(
+        0 => 'index',
+    ));
 });
 // CUSTOMER MOVMIENTO APROBACION
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('customer-movimiento-historial', 'CustomerMovimientoHistorial\CustomerMovimientoHistorialController')->only(array (
-  0 => 'index',
-));
+    Route::resource('customer-movimiento-historial', 'CustomerMovimientoHistorial\CustomerMovimientoHistorialController')->only(array(
+        0 => 'index',
+    ));
 });
 
 // PERFIL
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('perfil', 'Perfil\PerfilController')->only(array (
-  0 => 'index',
-));
+    Route::resource('perfil', 'Perfil\PerfilController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO CONCEPTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-concepto', 'TipoConcepto\TipoConceptoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-concepto', 'TipoConcepto\TipoConceptoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CONCEPTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('conceptos', 'Conceptos\ConceptosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('conceptos', 'Conceptos\ConceptosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //MODULOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('modulos', 'Modulos\ModulosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('modulos', 'Modulos\ModulosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //SEDES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('sedes', 'Sedes\SedesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('sedes', 'Sedes\SedesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CENTROS DE COSTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('centro-costos', 'CentroCostos\CentroCostosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('centro-costos', 'CentroCostos\CentroCostosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //SEDE CENTRO DE COSTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('sedes-centro-costos', 'SedesCentroCostos\SedesCentroCostosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('sedes-centro-costos', 'SedesCentroCostos\SedesCentroCostosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //OTROS VALORES QUE INGRESAN
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('otros-ingresos', 'OtrosIngresos\OtrosIngresosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('otros-ingresos', 'OtrosIngresos\OtrosIngresosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TODOS MODULOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('todos-modulos', 'TodosModulos\TodosModulosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('todos-modulos', 'TodosModulos\TodosModulosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //OPERACION
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('operacion', 'Operacion\OperacionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('operacion', 'Operacion\OperacionController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //MOVIMEINTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('movimientos-diarios', 'MovimientosDiarios\MovimientosDiariosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('movimientos-diarios', 'MovimientosDiarios\MovimientosDiariosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CARGAS INICIALES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('carga-inicial', 'CargaInicial\CargaInicialController')->only(array (
-  0 => 'index',
-));
+    Route::resource('carga-inicial', 'CargaInicial\CargaInicialController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //LOG REVERSO MOVIMIENTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('log-reversos', 'LogReversoMovimientos\LogReversoMovimientosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('log-reversos', 'LogReversoMovimientos\LogReversoMovimientosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TERMINOS DE USO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('terminos-uso', 'TerminosUso\TerminosUsoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('terminos-uso', 'TerminosUso\TerminosUsoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //PROVEEDORES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('proveedores', 'Proveedores\ProveedoresController')->only(array (
-  0 => 'index',
-));
+    Route::resource('proveedores', 'Proveedores\ProveedoresController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //GASTO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('gasto', 'Gasto\GastoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('gasto', 'Gasto\GastoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //GASTOS-CATEGORIAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('gastos-categorias', 'GastosCategorias\GastosCategoriasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('gastos-categorias', 'GastosCategorias\GastosCategoriasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //REPORTE CUENTAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reporte-cuentas', 'ReporteCuentas\ReporteCuentasController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reporte-cuentas', 'ReporteCuentas\ReporteCuentasController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //REPORTE CUENTAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reportes-niveles', 'ReporteNiveles\ReporteNivelesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reportes-niveles', 'ReporteNiveles\ReporteNivelesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //REPORTE CREDITOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reportes-creditos', 'ReporteCreditos\ResporteCreditosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reportes-creditos', 'ReporteCreditos\ResporteCreditosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CREDITOS AUTOMATICOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('creditos-automaticos', 'CreditosAutomaticos\CreditosAutomaticosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('creditos-automaticos', 'CreditosAutomaticos\CreditosAutomaticosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CALCULO VALORES Y APORTES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('valores-aportes', 'ValoresAportes\ValoresAportesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('valores-aportes', 'ValoresAportes\ValoresAportesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //NIVEL ACADEMIVO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('nivel-academico', 'NivelAcademico\NivelAcademicoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('nivel-academico', 'NivelAcademico\NivelAcademicoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //USUARIOS NUEVO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('user-new', 'UserNew\UserNewController')->only(array (
-  0 => 'index',
-  1 => 'show',
-));
+    Route::resource('user-new', 'UserNew\UserNewController')->only(array(
+        0 => 'index',
+        1 => 'show',
+    ));
 });
 
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -868,91 +850,91 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
 //TIPO DE RETENCIONES*
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-retencion', 'TipoRetencion\TipoRetencionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-retencion', 'TipoRetencion\TipoRetencionController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //LISTA DE RETENCIONES*
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('lista-retencion', 'ListaRetencion\ListaRetencionController')->only(array (
-  0 => 'index',
-));
+    Route::resource('lista-retencion', 'ListaRetencion\ListaRetencionController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //TIPO COMPROBANTES*
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('tipo-comprobante', 'TipoComprobante\TipoComprobanteController')->only(array (
-  0 => 'index',
-));
+    Route::resource('tipo-comprobante', 'TipoComprobante\TipoComprobanteController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //SUSTENTOS TRIBUTARIOS*
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('sustento-tributario', 'SustentoTributario\SustentoTributarioController')->only(array (
-  0 => 'index',
-));
+    Route::resource('sustento-tributario', 'SustentoTributario\SustentoTributarioController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //IMPUESTOS*
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('impuestos', 'Impuestos\ImpuestosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('impuestos', 'Impuestos\ImpuestosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //interes-fijo-parametrizado
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('interes-fijo-parametrizado', 'InteresFijoParametrizado\InteresFijoParametrizadoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('interes-fijo-parametrizado', 'InteresFijoParametrizado\InteresFijoParametrizadoController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //reporte-gastos-administrativos
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reporte-gastos-administrativos', 'ReporteGastosAdministrativos\ReporteGastosAdministrativosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reporte-gastos-administrativos', 'ReporteGastosAdministrativos\ReporteGastosAdministrativosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //reporte-cartera
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reporte-cartera', 'ReporteCartera\ReporteCarteraController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reporte-cartera', 'ReporteCartera\ReporteCarteraController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //reporte-cartera-niveles
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reporte-niveles-cartera', 'ReporteCarteraNiveles\ReporteCarteraNivelesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reporte-niveles-cartera', 'ReporteCarteraNiveles\ReporteCarteraNivelesController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //CARGA MOVIMIENTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('carga-movimientos', 'CargaMovimientos\CargaMovimientosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('carga-movimientos', 'CargaMovimientos\CargaMovimientosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 //SOLICITUD ENCAJE
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('solicitud-encaje', 'SolicitudEncaje\SolicitudEncajeController')->only(array (
-  0 => 'index',
-));
+    Route::resource('solicitud-encaje', 'SolicitudEncaje\SolicitudEncajeController')->only(array(
+        0 => 'index',
+    ));
 });
 //SOLICITUD ENCAJE
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('cambio-datos-movimientos', 'CambioDatosMovimientos\CambioDatosMovimientosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cambio-datos-movimientos', 'CambioDatosMovimientos\CambioDatosMovimientosController')->only(array(
+        0 => 'index',
+    ));
 });
 //DOCUMENTOS PARAMETRIZADOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('documentos-parametrizados', 'DocumentosParametrizados\DocumentosParametrizadosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('documentos-parametrizados', 'DocumentosParametrizados\DocumentosParametrizadosController')->only(array(
+        0 => 'index',
+    ));
     Route::get('formatoCreado/{id}/{doc}', 'DocumentosParametrizados\DocumentosParametrizadosController@formatoCreado')->name('formatoCreado.ver');
 });
 
@@ -973,12 +955,12 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::get('/customer/buscar/{dato}', 'Customer\CustomerController@buscarCustomerCaja')->name('customer.buscarCustomerCaja');
     Route::get('/customer/seleccionar/{id}', 'Customer\CustomerController@seleccionarCustomer')->name('customer.seleccionarCustomer');
-    Route::resource('ingresos', 'Ingresos\IngresosController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'destroy',
-));
+    Route::resource('ingresos', 'Ingresos\IngresosController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'destroy',
+    ));
 });
 
 //RETIROS
@@ -987,12 +969,12 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 
     Route::get('/historial/movimientos/{ruc}', 'Ingresos\IngresosController@verHistorial')->name('ingresos.verHistorial');
     Route::get('/historial/transacciones/movimientos/{id}', 'Customer\CustomerHistorialController@transaccionesMovimientos')->name('transacciones.transaccionesMovimientos');
-    Route::resource('retiros', 'Retiros\RetirosController')->only(array (
-  0 => 'index',
-  1 => 'create',
-  2 => 'store',
-  3 => 'destroy',
-));
+    Route::resource('retiros', 'Retiros\RetirosController')->only(array(
+        0 => 'index',
+        1 => 'create',
+        2 => 'store',
+        3 => 'destroy',
+    ));
 });
 
 //GRAFICOS HOME
@@ -1006,17 +988,17 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::post('fondo/transacciones', 'Fondo\FondoController@storeTransacciones')->name('fondo.storeTransacciones');
     Route::get('fondo/ver/{id}', 'Fondo\FondoController@verMovimientos')->name('fondo.verMovimientos');
-    Route::resource('fondo', 'Fondo\FondoController')->only(array (
-  0 => 'index',
-));
+    Route::resource('fondo', 'Fondo\FondoController')->only(array(
+        0 => 'index',
+    ));
 });
 //SIMULADOR
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::post('simulador/transacciones', 'Simulador\SimuladorController@simular')->name('simulador.simular');
     Route::get('simulador/letras/{valor}/{anual}/{mensual}/{id}', 'Simulador\SimuladorController@pdfLetras')->name('simulador.pdfLetras');
-    Route::resource('simulador', 'Simulador\SimuladorController')->only(array (
-  0 => 'index',
-));
+    Route::resource('simulador', 'Simulador\SimuladorController')->only(array(
+        0 => 'index',
+    ));
 });
 //CREDITO
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -1058,10 +1040,10 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
     Route::post('credit/updateTipoPrestamo', 'Credit\CreditController@updateTipoPrestamo')->name('credito.updateTipoPrestamo');
     Route::get('credit/buscarPrestamo/{prestmo}', 'Credit\CreditController@buscarPrestamo')->name('credito.buscarPrestamo');
     Route::get('credit/consultarPrestamo/{prestmo}', 'Credit\CreditController@consultarPrestamo')->name('credito.consultarPrestamo');
-    Route::resource('credit', 'Credit\CreditController')->only(array (
-  0 => 'index',
-  1 => 'create',
-));
+    Route::resource('credit', 'Credit\CreditController')->only(array(
+        0 => 'index',
+        1 => 'create',
+    ));
 });
 //ALERTAS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -1079,35 +1061,35 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
     Route::get('/cobranza/notificarLetra/{id}', 'Cobranza\CobranzaController@notificarLetra')->name('cobranza.notificarLetra');
     Route::get('/cobranza/notificarLetraMensajes/{id}', 'Cobranza\CobranzaController@notificarLetraMensajes')->name('cobranza.notificarLetraMensajes');
     Route::get('/cobranza/listaLetrasMesBuscar', 'Cobranza\CobranzaController@listaLetrasMesBuscar')->name('cobranza.listaLetrasMesBuscar');
-    Route::resource('cobranza', 'Cobranza\CobranzaController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cobranza', 'Cobranza\CobranzaController')->only(array(
+        0 => 'index',
+    ));
 });
 //GASTOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::get('gastos/tcket/{id}', 'Gastos\GatosController@pdfGastos')->name('gastos.pdfGastosAnterior');
     Route::get('gastos/ticket/{id}', 'Gastos\GatosController@pdfGastosNuevo')->name('gastos.pdfGastos');
-    Route::resource('gastos', 'Gastos\GatosController')->only(array (
-  0 => 'index',
-  1 => 'store',
-));
+    Route::resource('gastos', 'Gastos\GatosController')->only(array(
+        0 => 'index',
+        1 => 'store',
+    ));
 });
 //CUSTOMER INTERES
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::get('interes/historia', 'Customer\CustomerInteresController@historia')->name('interes.historia');
     Route::get('interes/historia/descargar', 'Customer\CustomerInteresController@descargarHistoria')->name('interes.descargarHistoria');
     Route::get('/interes/verTabla/{id}', 'Customer\CustomerInteresController@verTabla')->name('interes.verTabla');
-    Route::resource('interes', 'Customer\CustomerInteresController')->only(array (
-  0 => 'index',
-));
+    Route::resource('interes', 'Customer\CustomerInteresController')->only(array(
+        0 => 'index',
+    ));
 });
 //CARGAR CREDITOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::get('cargas/detalles', 'Cargas\CargasInicialesController@descargaDetalles')->name('cargas.descargaDetalles');
     Route::post('cargas/credito/{i_customer}/{date}/{valor}/{garante}/{carpeta}/{valor_encaje}/', 'Cargas\CargasInicialesController@cargarDetalles')->name('cargas.cargarDetalles');
-    Route::resource('cargas', 'Cargas\CargasInicialesController')->only(array (
-  0 => 'index',
-));
+    Route::resource('cargas', 'Cargas\CargasInicialesController')->only(array(
+        0 => 'index',
+    ));
 });
 //CARGAR CUSTOMER
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -1115,27 +1097,24 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
     Route::get('custom/plantilla', 'Cargas\CargasInicialesCustomer@descargaPlantilla')->name('cargas.descargaPlantilla');
 
     Route::post('custom/cargar', 'Cargas\CargasInicialesCustomer@cargarCustomer')->name('customer.cargarCustomer');
-    Route::resource('custom', 'Cargas\CargasInicialesCustomer')->only(array (
-  0 => 'index',
-));
+    Route::resource('custom', 'Cargas\CargasInicialesCustomer')->only(array(
+        0 => 'index',
+    ));
 });
 //REPORTES CREDITOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::resource('reportesCreditos', 'Reportes\ReportesController')->only(['index']);
 });
 //REPORTES CREDITOS
-Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-
-
-});
+Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {});
 
 //MODULO DE RECURRENCIA PRESTAMOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
     Route::post('recurrencia-prestamos/save', 'RecurrenciaPrestamos\RecurrenciaPrestamosController@save')->name('recu.save');
     Route::get('recurrencia-prestamos/editar/{id}', 'RecurrenciaPrestamos\RecurrenciaPrestamosController@editar')->name('recu.editar');
-    Route::resource('recurrencia-prestamos', 'RecurrenciaPrestamos\RecurrenciaPrestamosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('recurrencia-prestamos', 'RecurrenciaPrestamos\RecurrenciaPrestamosController')->only(array(
+        0 => 'index',
+    ));
 });
 //MODULO DE RECURRENCIA DE CARTERA
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -1143,11 +1122,11 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
     Route::get('recurrenciaCarteraVew', 'RecurrenciaCartera\RecurrenciaCarteraController@recurrenciaCarteraVew')->name('recurrenciaCartera.verDatos');
     Route::get('recurrenciaCartera/calcular', 'RecurrenciaCartera\RecurrenciaCarteraController@calcular')->name('recurrenciaCartera.calcular');
     Route::get('recurrenciaCartera/show/{heder}/{recu}', 'RecurrenciaCartera\RecurrenciaCarteraController@show')->name('recurrenciaCartera.show');
-    Route::resource('recurrenciaCartera', 'RecurrenciaCartera\RecurrenciaCarteraController')->only(array (
-  0 => 'index',
-  2 => 'store',
-  6 => 'destroy',
-));
+    Route::resource('recurrenciaCartera', 'RecurrenciaCartera\RecurrenciaCarteraController')->only(array(
+        0 => 'index',
+        2 => 'store',
+        6 => 'destroy',
+    ));
 });
 //RESULTADOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
@@ -1158,11 +1137,13 @@ Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Mid
 });
 // REPORTE INGRESOS
 Route::group(['middleware' => ['App\Http\Middleware\Authenticate', \App\Http\Middleware\CheckInactivity::class]], function () {
-    Route::resource('reporte-ingresos', 'ReporteIngresos\ReporteIngresosController')->only(array (
-  0 => 'index',
-));
+    Route::resource('reporte-ingresos', 'ReporteIngresos\ReporteIngresosController')->only(array(
+        0 => 'index',
+    ));
 });
 
 Route::post('product/saveCateLayapa', 'Product\ProductController@saveCateLayapa')->middleware('auth')->name('product.saveCateLayapa');
 
-Route::get('/home', function () { return redirect()->route('onix.dashboard'); })->middleware('auth');
+Route::get('/home', function () {
+    return redirect()->route('onix.dashboard');
+})->middleware('auth');

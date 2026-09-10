@@ -10,9 +10,18 @@ use App\Models\TipoAhorrosProgramadosDetalle;
 use App\Models\TransaccionesCuentas;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class TipoAhorrosComponent extends Component
 {
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+    public $estado = '';
+
+    public function updatingSearch() { $this->resetPage(); }
+    public function updatingEstado() { $this->resetPage(); }
+
     public $search = '';
     public $name = '';
     public $descargo_creditos = 0;
@@ -77,7 +86,7 @@ class TipoAhorrosComponent extends Component
             $this->interes = $tipo->interes;
             $this->rango_valor = $tipo->rango_valor;
             $this->rango_tiempo = $tipo->rango_tiempo;
-            $this->class = $tipo->class;
+            $this->class = \App\Support\SavingsPalette::hex($tipo->class);
             $this->valor_periodico = $tipo->valor_periodico;
             $this->ahorro_prestamo = $tipo->ahorro_prestamo;
             $this->cuenta_encaje = $tipo->cuenta_encaje;
@@ -102,6 +111,9 @@ class TipoAhorrosComponent extends Component
 
     public function resetInput()
     {
+        $this->valor_periodico = 0;
+        $this->mostrarReglas = false;
+        $this->reglasAhorro = [];
         $this->programado = 0;
         $this->descargo_creditos = 0;
         $this->cuenta_certificado = 0;
@@ -116,7 +128,7 @@ class TipoAhorrosComponent extends Component
         $this->rango_tiempo = '';
         $this->cuenta_encaje = 0;
         $this->porcentaje_encaje = 0;
-        $this->class = 'info';
+        $this->class = \App\Support\SavingsPalette::hex('info');
 
         $this->cuentaPrincipal = 0;
         $this->cuentaTransaccional = 0;
@@ -197,7 +209,7 @@ class TipoAhorrosComponent extends Component
             "edad_min" => "required|numeric",
             "edad_max" => "required|numeric",
             "interes" => "required|numeric",
-            "class" => "required",
+            "class" => ['required', 'string', 'regex:/\A#[0-9a-fA-F]{6}\z/'],
         ]);
 
         if ($this->id_seleccionado > 0) {
@@ -447,7 +459,7 @@ class TipoAhorrosComponent extends Component
 
     public function render()
     {
-        $tipos = TipoAhorros::where('company_id', Auth::user()->company_id)->where('name', 'like', '%' . $this->search . '%')->paginate(10);
+        $tipos = TipoAhorros::where('company_id', Auth::user()->company_id)->where('name', 'like', '%' . trim($this->search) . '%')->when(in_array($this->estado, ['0', '1'], true), function ($query) { $query->where('status', $this->estado); })->orderBy('name')->orderBy('id')->paginate(10);
         $detalle = TipoAhorrosDetalle::where('company_id', Auth::user()->company_id)->where('tipo_ahorros_id', $this->id_seleccionado)->get();
         $detalleProgramado = TipoAhorrosProgramadosDetalle::where('company_id', Auth::user()->company_id)->where('tipo_ahorros_id', $this->id_seleccionado)->get();
         $bancos = Bancos::where('tipo_cuenta_id', '>', 0)->where('numero_cuenta', '!=', '')->where('status', true)->get();

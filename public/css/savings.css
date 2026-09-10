@@ -1,0 +1,56 @@
+.savings-module { --savings-border:#e2e8f0; color:#263449; }
+.savings-heading { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:1.5rem 0; }
+.savings-heading h1 { font-size:1.8rem; font-weight:700; margin:0 0 .5rem; }
+.savings-heading p { color:#64748b; margin:0; }
+.savings-module .card { border:1px solid var(--savings-border); border-radius:12px; box-shadow:0 3px 12px #152c4610; overflow:hidden; }
+.savings-module .card-header,.savings-module .card-footer { background:#fff; padding:1.1rem; border-color:var(--savings-border); }
+.savings-customer-heading,.savings-filters { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.savings-filters input { width:240px; }
+.savings-filters select { width:auto; }
+.savings-module .table th { background:#f5f7fb; color:#64748b; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; padding:1rem; }
+.savings-module .table td { padding:.9rem 1rem; }
+.savings-description { max-width:340px; white-space:normal; margin-top:.3rem; }
+.savings-module .btn.savings-secondary-action { background:#e8eef5; border:1px solid #8496ac; color:#243b53; font-weight:600; }
+.savings-module .btn.savings-secondary-action:hover,.savings-module .btn.savings-secondary-action:focus-visible { background:#d5e2f0; border-color:#42658c; color:#152c46; }
+.savings-module .btn.savings-secondary-action:active { background:#c2d5e9; border-color:#42658c; color:#152c46; }
+.savings-module .btn.savings-secondary-action i { color:inherit; }
+.savings-sidebar .nav-link { border-bottom:1px solid #edf1f5; border-radius:0; padding:1rem; cursor:pointer; color:#475569; }
+.savings-module .savings-sidebar .nav-link.savings-customer { width:100%; text-align:left; background:#fff; border:0; border-bottom:1px solid #edf1f5; border-left:4px solid transparent; color:#475569; white-space:normal; }
+.savings-module .savings-sidebar .nav-link.savings-customer:hover { background:#f1f5f9; }
+.savings-module .savings-sidebar .nav-link.savings-customer.is-selected { background:#dbeafe; color:#123d70; border-left-color:#1763be; }
+.savings-customer-selected { display:block; clear:both; padding-top:.55rem; color:#123d70; font-size:.75rem; font-weight:700; }
+.savings-sidebar .pagination { flex-wrap:wrap; padding:.6rem; }
+.savings-accounts { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; padding:1rem; }
+.savings-account { position:relative; border:1px solid var(--account-accent,var(--savings-border)); border-top:4px solid var(--account-accent,var(--savings-border)); border-radius:12px; background:var(--account-background,#fff); }
+.savings-account.is-selected { outline:3px solid #263449; outline-offset:2px; box-shadow:0 4px 12px #152c4620; }
+.savings-module .savings-color-picker { width:76px; height:48px; padding:4px; cursor:pointer; }
+.savings-palette { display:flex; flex-wrap:wrap; gap:.75rem; }
+.savings-color-option { display:flex; align-items:center; gap:.4rem; padding:.5rem .7rem; border:1px solid #cdd7e3; border-radius:8px; cursor:pointer; }
+.savings-color-option input { accent-color:var(--account-accent); }
+.savings-color-swatch { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--account-accent); color:#fff; }
+.savings-color-swatch i { visibility:hidden; }
+.savings-color-option input:checked + .savings-color-swatch i { visibility:visible; }
+.savings-color-option:focus-within { outline:3px solid #348fe2; outline-offset:2px; }
+.savings-color-preview { max-width:360px; }
+.savings-account-select { display:flex; flex-direction:column; text-align:left; width:100%; height:100%; padding:1.2rem; background:transparent; border:0; border-radius:12px; color:inherit; }
+.savings-account-name { font-weight:600; margin-bottom:.5rem; padding-right:1rem; }
+.savings-balance { font-size:1.6rem; margin-top:.8rem; font-variant-numeric:tabular-nums; }
+.savings-account-delete { position:absolute; right:.25rem; top:.25rem; }
+.savings-add { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:155px; border:2px dashed #b9c9df; border-radius:12px; color:#1763be; background:#f8faff; }
+.savings-actions { display:flex; flex-wrap:wrap; gap:.5rem; padding:1rem; border-block:1px solid var(--savings-border); background:#fafbfd; }
+.savings-actions .btn { margin:0; border-radius:8px; min-width:95px; cursor:pointer; }
+.savings-movements { max-height:650px; }
+.savings-movements thead { position:sticky; top:0; z-index:1; }
+.savings-movements td { font-variant-numeric:tabular-nums; }
+.savings-module .modal-content { border:0; border-radius:14px; overflow:hidden; box-shadow:0 20px 60px #14284230; }
+.savings-module .modal-header { background:#f5f8fc; padding:1.25rem 1.5rem; border-color:var(--savings-border); }
+.savings-module .modal-title { font-size:1.15rem; font-weight:600; }
+.savings-module .modal-body { padding:1.5rem; }
+.savings-module .modal-body .row { row-gap:1rem; }
+.savings-module .modal-body label { font-weight:600; margin-bottom:.4rem; }
+.savings-module .modal-body .form-control { border-radius:6px; border-color:#cdd7e3; min-height:36px; }
+.savings-module .modal-footer { background:#f8fafc; padding:1rem 1.5rem; }
+.savings-loading { background:#eaf2ff; padding:.65rem 1rem; border-radius:8px; margin-bottom:1rem; }
+.savings-module button:focus-visible,.savings-module a:focus-visible { outline:3px solid #348fe2; outline-offset:2px; }
+@media(max-width:767px) { .savings-heading { align-items:stretch; flex-direction:column; } .savings-sidebar .nav { max-height:300px; overflow:auto; } .savings-filters,.savings-filters>div,.savings-filters input,.savings-filters select { width:100%; } .savings-accounts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; } .savings-balance { font-size:1.25rem; } .savings-customer-heading>div { gap:.5rem!important; } .savings-module .modal-body { padding:1rem; } }
+@media(max-width:400px) { .savings-accounts { grid-template-columns:1fr; } }

@@ -302,12 +302,24 @@ class CreditosComponet extends Component
     }
     public function seleccionarCliente($id)
     {
+        if ($id > 0) {
+            Customer::where('company_id', Auth::user()->company_id)->findOrFail($id);
+        }
+        if ($this->id_seleccionado != $id) {
+            $this->headerPago = 0;
+            $this->id_credito = 0;
+            $this->resetErrorBag();
+        }
+        if (!$this->mostrarSimulador && !$this->mostrarListaCreditos) {
+            $this->mostrarListaCreditos = true;
+            $this->StyleMostrarListaCreditos = 'btn-primary';
+        }
         $this->listaLetras = [];
         $this->interesSuma = '';
         if ($id > 0) {
             $this->customer_selec = $id;
             $company = Company::find(Auth::user()->company_id);
-            $customer = Customer::find($id);
+            $customer = Customer::where('company_id', Auth::user()->company_id)->findOrFail($id);
             $creditos = CreditFolderHeader::where('company_id', Auth::user()->company_id)
                 ->where('customer_id', $id)
                 ->get();
@@ -3918,10 +3930,12 @@ class CreditosComponet extends Component
         ]);
     }
 
+    public function updatingSearch() { $this->resetPage(); }
+
     public function mount($customer_id)
     {
         if ($customer_id > 0) {
-            $customerFind = Customer::find($customer_id);
+            $customerFind = Customer::where('company_id', Auth::user()->company_id)->findOrFail($customer_id);
             if ($customerFind != null) {
                 $this->seleccionarCliente($customer_id);
                 $this->customer_selec = $customer_id;
@@ -5121,6 +5135,17 @@ class CreditosComponet extends Component
         }
         $credit->delete();
     }
+    public function customerSearchQuery()
+    {
+        return Customer::where('company_id', Auth::user()->company_id)
+            ->where(function ($query) {
+                $term = '%' . trim($this->search) . '%';
+                $query->where('nombres', 'like', $term)
+                    ->orWhere('apellidos', 'like', $term)
+                    ->orWhere('numero_documento', 'like', $term);
+            })->orderBy('apellidos')->orderBy('nombres')->orderBy('id');
+    }
+
     public function render()
     {
         $cajaAbierta = Cajas::where('status', 'ABIERTA')
@@ -5138,11 +5163,7 @@ class CreditosComponet extends Component
         if ($this->headerPago != 0) {
             $this->cargarDatosPrestamo($this->headerPago);
         }
-        $clientes = Customer::where('company_id', Auth::user()->company_id)
-            ->where('nombres', 'like', '%' . $this->search . '%')
-            ->orWhere('apellidos', 'like', '%' . $this->search . '%')
-            ->orWhere('numero_documento', 'like', '%' . $this->search . '%')
-            ->paginate(15);
+        $clientes = $this->customerSearchQuery()->paginate(15);
         $cliente = Customer::find($this->id_seleccionado);
         $filesCreditos = CustomerFile::where('company_id', Auth::user()->company_id)->where('customer_id', $this->id_seleccionado)->where('credit_header_id', $this->id_credito)->get();
         $formasPago = FormasPago::where('status', 1)->get();

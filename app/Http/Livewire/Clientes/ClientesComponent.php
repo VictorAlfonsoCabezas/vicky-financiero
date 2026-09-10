@@ -465,8 +465,24 @@ class ClientesComponent extends Component
         return $edad;
     }
 
+    public $activeTab = 'activity';
+
+    public function selectTab($tab)
+    {
+        if (in_array($tab, ['activity', 'timeline', 'archivos'], true) && ($tab === 'activity' || $this->id_seleccionado > 0)) {
+            $this->activeTab = $tab;
+        }
+    }
+
+    public function updatingSearch() { $this->resetPage(); }
+
     public function seleccionarCliente($id)
     {
+        if ($id > 0) {
+            Customer::where('company_id', Auth::user()->company_id)->findOrFail($id);
+        }
+        $this->activeTab = 'activity';
+        $this->resetErrorBag();
         $this->limpiarFormulario();
         if ($id > 0) {
             $this->id_seleccionado = $id;
@@ -706,7 +722,7 @@ class ClientesComponent extends Component
         $this->tipo_cuenta_id = '';
 
         if ($customer_id > 0) {
-            $customerFind = Customer::find($customer_id);
+            $customerFind = Customer::where('company_id', Auth::user()->company_id)->findOrFail($customer_id);
             if ($customerFind != null) {
                 $this->seleccionarCliente($customer_id);
                 $this->search = $customerFind->numero_documento;
@@ -714,19 +730,20 @@ class ClientesComponent extends Component
         }
     }
 
-    public function render()
+    public function customerSearchQuery()
     {
         $hoy = now()->format('Y-m-d');
-        $clientes = Customer::select(
-            '*',
-            DB::raw("DATE(customer.created_at) = '{$hoy}' as nuevo")
-        )
+        return Customer::select('*', DB::raw("DATE(customer.created_at) = '{$hoy}' as nuevo"))
             ->where('company_id', Auth::user()->company_id)
-            ->where('nombres', 'like', '%' . $this->search . '%')
-            ->orWhere('apellidos', 'like', '%' . $this->search . '%')
-            ->orWhere('numero_documento', 'like', '%' . $this->search . '%')
-            ->orderBy('created_at', 'DESC')
-            ->paginate(15);
+            ->where(function ($query) {
+                $term = '%' . trim($this->search) . '%';
+                $query->where('nombres', 'like', $term)->orWhere('apellidos', 'like', $term)->orWhere('numero_documento', 'like', $term);
+            })->orderBy('created_at', 'DESC')->orderBy('id', 'DESC');
+    }
+
+    public function render()
+    {
+        $clientes = $this->customerSearchQuery()->paginate(15);
         $cliente = Customer::find($this->id_seleccionado);
         $resultado = CustomerParentezco::where('company_id', Auth::user()->company_id)->where('customer_id', $this->id_seleccionado)->get();
         $this->valores = [];

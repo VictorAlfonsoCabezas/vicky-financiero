@@ -2280,11 +2280,16 @@ class CuentasComponent extends Component
         $this->historialCuenrtas = $cuentas;
     }
 
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
     public function mount($customer_id)
     {
         if ($customer_id > 0) {
             $this->customer_selec = $customer_id;
-            $customerFind = Customer::find($customer_id);
+            $customerFind = Customer::where('company_id', Auth::user()->company_id)->findOrFail($customer_id);
             $this->search = $customerFind->numero_documento;
         }
         $tipoAhorros = TipoAhorros::where('status', true)->get();

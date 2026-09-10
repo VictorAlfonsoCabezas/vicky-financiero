@@ -1,0 +1,21 @@
+.loans-module .loan-documents { display:flex; flex-direction:column; align-items:flex-start; gap:.4rem; }
+.loans-module .loan-customer-summary { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.loans-module .loan-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
+.loans-module .card-body { background:#fff!important; }
+.loans-module .card-body>.tab-content { min-width:0; }
+.loans-module .post { padding:1rem; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; }
+.loans-module .user-block { float:none; display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:.75rem; }
+.loans-module .user-block .username,.loans-module .user-block .description { margin-left:0; color:#334155; }
+.loans-module .table-responsive { overflow-x:auto; }
+.loans-module .card-body { overflow-x:auto; }
+.loans-module .table { font-variant-numeric:tabular-nums; }
+.loans-module .table .btn { white-space:nowrap; margin-bottom:.25rem; }
+.loans-module .form-group { margin-bottom:1rem; }
+.loans-module label { color:#334155; font-weight:600; margin-bottom:.4rem; }
+.loans-module .form-control,.loans-module .form-select { min-height:36px; }
+.loans-module .btn.btn-default { background:#e8eef5; color:#243b53!important; border:1px solid #8496ac; }
+.loans-module .btn.btn-default i { color:inherit!important; }
+.loans-module .btn.btn-warning { color:#263449!important; }
+.loans-module .modal-body .row.col { margin-left:0; margin-right:0; padding:0; }
+.loans-module .modal-body .callout { padding:1rem; background:#fff8df; border-left:4px solid #c98b16; }
+@media(max-width:767px) { .loans-module .post { padding:.75rem; } .loans-module .loan-tabs .btn { flex:1; } .loans-module .modal-body .row { margin-left:0; margin-right:0; } }

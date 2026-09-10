@@ -1,59 +1,21 @@
-<div>
-    <div class="row">
-        <div class="col-lg-3 mt-3">
-            <div class="card mt-1">
-                <div class="card-header border-0">
-                    <div class="input-group input-group-sm">
-                        <input type="search" wire:model="search" class="form-control form-control-sm"
-                            placeholder="Buscar">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-sm btn-default">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-striped table-valign-middle">
-                        <tbody>
-                            @foreach ($clientes as $cli)
-                            <tr wire:click="seleccionarCliente({{ $cli->id }})">
-                                <td class="small"
-                                    style="color:{{ $cli->id == $this->id_seleccionado ? '#007bff' : '' }};">
-                                    {{ $cli->nombres }}
-                                    {{ $cli->apellidos }}
-                                    @if ($cli->nuevo)
-                                    <span class="badge bg-success"> Nuevo</span>
-                                    @endif
-                                    <br><b>{{ $cli->numero_documento }}<b>
-                                </td>
-                                <td>
-                                    <a wire:click="seleccionarCliente({{ $cli->id }})" class="text-muted">
-                                        <i
-                                            class="fa fa-{{ $cli->id == $this->id_seleccionado ? 'check' : 'arrow-right' }}"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    {{ $clientes->links() }}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6 mt-3">
-            <button wire:click="seleccionarCliente(0)" class="btn btn-block btn-primary btn-xs"><i
-                    class="fa fa-user-plus"></i> Crear Nuevo</button>
-            @if(Auth::user()->descargar_clientes)
-            <button wire:click="descargarClientes" class="btn btn-block btn-info btn-xs"><i
-                    class="fa fa-user"></i> Descargar Clientes</button>
-            @endif
+<div class="savings-module customers-module">
+    <div class="savings-heading"><div><div class="text-muted small mb-1">SOCIOS / CLIENTES</div><h1>Ficha del cliente</h1><p>Administra la informaci&oacute;n personal, referencias y documentos de tus clientes.</p></div><div class="d-flex gap-2 flex-wrap"><button type="button" wire:click="seleccionarCliente(0)" class="btn btn-primary"><i class="fa fa-user-plus me-2"></i>Nuevo cliente</button>@if(Auth::user()->descargar_clientes)<button type="button" wire:click="descargarClientes" class="btn savings-secondary-action"><i class="fa fa-download me-2"></i>Exportar clientes</button>@endif</div></div>
+@if ($id_seleccionado > 0)
+    <div class="customer-quick-actions mb-3"><strong>{{ $apellidos }} {{ $nombres }}</strong><span class="text-muted">{{ $numero_documento }}</span><a class="btn btn-outline-primary" href="/cuentas/{{ $id_seleccionado }}"><i class="fa fa-wallet me-1"></i>Cuentas ({{ $totalCuentas }})</a><a class="btn btn-outline-primary" href="/creditos/{{ $id_seleccionado }}"><i class="fa fa-hand-holding-usd me-1"></i>Pr&eacute;stamos ({{ $totalPrestamos }})</a><a href="#customer-location" class="btn savings-secondary-action"><i class="fa fa-map-marker-alt me-1"></i>Ubicaci&oacute;n</a><button type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral4" class="btn savings-secondary-action"><i class="fa fa-paperclip me-1"></i>Adjuntar archivos</button></div>
+    @endif
+    <div class="row g-3 align-items-start customer-columns">
+        <aside class="col-12 col-lg-3 savings-sidebar"><div class="card"><div class="card-header"><h2 class="h5 mb-3">Lista de clientes</h2><input type="search" wire:model.debounce.350ms="search" class="form-control" placeholder="Nombre o documento" aria-label="Buscar cliente"></div><div class="card-body p-0"><div wire:loading.delay wire:target="search,seleccionarCliente" class="p-3 text-primary" role="status">Cargando datos...</div><ul class="nav nav-pills flex-column">
+        @forelse ($clientes as $cli)
+        <li class="nav-item" wire:key="profile-customer-{{ $cli->id }}"><button type="button" wire:click="seleccionarCliente({{ $cli->id }})" class="nav-link savings-customer {{ $id_seleccionado == $cli->id ? 'is-selected' : '' }}" aria-pressed="{{ $id_seleccionado == $cli->id ? 'true' : 'false' }}"><i class="fa fa-user me-1"></i><strong>{{ $cli->apellidos }} {{ $cli->nombres }}</strong>@if($cli->nuevo)<span class="badge bg-success ms-1">Nuevo</span>@endif<br><small>{{ $cli->numero_documento }}</small>@if($id_seleccionado == $cli->id)<span class="savings-customer-selected"><i class="fa fa-check-circle me-1"></i>Cliente seleccionado</span>@endif</button></li>
+        @empty<li class="p-4 text-muted">No se encontraron clientes.</li>@endforelse
+        </ul>{{ $clientes->links() }}</div></div></aside>
+        <div class="col-12 col-lg-6 customer-editor">
             <div class="card">
                 <div class="card-header p-2">
-                    <ul class="nav nav-pills">
+                    <h2 class="h5 mb-3">Datos del cliente</h2>
+                    <ul class="nav nav-pills customer-tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#activity" data-bs-toggle="tab">
+                            <a class="nav-link {{ $activeTab == 'activity' ? 'active' : '' }}" href="#activity" wire:click.prevent="selectTab('activity')" role="tab" aria-selected="{{ $activeTab == 'activity' ? 'true' : 'false' }}">
                                 @if ($this->id_seleccionado !== 0)
                                 Datos Personales
                                 @else
@@ -62,18 +24,17 @@
                             </a>
                         </li>
                         @if ($this->id_seleccionado !== 0)
-                        <li class="nav-item"><a class="nav-link" href="#timeline" data-bs-toggle="tab">Historial</a>
+                        <li class="nav-item"><a class="nav-link {{ $activeTab == 'timeline' ? 'active' : '' }}" href="#timeline" wire:click.prevent="selectTab('timeline')" role="tab" aria-selected="{{ $activeTab == 'timeline' ? 'true' : 'false' }}">Historial</a>
                         </li>
-                        <li class="nav-item"><a class="nav-link" href="#archivos" data-bs-toggle="tab">Archivos</a>
+                        <li class="nav-item"><a class="nav-link {{ $activeTab == 'archivos' ? 'active' : '' }}" href="#archivos" wire:click.prevent="selectTab('archivos')" role="tab" aria-selected="{{ $activeTab == 'archivos' ? 'true' : 'false' }}">Archivos</a>
                         </li>
                         @endif
                     </ul>
                 </div>
-                <div class="card-body"
-                    style="background-color:{{ $this->genero_id == 1 ? '#ededf3' : ($this->genero_id == 2 ? '#e9dde1' : '') }};">
-                    <div class="tab-content" wire:key="myUniqueKey">
+                <div class="card-body">
+                    <div class="tab-content" wire:key="customer-panel-{{ $id_seleccionado }}">
 
-                        <div class="tab-pane active" id="activity">
+                        <div class="tab-pane {{ $activeTab == 'activity' ? 'active' : '' }}" id="activity" role="tabpanel">
                             @if ($errors->any())
                             <div class="callout callout-warning">
                                 <h5>Verifica estas observaciones.</h5>
@@ -91,18 +52,16 @@
                                     </span>
                                     <span class="description">Fecha creación - {{ $this->created_at }}</span>
                                 </div>
-                                <div class="d-flex justify-content-end mb-3">
+                                <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap mb-3">
                                     <a class="btn btn-app bg-warning" data-bs-toggle="modal" data-bs-target="#modalGeneral4"
                                         title="Archivos de esta cuenta">
                                         <i class="fa fa-paperclip"></i> Archivos
                                     </a>
-                                    <a class="btn btn-app bg-primary" wire:click="store">
-                                        <i class="fas fa-save"></i> Guardar
-                                    </a>
+                                    <button type="button" class="btn btn-primary" wire:click="store" wire:loading.attr="disabled" wire:target="store"><i class="fa fa-save me-2"></i>Guardar cambios</button>
                                 </div>
                                 @endif
 
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-personal-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Datos personales</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><div style="display: flex; align-items: center; justify-content: space-between;">
                                     <h5>Información Básica <i class="fa fa-edit"></i></h5>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" wire:model="fundador">
@@ -111,7 +70,7 @@
                                             Socio
                                         </label>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <input type="date" wire:model="date_open_account"
                                             class="form-control form-control-sm"
                                             placeholder="0000-00-00" title="Selecciona la fecha que inicio a ser socio">
@@ -119,7 +78,7 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Tipo Identificacion
                                             <a href="/tipo-documento" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -131,7 +90,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Identificación</label>
                                         <div class="input-group input-group-sm">
                                             <input type="search" wire:model.defer="numero_documento"
@@ -145,7 +104,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Sexo
                                             <a href="/genero" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -157,7 +116,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Estado Civil
                                             <a href="/estado-civil" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -172,19 +131,19 @@
                                     </div>
                                 </div>
                                 <div class="row  mt-3">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label class="small">Nombres</label>
                                         <input type="text" wire:model="nombres" class="form-control form-control-sm"
                                             placeholder="Nombres">
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label class="small">Apellidos</label>
                                         <input type="text" wire:model="apellidos" class="form-control form-control-sm"
                                             placeholder="Apellidos">
                                     </div>
                                 </div>
                                 <div class="row  mt-3">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Nivel Académico
                                             <a href="/nivel-academico" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -199,13 +158,13 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Fecha Nacimiento</label>
                                         <input type="date" wire:model="fecha_nacimiento"
                                             wire:change="calcularEdadVista()" class="form-control form-control-sm"
                                             placeholder="0000-00-00">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Edad</label>
                                         <input type="number" wire:model="edad" class="form-control form-control-sm"
                                             placeholder="0" readonly>
@@ -214,7 +173,7 @@
                                 <hr>
                                 <h5>Contacto <i class="fa fa-user" aria-hidden="true"></i></h5>
                                 <div class="row">
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Codigo Pais
                                             <a href="/country" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -228,27 +187,25 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Celular</label>
                                         <input type="text" wire:model="telefono" class="form-control form-control-sm"
                                             placeholder="0999999999">
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Telefono Fijo</label>
                                         <input type="text" wire:model="telefono_fijo"
                                             class="form-control form-control-sm" placeholder="023383387">
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Email</label>
                                         <input type="mail" wire:model="correo" class="form-control form-control-sm"
                                             placeholder="ejemplo@mail.com">
                                     </div>
-                                </div>
-
-                                <hr>
-                                <h5>Domicilio <i class="fa fa-globe" aria-hidden="true"></i></h5>
+                                </div></div></details>
+<details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-address-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Domicilio</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><h5>Domicilio <i class="fa fa-globe" aria-hidden="true"></i></h5>
                                 <div class="row">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label class="small">Tipo Vivienda</label>
                                         <select wire:model="tipo_vivienda" class="form-control form-control-sm">
                                             <option value="">Seleccione</option>
@@ -258,7 +215,7 @@
                                             <option value="OTROS">OTROS</option>
                                         </select>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <label class="small">Tiempo Residencia</label>
                                         <input type="text" wire:model="tiempo_vivienda"
                                             class="form-control form-control-sm" placeholder="1 año">
@@ -268,7 +225,7 @@
                                         <textarea class="form-control" wire:model="direccion" rows="3"
                                             placeholder="Escriba la dirección"></textarea>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Provincia
                                             <a href="/provincia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -282,7 +239,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Ciudad
                                             <a href="/ciudad" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -295,7 +252,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Parroquia
                                             <a href="/parroquia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -309,14 +266,12 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
-
-                                <hr>
-                                <div style="display: {{ $this->estado_civil_id == 2 ? 'visible' : 'none' }};">
+                                </div></div></details>
+<details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-spouse-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Datos del cónyuge</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><div style="display: {{ $this->estado_civil_id == 2 ? 'block' : 'none' }};">
                                     <h5>Datos Cónyuge <i class="fa fa-female" aria-hidden="true"></i><i
                                             class="fa fa-male" aria-hidden="true"></i></h5>
                                     <div class="row">
-                                        <div class="col-4">
+                                        <div class="col-12 col-md-4">
                                             <label class="small">Separación Bienes</label>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox"
@@ -324,12 +279,12 @@
                                                 <label class="form-check-label">Separación de Bienes</label>
                                             </div>
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-12 col-md-4">
                                             <label class="small">Cargas Familiares</label>
                                             <input type="number" wire:model="cargas_familiares"
                                                 class="form-control form-control-sm" placeholder="0">
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-12 col-md-4">
                                             <label class="small">Nivel Académico
                                                 <a href="/nivel-academico" target="_blank">
                                                     <i class="fa fa-plus-circle"></i>
@@ -400,10 +355,8 @@
                                         </div>
 
                                     </div>
-                                </div>
-
-                                <hr>
-                                <div class="d-flex justify-content-between align-items-center">
+                                </div></div></details>
+<details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-work-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Actividad laboral</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><div class="d-flex justify-content-between align-items-center">
                                     <h5>Datos Ocupacionales <i class="fa fa-building" aria-hidden="true"></i></h5>
                                     <div class="btn-group">
                                         <button type="button" class="btn btn-default">{{ $this->ocupacion }}</button>
@@ -433,19 +386,19 @@
 
                                 <!-- Trabaja empresa -->
                                 <div class="row"
-                                    style="display: {{ $this->ocupacion == 'EMPRESA' ? 'visible' : 'none' }};">
-                                    <div class="col-4">
+                                    style="display: {{ $this->ocupacion == 'EMPRESA' ? 'flex' : 'none' }};">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Nombre Empresa</label>
                                         <input type="text" wire:model="empresa_nombre"
                                             class="form-control form-control-sm" placeholder="Nombre de la Empresa">
                                     </div>
-                                    <div class="col-8">
+                                    <div class="col-12 col-md-8">
                                         <label class="small">Dirección Empresa</label>
                                         <input type="text" wire:model="empresa_direccion"
                                             class="form-control form-control-sm" placeholder="Dirección de la Empresa">
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Provincia
                                             <a href="/provincia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -460,7 +413,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Ciudad
                                             <a href="/ciudad" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -474,7 +427,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Parroquia
                                             <a href="/parroquia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -490,17 +443,17 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Teléfono Empresa</label>
                                         <input type="text" wire:model="empresa_telefono"
                                             class="form-control form-control-sm" placeholder="0999999999">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Tiempo Empresa</label>
                                         <input type="number" wire:model="empresa_tiempo"
                                             class="form-control form-control-sm" placeholder="1 año">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Cargo Empresa</label>
                                         <input type="text" wire:model="empresa_cargo"
                                             class="form-control form-control-sm" placeholder="Servicio al cliente">
@@ -509,19 +462,19 @@
 
                                 <!-- Negocio Propio -->
                                 <div class="row"
-                                    style="display: {{ $this->ocupacion == 'NEGOCIO' ? 'visible' : 'none' }};">
-                                    <div class="col-4">
+                                    style="display: {{ $this->ocupacion == 'NEGOCIO' ? 'flex' : 'none' }};">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Nombre Negocio</label>
                                         <input type="text" wire:model="negocio_nombre"
                                             class="form-control form-control-sm" placeholder="Nombre del Negocio">
                                     </div>
-                                    <div class="col-8">
+                                    <div class="col-12 col-md-8">
                                         <label class="small">Dirección Negocio</label>
                                         <input type="text" wire:model="negocio_direccion"
                                             class="form-control form-control-sm" placeholder="Dirección del Negocio">
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Provincia
                                             <a href="/provincia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -536,7 +489,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Ciudad
                                             <a href="/ciudad" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -550,7 +503,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Parroquia
                                             <a href="/parroquia" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -567,27 +520,25 @@
                                     </div>
 
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Teléfono Negocio</label>
                                         <input type="text" wire:model="negocio_telefono"
                                             class="form-control form-control-sm" placeholder="0999999999">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Tiempo Negocio</label>
                                         <input type="number" wire:model="negocio_tiempo"
                                             class="form-control form-control-sm" placeholder="1 año">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Actividad Negocio</label>
                                         <input type="text" wire:model="negocio_actividad"
                                             class="form-control form-control-sm" placeholder="Farmacia">
                                     </div>
-                                </div>
-
-                                <hr>
-                                <h5>Datos Bancarios <i class="fa fa-money-bill-alt" aria-hidden="true"></i></h5>
+                                </div></div></details>
+<details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-bank-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Datos bancarios</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><h5>Datos Bancarios <i class="fa fa-money-bill-alt" aria-hidden="true"></i></h5>
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Banco
                                             <a href="/bancos" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -600,7 +551,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Tipo de Cuenta</label>
                                         <a href="/tipo-cuenta" target="_blank">
                                             <i class="fa fa-plus-circle"></i>
@@ -613,16 +564,15 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">No. Cuenta</label>
                                         <input type="text" wire:model="no_cuenta" class="form-control form-control-sm"
                                             placeholder="2200000000">
                                     </div>
-                                </div>
-                                <hr>
-                                <h5>Referencias <i class="fa fa-users" aria-hidden="true"></i></h5>
+                                </div></div></details>
+<details class="panel customer-detail-panel" open wire:ignore.self wire:key="customer-section-references-{{ $id_seleccionado }}"><summary class="panel-heading"><span>Referencias</span><i class="fa fa-chevron-down" aria-hidden="true"></i></summary><div class="panel-body"><h5>Referencias <i class="fa fa-users" aria-hidden="true"></i></h5>
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Parentesco
                                             <a href="/parentezco" target="_blank">
                                                 <i class="fa fa-plus-circle"></i>
@@ -635,12 +585,12 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Nombres</label>
                                         <input type="text" wire:model="name_parentesco"
                                             class="form-control form-control-sm" placeholder="Nombres y Apellidos">
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Teléfono</label>
                                         <input type="text" wire:model="telefono_parentesco"
                                             class="form-control form-control-sm" placeholder="0999999999">
@@ -654,7 +604,7 @@
                                 @if (count($valores))
                                 @foreach ($valores as $key => $result)
                                 <div class="row">
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Parentezco
                                         </label>
 
@@ -666,12 +616,12 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <label class="small">Nombres</label>
                                         <input type="text" wire:model.defer="valores.{{ $key }}.nombres_apellidos"
                                             class="form-control form-control-sm" placeholder="Nombres y Apellidos">
                                     </div>
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <label class="small">Teléfono</label>
                                         <input type="text" wire:model.defer="valores.{{ $key }}.celular"
                                             class="form-control form-control-sm" placeholder="0999999999">
@@ -687,14 +637,15 @@
                                 @endif
 
 
+</div></details>
                             </div>
                             <div class="mt-3">
                                 <button type="button" wire:click="store"
-                                    class="btn btn-block bg-primary btn-sm">Guardar</button>
+                                    class="btn btn-primary" wire:loading.attr="disabled" wire:target="store">Guardar</button>
                             </div>
                         </div>
 
-                        <div class="tab-pane" id="timeline">
+                        <div class="tab-pane {{ $activeTab == 'timeline' ? 'active' : '' }}" id="timeline" role="tabpanel">
                             <div class="timeline timeline-inverse">
 
                                 <div class="time-label">
@@ -730,11 +681,11 @@
                             </div>
                         </div>
 
-                        <div class="tab-pane" id="archivos">
+                        <div class="tab-pane {{ $activeTab == 'archivos' ? 'active' : '' }}" id="archivos" role="tabpanel">
                             <div class="col-12 col-md-12 col-lg-12 order-1 order-md-2">
                                 @if ($this->id_seleccionado > 0)
                                 <div class="row">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <h3 class="text-primary">
                                             <i class="far fa-fw fa-file-pdf"></i> CREDITOS
                                         </h3>
@@ -769,7 +720,7 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6">
                                         <h3 class="text-primary">
                                             <i class="far fa-fw fa-file-pdf"></i> CUENTAS
                                         </h3>
@@ -906,8 +857,9 @@
             </div>
         </div>
 
-        <div class="col-lg-3 mt-3">
+        <div id="customer-location" class="col-12 col-lg-3 customer-location">
             <div class="card card-primary card-outline">
+                <div class="card-header"><h2 class="h5 mb-0">Ubicaci&oacute;n del cliente</h2></div>
                 <div class="card-body box-profile">
                     @if ($this->id_seleccionado !== 0)
                     <div class="text-center">
@@ -919,12 +871,12 @@
                     <ul class="list-group list-group-unbordered mb-3">
                         <a href="/cuentas/{{ $this->id_seleccionado }}" target="_blank">
                             <li class="list-group-item">
-                                <b>Cuentas</b> <a class="float-end">{{ $this->totalCuentas }}</a>
+                                <b>Cuentas</b> <span class="badge bg-primary float-end">{{ $this->totalCuentas }}</span>
                             </li>
                         </a>
                         <a href="/creditos/{{ $this->id_seleccionado }}" target="_blank">
                             <li class="list-group-item">
-                                <b>Prestamos</b> <a class="float-end">{{ $this->totalPrestamos }}</a>
+                                <b>Prestamos</b> <span class="badge bg-primary float-end">{{ $this->totalPrestamos }}</span>
                             </li>
                         </a>
                     </ul>
@@ -959,9 +911,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title"> Archivos</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
                     <div class="modal-body">
@@ -977,14 +927,14 @@
                             <div class="col-12">
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputEmail1">Nombre Archivo</label>
                                                 <input type="text" class="form-control" wire:model="descrpcion"
                                                     placeholder="Nombre del Archivo">
                                             </div>
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label for="exampleInputFile">Archivo</label>
                                                 <div class="input-group">
@@ -1128,7 +1078,7 @@
 
     function initializeSelect2(selector, eventName) {
         const selectElement = document.querySelector(selector);
-        if (!selectElement.classList.contains('select2-hidden-accessible')) {
+        if (selectElement && !selectElement.classList.contains('select2-hidden-accessible')) {
             $(selectElement).select2({
                 theme: "bootstrap4",
                 dropdownDirection: 'bottom'

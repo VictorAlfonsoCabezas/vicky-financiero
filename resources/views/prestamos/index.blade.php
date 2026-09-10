@@ -1,5 +1,9 @@
 @extends('layouts.app')
-@section('custom_css_rules')@stop
+@section('title', 'Tipos de prestamo')
+@section('custom_css_rules')
+<link href="{{ asset('css/savings.css') }}" rel="stylesheet">
+<link href="{{ asset('css/loans.css') }}" rel="stylesheet">
+@stop
 @section('content')
 <livewire:prestamos.prestamos-component>
     @endsection
