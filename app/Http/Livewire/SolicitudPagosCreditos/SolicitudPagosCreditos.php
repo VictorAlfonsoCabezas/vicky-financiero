@@ -33,6 +33,8 @@ class SolicitudPagosCreditos extends Component
     public $letraSeleccionada;
     public $aplicarInteresMora = true;
     public $interesMoraOriginal = 0;
+    public $errorPago = null;
+    private $errorContableNotificado = false;
 
     public $totalCheque = 0;
     public $totalTransferencia = 0;
@@ -432,26 +434,27 @@ class SolicitudPagosCreditos extends Component
 
     public function pagarLetra($valorPagar, $letraId, $incluyeTransferencia = true)
     {
-        $cuota = CreditFolderDetail::find($letraId);
-
-        $cuota->interes_mora = $this->aplicarInteresMora
-            ? $this->interesMoraOriginal
-            : 0;
-
-        $cuota->save();
-
-        $interesMora = $cuota->interes_mora ?? 0; // Usamos el valor que ya tenga la cuota
-
-        // Lógica de cálculo idéntica a tu realizarPago()
-        $pagoTotalReq = (float) round(($cuota->valor_cuota + $interesMora + $cuota->faltante_anterior_cuota - $cuota->saldo_anterior_cuota), 2);
-
-        // Determinamos el CASO
-        $caso = 1;
-        if ($valorPagar > $pagoTotalReq) $caso = 2;
-        if ($valorPagar < $pagoTotalReq) $caso = 3;
-
+        $this->errorPago = null;
+        $this->errorContableNotificado = false;
+        $etapa = 'buscar la cuota';
         DB::beginTransaction();
         try {
+            $cuota = CreditFolderDetail::findOrFail($letraId);
+
+            $cuota->interes_mora = $this->aplicarInteresMora
+                ? $this->interesMoraOriginal
+                : 0;
+
+            $interesMora = $cuota->interes_mora ?? 0; // Usamos el valor que ya tenga la cuota
+
+            // Lógica de cálculo idéntica a tu realizarPago()
+            $pagoTotalReq = (float) round(($cuota->valor_cuota + $interesMora + $cuota->faltante_anterior_cuota - $cuota->saldo_anterior_cuota), 2);
+
+            // Determinamos el CASO
+            $caso = 1;
+            if ($valorPagar > $pagoTotalReq) $caso = 2;
+            if ($valorPagar < $pagoTotalReq) $caso = 3;
+
             // Actualización de la cuota principal
             $cuota->valor_pagado = $valorPagar;
             $cuota->valor_final = $valorPagar;
@@ -459,28 +462,54 @@ class SolicitudPagosCreditos extends Component
             $cuota->hour_pay = date('H:i:s');
             $cuota->user_pay_id = Auth::user()->id;
             $cuota->status = 'PAGADA';
+            $cuota->adelanto_prox_cuota = 0;
+            $cuota->faltante_prox_cuota = 0;
 
             if ($caso == 2) {
                 $SOBRANTE = (float) round($valorPagar - $pagoTotalReq, 2);
                 $cuota->adelanto_prox_cuota = $SOBRANTE;
-
-                $this->procesarSobrante($cuota->code_folder_header, $SOBRANTE);
             }
 
             if ($caso == 3) {
                 $FALTANTE = (float) round($pagoTotalReq - $valorPagar, 2);
                 $cuota->faltante_prox_cuota = $FALTANTE;
+            }
 
+            $etapa = 'guardar la cuota';
+            if (!$cuota->save()) {
+                throw new \RuntimeException('El guardado de la cuota fue cancelado.');
+            }
+
+            $etapa = 'distribuir el sobrante o faltante';
+            // La cuota actual debe estar pagada antes de buscar cuotas pendientes.
+            if ($caso == 2) {
+                $this->procesarSobrante($cuota->code_folder_header, $SOBRANTE);
+            }
+
+            if ($caso == 3) {
                 $this->procesarFaltante($cuota->code_folder_header, $FALTANTE);
             }
 
-            $cuota->save();
+            if ($incluyeTransferencia) {
+                $etapa = 'aprobar las formas de pago';
+                RegistroFormasPago::where('letra_id', $letraId)
+                    ->where('status', 3)
+                    ->update([
+                        'solicitado' => 1,
+                        'usuario_solicitud' => Auth::user()->username,
+                        'usuario_id_solicitud' => Auth::user()->id,
+                        'fecha_solicitud' => date('Y-m-d'),
+                        'hora_solicitud' => date('H:i:s'),
+                    ]);
+            }
 
             // Ejecutamos tus funciones de transición y cierre
+            $etapa = 'actualizar el estado del credito';
             $this->manejarTransicionEstado($cuota);
             $this->ultimaLetraPago($letraId);
 
             // Actualizar Cabecera
+            $etapa = 'actualizar el total del credito';
             $cabecera = CreditFolderHeader::where('code', $cuota->code_folder_header)->first();
             $cabecera->total_pagando += $valorPagar;
             $cabecera->save();
@@ -490,6 +519,7 @@ class SolicitudPagosCreditos extends Component
             $pagos = RegistroFormasPago::where('letra_id', $letraId)
                 ->where('status', 3);
             $movimientosCreados = [];
+            $etapa = 'registrar los movimientos e historial del pago';
 
             if ($incluyeTransferencia) { // caso todos los pagos incluidos
                 foreach ($pagos->get() as $pago) {
@@ -588,13 +618,30 @@ class SolicitudPagosCreditos extends Component
                 }
             }
 
+            $etapa = 'crear los asientos contables';
             $this->contabilizarPagosAprobadosLetra($letraId, $movimientosCreados);
 
+            $etapa = 'confirmar la transaccion';
             DB::commit();
-            $this->emit('alerta', ['titulo' => 'Éxito', 'mensaje' => 'Pago procesado correctamente', 'color' => 'success']);
-        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alerta-pago-credito', ['titulo' => 'Éxito', 'mensaje' => 'Pago procesado correctamente', 'tipo' => 'success']);
+            return true;
+        } catch (\Throwable $e) {
             DB::rollBack();
-            $this->emit('alerta', ['titulo' => 'Error', 'mensaje' => $e->getMessage(), 'color' => 'danger']);
+            $this->errorPago = 'No se pudo completar el pago de la cuota ' . $letraId
+                . ' al ' . $etapa . '. Los cambios del pago se revirtieron. ' . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Fallo al pagar una cuota de credito.', [
+                'letra_id' => $letraId,
+                'etapa' => $etapa,
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+            if (!$this->errorContableNotificado) {
+                $this->dispatchBrowserEvent(
+                    'alerta-pago-credito',
+                    ['titulo' => 'Error', 'mensaje' => $this->errorPago, 'tipo' => 'error']
+                );
+            }
+            return false;
         }
     }
 
@@ -614,10 +661,17 @@ class SolicitudPagosCreditos extends Component
             $resultado = AsientosHeader::recalcularAsientos($movimientoLetra->id, 'customer_movimientos');
 
             if (($resultado['code'] ?? null) != '200') {
-                throw new \Exception($resultado['msg'] ?? 'No se pudo crear el asiento contable del pago.');
+
+                $mensaje = $resultado['msg'] ?? 'No se pudo crear el asiento contable del pago.';
+                $this->dispatchBrowserEvent('alerta-pago-credito', [
+                    'titulo' => 'Error al crear el asiento contable',
+                    'mensaje' => $mensaje . ' El pago no se completara y sus cambios se revertiran.',
+                    'tipo' => 'error',
+                ]);
             }
         }
     }
+
 
     // --- FUNCIONES DE SOPORTE ADAPTADAS ---
 
