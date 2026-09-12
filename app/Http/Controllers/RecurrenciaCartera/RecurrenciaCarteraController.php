@@ -41,6 +41,11 @@ class RecurrenciaCarteraController extends Controller {
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request) {
+        $request->validate([
+            'desde' => 'required|integer|min:0',
+            'hasta' => 'nullable|integer|gte:desde',
+            'orden' => 'required|integer|min:0',
+        ], ['hasta.gte' => 'El límite del rango debe ser mayor o igual al inicio.']);
         $company = Company::find(Auth::user()->company_id);
         $dias = ($request->input('hasta') != null && $request->input('hasta') != '') ? $request->input('hasta') - $request->input('desde') + 1 : null;
         $data = [
@@ -57,7 +62,11 @@ class RecurrenciaCarteraController extends Controller {
         $existe = RecurrenciaCartera::where('company_id', Auth::user()->company_id)->where('desde', $request->input('desde'))->where('hasta', $request->input('hasta'))->where('dias', $dias);
         if ($existe->count() == 0) {
             RecurrenciaCartera::create($data);
+        } else {
+            throw \Illuminate\Validation\ValidationException::withMessages(['desde' => 'Este rango ya está registrado.']);
         }
+        session()->flash('mensaje', 'Recurrencia guardada correctamente.');
+        return $request->expectsJson() ? response()->json(['saved' => true]) : redirect('recurrenciaCartera');
     }
 
     /**
@@ -138,7 +147,7 @@ class RecurrenciaCarteraController extends Controller {
         $rec = RecurrenciaCartera::where('company_id', Auth::user()->company_id)->findOrFail($id);
         $rec->delete();
         return redirect('recurrenciaCartera')
-                        ->with('mensaje', 'Compania Eliminada Satisfactoriamente...');
+                        ->with('mensaje', 'Recurrencia eliminada correctamente.');
     }
 
     public function recurrenciaCarteraVew() {

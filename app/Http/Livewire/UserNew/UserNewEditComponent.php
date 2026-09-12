@@ -159,11 +159,12 @@ class UserNewEditComponent extends Component
     {
         if ($id > 0) {
             $this->id_selected = $id;
-            $user = User::find($id);
+            $user = User::findOrFail($id);
             $this->company_id = $user->company_id;
             $this->sede_id = $user->sede_id;
-            $this->rol_id = UsuarioRol::where('user_id', $id)->first()->rol_id;
-            $this->rol_name = Rol::find(UsuarioRol::where('user_id', $id)->first()->rol_id)->nombre;
+            $assignment = UsuarioRol::where('user_id', $id)->first();
+            $this->rol_id = $assignment ? $assignment->rol_id : '';
+            $this->rol_name = optional(Rol::find($this->rol_id))->nombre ?: 'Sin rol asignado';
             $this->firstname = $user->firstname;
             $this->lastname = $user->lastname;
             $this->username = $user->username;

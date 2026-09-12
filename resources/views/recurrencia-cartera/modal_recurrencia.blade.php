@@ -1,40 +1,6 @@
-<div class="modal fade" id="formRecurrenciaNew" tabindex="1" role="dialog" aria-labelledby="PagoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Recurrencia</h4>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="form_prestamo_new" autocomplete="false" autocomplete="off" class="validate-form" enctype="multipart/form-data">
-                    @csrf
-                    <div class="row col col-sm-12">
-                        <section class="col col-sm-4">
-                            <div class="form-group">
-                                <label for="desde">Desde</label>
-                                <input type="number" class="form-control text-uppercase" id="desde" name="desde"   placeholder="Ingrese el inicio" required="">
-                            </div>
-                        </section>
-                        <section class="col col-sm-4">
-                            <div class="form-group">
-                                <label for="hasta">Hasta</label>
-                                <input type="number" class="form-control text-uppercase" id="hasta" name="hasta"  placeholder="Ingrese el Fin" required="">
-                            </div>
-                        </section>
-                        <section class="col col-sm-4">
-                            <div class="form-group">
-                                <label for="orden">Orden</label>
-                                <input type="number" class="form-control text-uppercase" id="orden" name="orden"  placeholder="Orden" required="">
-                            </div>
-                        </section>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <a type="button" class="btn btn-primary" href="javascript:guardarNuewRecurrencia()" style="color: white" id="boton_generar">Generar</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="modal fade" id="formRecurrenciaNew" tabindex="-1" aria-labelledby="recurrence-title" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title" id="recurrence-title">Nueva recurrencia</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+<form id="form_prestamo_new" action="{{ route('recurrenciaCartera.store') }}" method="POST">@csrf
+<div class="modal-body"><p class="text-muted">Define el inicio del rango, su l&iacute;mite y el orden en el listado.</p><div id="recurrence-errors" class="alert alert-danger d-none" role="alert" tabindex="-1"></div><div class="row g-3"><div class="col-6"><label for="desde" class="form-label">Desde *</label><input type="number" id="desde" name="desde" min="0" step="1" required class="form-control"></div><div class="col-6"><label for="hasta" class="form-label">Hasta</label><input type="number" id="hasta" name="hasta" min="0" step="1" class="form-control"><div class="form-text">Vac&iacute;o para un rango sin l&iacute;mite.</div></div><div class="col-12"><label for="orden" class="form-label">Orden *</label><input type="number" id="orden" name="orden" min="0" step="1" required class="form-control"></div></div></div>
+<div class="modal-footer"><button type="button" class="btn savings-secondary-action" data-bs-dismiss="modal">Cancelar</button><button type="submit" id="recurrence-save" class="btn btn-primary"><i class="fa fa-save me-2"></i>Guardar recurrencia</button></div>
+</form></div></div></div>

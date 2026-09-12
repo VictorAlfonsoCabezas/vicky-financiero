@@ -19,7 +19,10 @@ class FondoController extends Controller {
     }
 
     public function storeTransacciones(Request $request) {
-        $fondos = FondoHeader::where('company_id', Auth::user()->company_id)->where('status', true)->first();
+        $request->validate(['fondo_id' => 'nullable|integer|min:1', 'type_fondo' => 'required|in:IN,EG',
+            'valor_fondo' => 'required|numeric|min:0.01', 'observation' => 'required|string|max:1000']);
+        $query = FondoHeader::where('company_id', Auth::user()->company_id)->where('status', true);
+        $fondos = $request->filled('fondo_id') ? $query->findOrFail($request->input('fondo_id')) : $query->firstOrFail();
         if ($request->input('type_fondo') == 'IN') {
             $transaction = TypeTransaction::where('name_corto', 'IN')->first();
             $fondoUpdate = FondoHeader::find($fondos->id);
@@ -265,7 +268,7 @@ class FondoController extends Controller {
     }
 
     public function verMovimientos($id) {
-        $fondo = FondoHeader::find($id);
+        $fondo = FondoHeader::where('company_id', Auth::user()->company_id)->findOrFail($id);
         $code = $fondo->code;
         $detalles = FondoDetail::where('code_header_id', $code)->get();
         return Response::json($detalles);

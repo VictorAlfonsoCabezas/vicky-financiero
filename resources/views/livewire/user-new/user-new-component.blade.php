@@ -1,45 +1,9 @@
-<div>
-    <div class="row justify-content-between">
-        <div class="col-3 mt-2 mb-2">
-            <a type="button" class="btn btn-primary text-white" href="/user-new/0"><i class="fa fa-plus"></i> </a>
-        </div>
-        <div class="col-3 mt-2 mb-2">
-            <div class="input-group input-group-sm">
-                <input type="text" wire:model="search" class="form-control float-end" placeholder="Buscar">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-default">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card card-default">
-                <div class="card-header" style="padding: 8px;">
-                    <h5 class="card-title"><i class="fa fa-user"></i></i> <b>Usuarios</b></h5>
-                </div>
-                <div class="card-body table-responsive p-2">
-                    <div class="row">
-                        @foreach ($users as $user)
-                        <div class="col-md-4 col-sm-6 col-12">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-{{ $user->status ? 'primary' : 'danger' }}"><i class="fa fa-user"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">{{ $user->username }}</span>
-                                    <a href="/user-new/{{ $user->id }}"><i class="fas fa-edit"></i> Editar</a>
-                                    <span class="info-box-number">{{ $user->ruc }}</span>
-                                    <small>{{ $user->firstname }} {{ $user->lastname }} / <i class="fa fa-envelope"></i> {{ $user->email }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                    {{ $users->links() }}
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="savings-module users-module">
+    <div class="savings-heading"><div><div class="text-muted small mb-1">ACCESO / USUARIOS</div><h1>Usuarios del sistema</h1><p>Administra perfiles, permisos y accesos desde un solo lugar.</p></div><a class="btn btn-primary" href="/user-new/0"><i class="fa fa-user-plus me-2"></i>Nuevo usuario</a></div>
+    <div class="card"><div class="card-header savings-filters"><div><h2 class="h5 mb-1">Directorio de usuarios</h2><span class="text-muted">{{ $users->total() }} resultados</span></div><div class="d-flex gap-2 flex-wrap"><input type="search" wire:model.debounce.350ms="search" class="form-control" placeholder="Nombre, usuario, correo o documento" aria-label="Buscar usuarios"><select wire:model="estado" class="form-select" aria-label="Filtrar estado"><option value="">Todos los estados</option><option value="1">Activos</option><option value="0">Inactivos</option></select></div></div>
+    <div class="card-body"><div wire:loading.delay role="status" class="text-primary mb-3">Actualizando usuarios...</div><div class="row g-3">
+    @forelse ($users as $user)
+        <div class="col-12 col-md-6 col-xxl-4" wire:key="user-card-{{ $user->id }}"><article class="user-directory-card"><div class="d-flex justify-content-between align-items-start gap-2"><span class="user-avatar"><i class="fa fa-user" aria-hidden="true"></i></span><span class="badge {{ $user->status ? 'bg-success' : 'bg-secondary' }}">{{ $user->status ? 'Activo' : 'Inactivo' }}</span></div><h3 class="h6 mt-3 mb-1">{{ $user->firstname }} {{ $user->lastname }}</h3><div class="text-muted mb-3">{{ $user->username }}</div><div class="small mb-2"><i class="fa fa-id-card me-2 text-muted"></i>{{ $user->ruc ?: 'Sin documento' }}</div><div class="small user-email"><i class="fa fa-envelope me-2 text-muted"></i>{{ $user->email ?: 'Sin correo' }}</div><a href="/user-new/{{ $user->id }}" class="btn btn-outline-primary w-100 mt-3"><i class="fa fa-pen me-2"></i>Editar usuario</a></article></div>
+    @empty<div class="col-12 text-center text-muted p-5"><i class="fa fa-search fs-2 mb-3 d-block"></i>No se encontraron usuarios con estos filtros.</div>@endforelse
+    </div></div><div class="card-footer">{{ $users->links() }}</div></div>
 </div>

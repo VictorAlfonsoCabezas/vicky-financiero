@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Livewire\Company;
+namespace App\Http\Livewire\MiEmpresa;
 
 use App\Models\{Company, Category};
-use App\Support\CompanyForm;
-use App\Http\Requests\SaveCompanyRequest;
-use App\Services\CompanyWriter;
+use App\Support\MiEmpresaForm;
+use App\Http\Requests\SaveMiEmpresaRequest;
+use App\Services\MiEmpresaWriter;
 use Illuminate\Support\Facades\{Crypt, Validator};
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-class CompanyEditor extends Component
+class MiEmpresaEditor extends Component
 {
-    use WithFileUploads, CompanyAccess;
+    use WithFileUploads, MiEmpresaAccess;
 
     public $record = '';
     public $data = [];
@@ -21,10 +21,11 @@ class CompanyEditor extends Component
 
     public function mount($companyId = null)
     {
-        $this->authorizeCompanyAccess();
-        $company = $companyId ? Company::findOrFail($companyId) : new Company();
+        $this->authorizeMiEmpresaAccess();
+        abort_unless(auth()->user()->company_id, 403);
+        $company = Company::findOrFail(auth()->user()->company_id);
         $this->record = Crypt::encryptString((string) ($company->id ?: 'new'));
-        foreach (CompanyForm::fields() as $name => $field) {
+        foreach (MiEmpresaForm::fields() as $name => $field) {
             $value = $company->getAttribute($field[5] ?? $name) ?? ($field[3] ?? '');
             if ($field[1] === 'switch') $value = (bool) $value;
             if ($field[1] === 'time' && $value) $value = substr($value, 0, 5);
@@ -36,49 +37,49 @@ class CompanyEditor extends Component
     {
         try { $id = Crypt::decryptString($this->record); }
         catch (\Throwable $error) { abort(403); }
-        return $id === 'new' ? new Company() : Company::findOrFail($id);
+        abort_unless($id !== 'new' && (int) $id === (int) auth()->user()->company_id, 403);
+        return Company::findOrFail(auth()->user()->company_id);
     }
 
     public function updatedPhoto()
     {
-        $this->validate(['photo' => (new SaveCompanyRequest())->rules()['photo']]);
+        $this->validate(['photo' => (new SaveMiEmpresaRequest())->rules()['photo']]);
     }
 
     public function save()
     {
-        $this->authorizeCompanyAccess();
+        $this->authorizeMiEmpresaAccess();
         $company = $this->company();
         $input = [];
-        foreach (CompanyForm::fields() as $name => $field) {
+        foreach (MiEmpresaForm::fields() as $name => $field) {
             $value = $this->data[$name] ?? null;
             if (is_string($value)) $value = trim($value) === '' ? null : trim($value);
             $input[$name] = $value;
         }
-        $request = new SaveCompanyRequest();
+        $request = new SaveMiEmpresaRequest();
         $request->replace($input);
         $validator = Validator::make($input + ['photo' => $this->photo], $request->rules(), $request->messages(), $request->attributes());
         $validator->validate();
         $request->setValidator($validator);
-        if (!$company->exists) $company->status = true;
-        app(CompanyWriter::class)->save($company, $request->companyData(), $this->photo);
+        app(MiEmpresaWriter::class)->save($company, $request->companyData(), $this->photo);
         $this->record = Crypt::encryptString((string) $company->id);
         $this->photo = null;
         $this->message = 'Cambios guardados correctamente.';
         $this->resetErrorBag();
-        $this->dispatchBrowserEvent('company-saved');
+        $this->dispatchBrowserEvent('mi-empresa-saved');
     }
 
     public function render()
     {
-        $this->authorizeCompanyAccess();
+        $this->authorizeMiEmpresaAccess();
         $company = $this->company();
         $category = Category::where('type', 2)->where('status', true)->orderBy('title')->get();
-        $sections = CompanyForm::sections();
+        $sections = MiEmpresaForm::sections();
         return view($this->editorView(), compact('company', 'category', 'sections'));
     }
 
     protected function editorView()
     {
-        return 'livewire.company.editor';
+        return 'livewire.mi-empresa.editor';
     }
 }

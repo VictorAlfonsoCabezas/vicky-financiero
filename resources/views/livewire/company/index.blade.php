@@ -1,23 +1,95 @@
-
 <div class="company-module">
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><span class="company-eyebrow">ADMINISTRACIÓN</span><h2 class="h3 mt-2 mb-1">Tus empresas, en un solo lugar</h2><p class="text-muted mb-0">Gestiona su información, operación y configuración financiera.</p></div><a href="{{ route('company.create') }}" class="btn btn-primary px-4"><i class="fa fa-plus me-2" aria-hidden="true"></i>Nueva empresa</a></div>
-@include('company.messages')
-@if($message)<div class="alert alert-success" role="status">{{ $message }}</div>@endif
-<div wire:loading.delay wire:target="q,estado,gotoPage,nextPage,previousPage,clearFilters" class="text-primary mb-2" role="status">Actualizando empresas...</div>
-<div class="row g-3 mb-4">@foreach([['Empresas registradas', $stats['total'], 'fa-building', 'primary'], ['Empresas activas', $stats['active'], 'fa-check-circle', 'success'], ['Con contabilidad activa', $stats['accounting'], 'fa-calculator', 'info']] as $stat)<div class="col-md-4"><div class="card border-0 company-stat"><div class="card-body d-flex justify-content-between align-items-center"><div><div class="text-muted mb-2">{{ $stat[0] }}</div><div class="fs-2 fw-bold">{{ $stat[1] }}</div></div><span class="company-stat-icon text-{{ $stat[3] }}"><i class="fa {{ $stat[2] }}" aria-hidden="true"></i></span></div></div></div>@endforeach</div>
-<div class="panel panel-inverse company-panel"><div class="panel-heading"><h3 class="panel-title">Directorio de empresas</h3><span class="badge bg-secondary">{{ $companies->total() }} resultados</span></div><div class="panel-body">
-<form wire:submit.prevent="$refresh" class="row g-2 mb-4" role="search">
-<div class="col-lg-7"><label class="form-label" for="company-search">Buscar empresa</label><div class="input-group"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span><input id="company-search" name="q" wire:model.debounce.350ms="q" type="search" class="form-control" placeholder="Razón social, nombre comercial, RUC o ciudad" value="{{ $q }}" maxlength="120"></div></div>
-<div class="col-lg-3"><label class="form-label" for="company-state">Estado</label><select id="company-state" name="estado" wire:model="estado" class="form-select">@foreach(['activas' => 'Activas', 'inactivas' => 'Inactivas', 'todas' => 'Todas'] as $key => $label)<option value="{{ $key }}" {{ $estado === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
-<div class="col-lg-2 d-flex gap-2 align-items-end"><button class="btn btn-primary flex-grow-1">Filtrar</button><button type="button" wire:click="clearFilters" class="btn btn-outline-secondary" aria-label="Limpiar filtros"><i class="fa fa-undo" aria-hidden="true"></i></button></div></form>
-<div class="table-responsive"><table class="table table-hover align-middle company-table"><thead><tr><th>Empresa</th><th>RUC / ubicación</th><th>Contacto</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody>
-@forelse($companies as $item)<tr wire:key="company-row-{{ $item->id }}"><td><div class="d-flex align-items-center gap-3"><div class="company-avatar">@if($item->photo && is_file(public_path('uploads/companies/' . basename($item->photo))))<img src="{{ asset('uploads/companies/' . basename($item->photo)) }}" alt="Logo de {{ $item->comercial_name }}" loading="lazy">@else<i class="fa fa-building" aria-hidden="true"></i>@endif</div><div><a class="fw-bold text-decoration-none" href="{{ route('company.edit', $item) }}">{{ $item->comercial_name ?: $item->company_name }}</a><div class="text-muted small">{{ $item->company_name }}</div>@if((int) auth()->user()->company_id === (int) $item->id)<span class="badge bg-primary mt-1">Empresa actual</span>@endif</div></div></td>
-<td><span class="font-monospace">{{ $item->ruc }}</span><div class="small text-muted">{{ $item->ciudad ?: 'Sin ciudad' }}{{ $item->pais ? ' · ' . $item->pais : '' }}</div></td><td><div>{{ $item->email ?: 'Sin correo' }}</div><div class="small text-muted">{{ $item->phone ?: 'Sin teléfono' }}</div></td><td><span class="badge {{ $item->status ? 'bg-success' : 'bg-secondary' }}">{{ $item->status ? 'Activa' : 'Inactiva' }}</span></td>
-<td class="text-end text-nowrap"><a href="{{ route('company.edit', $item) }}" class="btn btn-outline-primary btn-sm"><i class="fa fa-pen me-1" aria-hidden="true"></i>Configurar</a>@if((int) auth()->user()->company_id !== (int) $item->id)<button type="button" class="btn btn-outline-secondary btn-sm ms-1" wire:click="confirmStatus({{ $item->id }})" wire:loading.attr="disabled">{{ $item->status ? 'Desactivar' : 'Reactivar' }}</button>@endif</td></tr>
-@empty<tr><td colspan="5"><div class="text-center py-5"><i class="fa fa-building fs-1 text-muted mb-3" aria-hidden="true"></i><h4>No encontramos empresas</h4><p class="text-muted">Prueba otro nombre o cambia el filtro de estado.</p><button type="button" wire:click="showAll" class="btn btn-outline-primary">Ver todas las empresas</button></div></td></tr>@endforelse
-</tbody></table></div><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"><span class="text-muted small">Mostrando {{ $companies->firstItem() ?: 0 }}–{{ $companies->lastItem() ?: 0 }} de {{ $companies->total() }}</span>{{ $companies->links() }}</div>
-</div></div>
-@if($pendingCompany)
-<div class="modal d-block company-live-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="company-status-title" wire:keydown.escape="cancelStatus"><div class="modal-dialog modal-dialog-centered"><form class="modal-content" wire:submit.prevent="saveStatus"><div class="modal-header"><h4 class="modal-title" id="company-status-title">{{ $pendingActive ? 'Reactivar empresa' : 'Desactivar empresa' }}</h4><button type="button" class="btn-close" wire:click="cancelStatus" aria-label="Cerrar"></button></div><div class="modal-body"><p>{{ $pendingName }}</p><p class="text-muted">Los datos y el historial de la empresa se conservan.</p>@error('status')<div class="alert alert-danger">{{ $message }}</div>@enderror</div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" wire:click="cancelStatus">Cancelar</button><button class="btn btn-primary" wire:loading.attr="disabled" type="submit">Confirmar</button></div></form></div></div><div class="modal-backdrop show"></div>
-@endif
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div><span class="company-eyebrow">ADMINISTRACIÓN</span>
+            <h2 class="h3 mt-2 mb-1">Tus empresas, en un solo lugar</h2>
+            <p class="text-muted mb-0">Gestiona su información, operación y configuración financiera.</p>
+        </div><a href="{{ route('company.create') }}" class="btn btn-primary px-4"><i class="fa fa-plus me-2" aria-hidden="true"></i>Nueva empresa</a>
+    </div>
+    @include('company.messages')
+    @if($message)<div class="alert alert-success" role="status">{{ $message }}</div>@endif
+    <div wire:loading.delay wire:target="q,estado,gotoPage,nextPage,previousPage,clearFilters" class="text-primary mb-2" role="status">Actualizando empresas...</div>
+    <div class="row g-3 mb-4">@foreach([['Empresas registradas', $stats['total'], 'fa-building', 'primary'], ['Empresas activas', $stats['active'], 'fa-check-circle', 'success'], ['Con contabilidad activa', $stats['accounting'], 'fa-calculator', 'info']] as $stat)<div class="col-md-4">
+            <div class="card border-0 company-stat">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted mb-2">{{ $stat[0] }}</div>
+                        <div class="fs-2 fw-bold">{{ $stat[1] }}</div>
+                    </div><span class="company-stat-icon text-{{ $stat[3] }}"><i class="fa {{ $stat[2] }}" aria-hidden="true"></i></span>
+                </div>
+            </div>
+        </div>@endforeach</div>
+    <div class="panel panel-inverse company-panel">
+        <div class="panel-heading">
+            <h3 class="panel-title">Directorio de empresas</h3><span class="badge bg-secondary">{{ $companies->total() }} resultados</span>
+        </div>
+        <div class="panel-body">
+            <form wire:submit.prevent="$refresh" class="row g-2 mb-4" role="search">
+                <div class="col-lg-7"><label class="form-label" for="company-search">Buscar empresa</label>
+                    <div class="input-group"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span><input id="company-search" name="q" wire:model.debounce.350ms="q" type="search" class="form-control" placeholder="Razón social, nombre comercial, RUC o ciudad" value="{{ $q }}" maxlength="120"></div>
+                </div>
+                <div class="col-lg-3"><label class="form-label" for="company-state">Estado</label><select id="company-state" name="estado" wire:model="estado" class="form-select">@foreach(['activas' => 'Activas', 'inactivas' => 'Inactivas', 'todas' => 'Todas'] as $key => $label)<option value="{{ $key }}" {{ $estado === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
+                <div class="col-lg-2 d-flex gap-2 align-items-end"><button class="btn btn-primary flex-grow-1">Filtrar</button><button type="button" wire:click="clearFilters" class="btn btn-outline-secondary" aria-label="Limpiar filtros"><i class="fa fa-undo" aria-hidden="true"></i></button></div>
+            </form>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle company-table">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>RUC / ubicación</th>
+                            <th>Contacto</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($companies as $item)<tr wire:key="company-row-{{ $item->id }}">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="company-avatar">@if($item->photo && is_file(public_path('uploads/companies/' . basename($item->photo))))<img src="{{ asset('uploads/companies/' . basename($item->photo)) }}" alt="Logo de {{ $item->comercial_name }}" loading="lazy">@else<i class="fa fa-building" aria-hidden="true"></i>@endif</div>
+                                    <div><a class="fw-bold text-decoration-none" href="{{ route('company.edit', $item) }}">{{ $item->comercial_name ?: $item->company_name }}</a>
+                                        <div class="text-muted small">{{ $item->company_name }}</div>@if((int) auth()->user()->company_id === (int) $item->id)<span class="badge bg-primary mt-1">Empresa actual</span>@endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="font-monospace">{{ $item->ruc }}</span>
+                                <div class="small text-muted">{{ $item->ciudad ?: 'Sin ciudad' }}{{ $item->pais ? ' · ' . $item->pais : '' }}</div>
+                            </td>
+                            <td>
+                                <div>{{ $item->email ?: 'Sin correo' }}</div>
+                                <div class="small text-muted">{{ $item->phone ?: 'Sin teléfono' }}</div>
+                            </td>
+                            <td><span class="badge {{ $item->status ? 'bg-success' : 'bg-secondary' }}">{{ $item->status ? 'Activa' : 'Inactiva' }}</span></td>
+                            <td class="text-end text-nowrap"><a href="{{ route('company.edit', $item) }}" class="btn btn-outline-primary btn-sm"><i class="fa fa-pen me-1" aria-hidden="true"></i>Configurar</a>@if((int) auth()->user()->company_id !== (int) $item->id)<button type="button" class="btn btn-outline-secondary btn-sm ms-1" wire:click="confirmStatus({{ $item->id }})" wire:loading.attr="disabled">{{ $item->status ? 'Desactivar' : 'Reactivar' }}</button>@endif</td>
+                        </tr>
+                        @empty<tr>
+                            <td colspan="5">
+                                <div class="text-center py-5"><i class="fa fa-building fs-1 text-muted mb-3" aria-hidden="true"></i>
+                                    <h4>No encontramos empresas</h4>
+                                    <p class="text-muted">Prueba otro nombre o cambia el filtro de estado.</p><button type="button" wire:click="showAll" class="btn btn-outline-primary">Ver todas las empresas</button>
+                                </div>
+                            </td>
+                        </tr>@endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"><span class="text-muted small">Mostrando {{ $companies->firstItem() ?: 0 }}–{{ $companies->lastItem() ?: 0 }} de {{ $companies->total() }}</span>{{ $companies->links() }}</div>
+        </div>
+    </div>
+    @if($pendingCompany)
+    <div class="modal d-block company-live-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="company-status-title" wire:keydown.escape="cancelStatus">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" wire:submit.prevent="saveStatus">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="company-status-title">{{ $pendingActive ? 'Reactivar empresa' : 'Desactivar empresa' }}</h4><button type="button" class="btn-close" wire:click="cancelStatus" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ $pendingName }}</p>
+                    <p class="text-muted">Los datos y el historial de la empresa se conservan.</p>@error('status')<div class="alert alert-danger">{{ $message }}</div>@enderror
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" wire:click="cancelStatus">Cancelar</button><button class="btn btn-primary" wire:loading.attr="disabled" type="submit">Confirmar</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+    @endif
 </div>

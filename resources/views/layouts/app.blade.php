@@ -72,6 +72,7 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-end me-1">
                         <a href="{{URL::to('/usuarios/profile')}}" class="dropdown-item">Editar Perfil</a>
+                        <a href="{{ route('mi-empresa.index') }}" class="dropdown-item">Mi empresa</a>
                         <a href="javascript:;" class="dropdown-item">Configuración</a>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Cerrar Sesión</a>

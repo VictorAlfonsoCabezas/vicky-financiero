@@ -1,16 +1,68 @@
 <div class="savings-module loans-module">
-    <div class="savings-heading"><div><div class="text-muted small mb-1">CONFIGURACI&Oacute;N / PR&Eacute;STAMOS</div><h1>Tipos de pr&eacute;stamo</h1><p>Administra condiciones, montos y documentos de tus productos de cr&eacute;dito.</p></div><button type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral1" class="btn btn-primary" wire:click="creditoSelect(0)"><i class="fa fa-plus me-2"></i>Nuevo tipo de pr&eacute;stamo</button></div>
-    <div class="card"><div class="card-header savings-filters"><div><h2 class="h5 mb-1">Cat&aacute;logo de pr&eacute;stamos</h2><span class="text-muted">{{ $prestamos->total() }} productos</span></div><div class="d-flex gap-2 flex-wrap"><input type="search" class="form-control" wire:model.debounce.350ms="search" placeholder="Buscar por nombre" aria-label="Buscar tipo de pr&eacute;stamo"><select class="form-select" wire:model="tipoFiltro" aria-label="Filtrar sistema de amortizaci&oacute;n"><option value="">Todos los sistemas</option><option value="F">Francesa</option><option value="A">Alemana</option></select></div></div>
-    <div wire:loading.delay class="px-4 py-2 text-primary" role="status">Actualizando datos...</div>
-    <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Producto</th><th>Intereses</th><th>Montos permitidos</th><th>Edades</th><th>Documentos</th><th>Acciones</th></tr></thead><tbody>
-    @forelse ($prestamos as $prestamo)
-    <tr wire:key="loan-type-{{ $prestamo->id }}"><td><strong>{{ $prestamo->name }}</strong><div class="text-muted small mt-1">{{ $prestamo->tipo == 'F' ? 'Francesa' : 'Alemana' }} @if($prestamo->diario)&middot; Diario @endif</div><span class="text-muted small">#{{ $prestamo->id }}</span></td><td><div>{{ $prestamo->interes }} % <span class="text-muted small">Inter&eacute;s</span></div><div>{{ $prestamo->interes_anual }} % <span class="text-muted small">Anual</span></div><div class="small text-muted">Desgravamen: {{ $prestamo->fondo_desgravamen }}</div></td><td><div class="text-nowrap">$ {{ number_format($prestamo->valor_minimo, 2) }} <span class="text-muted small">M&iacute;n.</span></div><div class="text-nowrap">$ {{ number_format($prestamo->valor_maximo, 2) }} <span class="text-muted small">M&aacute;x.</span></div></td><td>{{ $prestamo->edad_minima }} &ndash; {{ $prestamo->edad_maxima }} a&ntilde;os</td><td><div class="loan-documents">
-    @foreach (['letra_cambio' => ['Letra', 'cambioLetra'], 'pagare' => ['Pagar&eacute;', 'cambioPagare'], 'contrato' => ['Contrato', 'cambioContrato']] as $field => $document)
-        <button type="button" class="btn btn-sm {{ $prestamo->$field ? 'btn-outline-success' : 'savings-secondary-action' }}" wire:click="{{ $document[1] }}({{ $prestamo->id }})" aria-pressed="{{ $prestamo->$field ? 'true' : 'false' }}" title="Activar o desactivar documento"><i class="fa {{ $prestamo->$field ? 'fa-check-circle' : 'fa-minus-circle' }} me-1"></i>{!! $document[0] !!}: {{ $prestamo->$field ? 'Activo' : 'Inactivo' }}</button>
-    @endforeach
-    </div></td><td><button type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral1" class="btn btn-sm btn-outline-primary" wire:click="creditoSelect({{ $prestamo->id }})"><i class="fa fa-pen me-1"></i>Editar</button></td></tr>
-    @empty<tr><td colspan="6" class="text-center p-5 text-muted">No se encontraron tipos de pr&eacute;stamo con estos filtros.</td></tr>@endforelse
-    </tbody></table></div><div class="card-footer">{{ $prestamos->links() }}</div></div>
+    <div class="savings-heading">
+        <div>
+            <div class="text-muted small mb-1">CONFIGURACI&Oacute;N / PR&Eacute;STAMOS</div>
+            <h1>Tipos de pr&eacute;stamo</h1>
+            <p>Administra condiciones, montos y documentos de tus productos de cr&eacute;dito.</p>
+        </div><button type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral1" class="btn btn-primary" wire:click="creditoSelect(0)"><i class="fa fa-plus me-2"></i>Nuevo tipo de pr&eacute;stamo</button>
+    </div>
+    <div class="card">
+        <div class="card-header savings-filters">
+            <div>
+                <h2 class="h5 mb-1">Cat&aacute;logo de pr&eacute;stamos</h2><span class="text-muted">{{ $prestamos->total() }} productos</span>
+            </div>
+            <div class="d-flex gap-2 flex-wrap"><input type="search" class="form-control" wire:model.debounce.350ms="search" placeholder="Buscar por nombre" aria-label="Buscar tipo de pr&eacute;stamo"><select class="form-select" wire:model="tipoFiltro" aria-label="Filtrar sistema de amortizaci&oacute;n">
+                    <option value="">Todos los sistemas</option>
+                    <option value="F">Francesa</option>
+                    <option value="A">Alemana</option>
+                </select></div>
+        </div>
+        <div wire:loading.delay class="px-4 py-2 text-primary" role="status">Actualizando datos...</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Intereses</th>
+                        <th>Montos permitidos</th>
+                        <th>Edades</th>
+                        <th>Documentos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($prestamos as $prestamo)
+                    <tr wire:key="loan-type-{{ $prestamo->id }}">
+                        <td><strong>{{ $prestamo->name }}</strong>
+                            <div class="text-muted small mt-1">{{ $prestamo->tipo == 'F' ? 'Francesa' : 'Alemana' }} @if($prestamo->diario)&middot; Diario @endif</div><span class="text-muted small">#{{ $prestamo->id }}</span>
+                        </td>
+                        <td>
+                            <div>{{ $prestamo->interes }} % <span class="text-muted small">Inter&eacute;s</span></div>
+                            <div>{{ $prestamo->interes_anual }} % <span class="text-muted small">Anual</span></div>
+                            <div class="small text-muted">Desgravamen: {{ $prestamo->fondo_desgravamen }}</div>
+                        </td>
+                        <td>
+                            <div class="text-nowrap">$ {{ number_format($prestamo->valor_minimo, 2) }} <span class="text-muted small">M&iacute;n.</span></div>
+                            <div class="text-nowrap">$ {{ number_format($prestamo->valor_maximo, 2) }} <span class="text-muted small">M&aacute;x.</span></div>
+                        </td>
+                        <td>{{ $prestamo->edad_minima }} &ndash; {{ $prestamo->edad_maxima }} a&ntilde;os</td>
+                        <td>
+                            <div class="loan-documents">
+                                @foreach (['letra_cambio' => ['Letra', 'cambioLetra'], 'pagare' => ['Pagar&eacute;', 'cambioPagare'], 'contrato' => ['Contrato', 'cambioContrato']] as $field => $document)
+                                <button type="button" class="btn btn-sm {{ $prestamo->$field ? 'btn-outline-success' : 'savings-secondary-action' }}" wire:click="{{ $document[1] }}({{ $prestamo->id }})" aria-pressed="{{ $prestamo->$field ? 'true' : 'false' }}" title="Activar o desactivar documento"><i class="fa {{ $prestamo->$field ? 'fa-check-circle' : 'fa-minus-circle' }} me-1"></i>{!! $document[0] !!}: {{ $prestamo->$field ? 'Activo' : 'Inactivo' }}</button>
+                                @endforeach
+                            </div>
+                        </td>
+                        <td><button type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral1" class="btn btn-sm btn-outline-primary" wire:click="creditoSelect({{ $prestamo->id }})"><i class="fa fa-pen me-1"></i>Editar</button></td>
+                    </tr>
+                    @empty<tr>
+                        <td colspan="6" class="text-center p-5 text-muted">No se encontraron tipos de pr&eacute;stamo con estos filtros.</td>
+                    </tr>@endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">{{ $prestamos->links() }}</div>
+    </div>
     {{-- MODAL ENTREGAR CREDITO--}}
     <div wire:ignore.self class="modal fade" id="modalGeneral1" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
@@ -73,11 +125,11 @@
                                         <select id="plan_cuenta_id" name="plan_cuenta_id" class="form-control" wire:model="plan_cuenta_id" wire:key="plan_cuenta_id">
                                             <option value="" selected=""> --SELECCIONE-- </option>
                                             @foreach($planCuentas as $cuenta)
-                                                <option value="{{ $cuenta->id }}"> {{ $cuenta->codigo }} - {{ $cuenta->nombre }} </option>
+                                            <option value="{{ $cuenta->id }}"> {{ $cuenta->codigo }} - {{ $cuenta->nombre }} </option>
                                             @endforeach
                                         </select>
-                                        @error('plan_cuenta_id') 
-                                            <span class="text-danger">{{ $message }}</span> 
+                                        @error('plan_cuenta_id')
+                                        <span class="text-danger">{{ $message }}</span>
                                         @enderror
                                     </div>
                                 </section>
@@ -157,7 +209,7 @@
                                 <section class="col-12 col-md-3">
                                     <div class="form-group">
                                         <div class="custom-control custom-switch">
-                                            <input type="checkbox" class="custom-control-input" id="lleva_contabilidad_switch" 
+                                            <input type="checkbox" class="custom-control-input" id="lleva_contabilidad_switch"
                                                 wire:model.defer="lleva_contabilidad">
                                             <label class="custom-control-label" for="lleva_contabilidad_switch">
                                                 Lleva Contabilidad

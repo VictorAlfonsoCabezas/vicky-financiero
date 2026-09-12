@@ -12,6 +12,35 @@ use Tests\TestCase;
 
 class CompanyModuleTest extends TestCase
 {
+    public function testOwnCompanyRouteAndEditorOnlySaveTheSessionCompany()
+    {
+        $this->get('/mi-empresa?companyId=2')->assertOk()->assertSee('Mi empresa')->assertDontSee('Volver a empresas');
+        $editor = \Livewire\Livewire::test(\App\Http\Livewire\MiEmpresa\MiEmpresaEditor::class, ['companyId' => 2]);
+        $editor->assertSet('data.company_name', 'Primera');
+        $editor->set('data', $this->input())->call('save')->assertHasNoErrors();
+        $this->assertSame('CAJA ÁGUILA', Company::find(1)->company_name);
+        $this->assertSame('Segunda', Company::find(2)->company_name);
+        $this->assertSame(2, Company::count());
+    }
+
+    public function testOwnCompanyRejectsAnotherCompanyTokenAndCreationToken()
+    {
+        foreach (['2', 'new'] as $id) {
+            \Livewire\Livewire::test(\App\Http\Livewire\MiEmpresa\MiEmpresaEditor::class)
+                ->set('record', \Illuminate\Support\Facades\Crypt::encryptString($id))->assertForbidden();
+        }
+        $this->assertSame('Segunda', Company::find(2)->company_name);
+        $this->assertSame(2, Company::count());
+    }
+
+    public function testOwnCompanyRequiresAnAuthenticatedUserWithACompany()
+    {
+        auth()->user()->company_id = null;
+        $this->get('/mi-empresa')->assertForbidden();
+        auth()->logout();
+        $this->get('/mi-empresa')->assertRedirect('/login');
+    }
+
     public function testLivewireSearchAndStatusUpdateWithoutNavigating()
     {
         $component = \Livewire\Livewire::test(\App\Http\Livewire\Company\CompanyIndex::class);
