@@ -2598,8 +2598,8 @@ class CreditosComponet extends Component
         $this->validate(
             [
                 'formaPagoEntregaCredito' => 'required',
-                //'cuenta_credito' => ($this->formaPagoEntregaCredito == 0 || $cuentaAcreditar == 0) ? 'required' : '',
-                'cuenta_credito' => 'required',
+                'cuenta_credito' => ($this->formaPagoEntregaCredito == 0 || $cuentaAcreditar == 0) ? 'required' : '',
+                //'cuenta_credito' => 'required',
                 'documento_desembolso' => ($this->obligarCuentaInterna == 0) ? 'required' : '',
                 'banco_id' => ($this->obligarCuentaInterna == 0 && !$esEfectivo) ? 'required' : '',
             ],
@@ -2612,6 +2612,21 @@ class CreditosComponet extends Component
         );
 
         $id = $this->creditoDineroEntregar;
+        if ($cuentaAcreditar == 0) {
+            $respuesta = $this->verficarExisteCuentaDescargos($id, $this->cuenta_credito);
+            if (!$respuesta) {
+                $color = 'danger';
+                $mensaje = 'No se puede aprobar el crédito, porque no existe una cuenta de descargos';
+                $data = [
+                    'titulo' => 'Notificación',
+                    'color' => $color,
+                    'mensaje' => $mensaje
+                ];
+                $this->dispatchBrowserEvent('alerta', $data);
+                $this->generarListadeCreditos();
+                return;
+            }
+        }
         $credito = CreditFolderHeader::find($id);
         if (!$credito) {
             $this->dispatchBrowserEvent('alerta', [
@@ -2729,10 +2744,12 @@ class CreditosComponet extends Component
 
             // 1. Generar Movimientos
             $movimiento = null;
+            //dd($movimiento, $esEfectivo, $id, $llevaContabilidad, $cuentaContableHaber);
             if ($esEfectivo) {
-                $this->descargarBalorBoveda($id);
                 $movimiento = $this->movimientoCreditoCuentaEmpresa($id, $llevaContabilidad, $cuentaContableHaber);
+                $this->movimientoCreditoCuentaCliente($id, $this->cuenta_credito);
             } else {
+                $this->descargarBalorBoveda($id);
                 $movimiento = $this->movimientoCreditoCuentaEmpresa($id, $llevaContabilidad, $cuentaContableHaber);
             }
 
@@ -3621,54 +3638,31 @@ class CreditosComponet extends Component
     public function movimientoCreditoCuentaCliente($credito_id, $idCuenta)
     {
         $credito = CreditFolderHeader::find($credito_id);
-        if (!$credito) {
-            throw new \Exception('No existe el credito para generar el movimiento en cuenta del cliente.');
-        }
-
         $customer = Customer::find($credito->customer_id);
-        if (!$customer) {
-            throw new \Exception('No existe el cliente del credito para generar el movimiento en cuenta.');
-        }
-
         $cuenta = CustomerTipoAhorros::where('company_id', Auth::user()->company_id)
             ->where('customer_id', $customer->id)
             ->where('id', $idCuenta)
             ->first();
-        if (!$cuenta) {
-            throw new \Exception('No existe la cuenta de ahorro seleccionada para acreditar el credito.');
-        }
-
         $operacion = "IN";
         $transaction = TypeTransaction::where('company_id', Auth::user()->company_id)
             ->where('name_corto', $operacion)
             ->where('action', 'S')
             ->where('afecta', 'C')
             ->first();
-        if (!$transaction) {
-            throw new \Exception('No existe el tipo de transaccion IN configurado.');
-        }
-
         $tabla = 'customer_movimientos';
         $code = BaseController::generarCodigo($tabla, 9);
         $valorTotal = BaseController::valorTotal();
 
         $prestamos = Prestamos::find($credito->tipo_prestamo);
-        if (!$prestamos) {
-            throw new \Exception('El credito no tiene un tipo de prestamo valido configurado.');
-        }
-
         $dineroEntregar = $credito->valor_solicitado;
         if ($prestamos->suma_valores_gastos_prestamo) {
-            $dineroEntregar = ($credito->valor_solicitado) - $credito->encaje_valor - $credito->gasto_administrativo;
-
-            //if ($prestamos->letra_credito == 'LETRA') {
-            //    $dineroEntregar = $credito->valor_solicitado;
-            //} else {
-            //    $dineroEntregar = ($credito->valor_solicitado) - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto  -  $credito->segundo_gasto  - $credito->tercer_gasto;
-            //}
-        } else if ($prestamos->suma_valores_gastos_prestamo == false) {
-            //$dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo;
-            $dineroEntregar = $credito->valor_solicitado - $credito->suma_valores_gastos_prestamo - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto - $credito->segundo_gasto - $credito->tercer_gasto;
+            if ($prestamos->letra_credito == 'LETRA') {
+                $dineroEntregar = $credito->valor_solicitado;
+            } else {
+                $dineroEntregar = ($credito->valor_solicitado) - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto  -  $credito->segundo_gasto  - $credito->tercer_gasto;
+            }
+        } else if ($credito->suma_valores_gastos_prestamo > 0) {
+            $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo;
         } else {
             $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto - $credito->segundo_gasto - $credito->tercer_gasto;
         }
@@ -3696,7 +3690,9 @@ class CreditosComponet extends Component
             "hour_created" => date("H:i:s"),
             "banco_id" => $this->banco_id,
         ];
+        
         $movimientos = CustomerMovimiento::create($data);
+        //dd('entra , movimiento creado');
         CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $dineroEntregar, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
         BaseController::guardarValoresCartola($cuenta->id, $customer->id, $movimientos, $transaction);
         BaseController::enviarMail($movimientos);
@@ -3721,7 +3717,7 @@ class CreditosComponet extends Component
         $whatsapp->save();
 
         $color = 'success';
-        $mensaje = 'El valor fue acreditadp correctamente';
+        $mensaje = 'El valor fue acreditado correctamente';
         $data = [
             'titulo' => 'Notificación',
             'color' => $color,
@@ -3729,6 +3725,7 @@ class CreditosComponet extends Component
         ];
         $this->dispatchBrowserEvent('alerta', $data);
     }
+
     public function descargarBalorBoveda($id)
     {
         $credito = CreditFolderHeader::find($id);
@@ -3930,7 +3927,10 @@ class CreditosComponet extends Component
         ]);
     }
 
-    public function updatingSearch() { $this->resetPage(); }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     public function mount($customer_id)
     {
