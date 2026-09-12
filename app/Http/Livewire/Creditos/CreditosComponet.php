@@ -3655,16 +3655,28 @@ class CreditosComponet extends Component
 
         $prestamos = Prestamos::find($credito->tipo_prestamo);
         $dineroEntregar = $credito->valor_solicitado;
-        if ($prestamos->suma_valores_gastos_prestamo) {
-            if ($prestamos->letra_credito == 'LETRA') {
-                $dineroEntregar = $credito->valor_solicitado;
+
+        if ($prestamos->gasto_administrativo > 0) {
+            if ($prestamos->administrativo_porcentaje_valor == 'VALOR') {
+                $dineroEntregar = $credito->valor_solicitado - $prestamos->gasto_administrativo;
             } else {
-                $dineroEntregar = ($credito->valor_solicitado) - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto  -  $credito->segundo_gasto  - $credito->tercer_gasto;
+                $dineroEntregar = $credito->valor_solicitado - (($credito->valor_solicitado * $prestamos->gasto_administrativo) / 100);
             }
-        } else if ($credito->suma_valores_gastos_prestamo > 0) {
-            $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo;
         } else {
-            $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto - $credito->segundo_gasto - $credito->tercer_gasto;
+            $dineroEntregar = $credito->valor_solicitado;
+            /*
+            if ($prestamos->suma_valores_gastos_prestamo) {
+                if ($prestamos->letra_credito == 'LETRA') {
+                    $dineroEntregar = $credito->valor_solicitado;
+                } else {
+                    $dineroEntregar = ($credito->valor_solicitado) - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto  -  $credito->segundo_gasto  - $credito->tercer_gasto;
+                }
+            } else if ($credito->suma_valores_gastos_prestamo > 0) {
+                $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo;
+            } else {
+                $dineroEntregar = $credito->valor_solicitado - $credito->encaje_valor - $credito->gasto_administrativo - $credito->primer_gasto - $credito->segundo_gasto - $credito->tercer_gasto;
+            }
+                */
         }
 
         $data = [
@@ -3690,7 +3702,7 @@ class CreditosComponet extends Component
             "hour_created" => date("H:i:s"),
             "banco_id" => $this->banco_id,
         ];
-        
+
         $movimientos = CustomerMovimiento::create($data);
         //dd('entra , movimiento creado');
         CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $dineroEntregar, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
