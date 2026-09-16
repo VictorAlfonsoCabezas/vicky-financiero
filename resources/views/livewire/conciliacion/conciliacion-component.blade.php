@@ -9,25 +9,24 @@
         <div class="panel-body">
             <form wire:submit.prevent="applyFilters">
                 <div class="row g-3">
-                    <div class="col-md-3 col-xl-2"><label for="cb-desde" class="form-label">Desde</label><input id="cb-desde" type="date" class="form-control" wire:model.defer="filters.desde" required></div>
-                    <div class="col-md-3 col-xl-2"><label for="cb-hasta" class="form-label">Hasta</label><input id="cb-hasta" type="date" class="form-control" wire:model.defer="filters.hasta" required></div>
+                    <div class="col-md-3 col-xl-2"><label for="cb-desde" class="form-label">Desde</label><input id="cb-desde" type="date" class="form-control" wire:model.lazy="filters.desde" required></div>
+                    <div class="col-md-3 col-xl-2"><label for="cb-hasta" class="form-label">Hasta</label><input id="cb-hasta" type="date" class="form-control" wire:model.lazy="filters.hasta" required></div>
                     <div class="col-md-6 col-xl-8">
                         <label for="cb-banco" class="form-label">Banco / cuenta bancaria</label>
-                        <select id="cb-banco" class="form-select" wire:model.defer="filters.banco">
+                        <select id="cb-banco" class="form-select" wire:model.lazy="filters.banco">
                             <option value="">Todos (con y sin banco)</option>
                             <option value="sin_banco">Sin banco / cuenta identificada (incluye efectivo)</option>
                             <option value="bancarios">Solo movimientos con banco / cuenta identificada</option>
                             @foreach ($bancos as $banco)<option value="{{ $banco->id }}">{{ $banco->nombre }} · {{ $banco->numero_cuenta }}</option>@endforeach
                         </select>
                     </div>
-                    <div class="col-md-4 col-xl-3"><label for="cb-forma" class="form-label">Forma de pago</label><select id="cb-forma" class="form-select" wire:model.defer="filters.forma"><option value="">Todas</option>@foreach ($formas as $forma)<option value="{{ $forma->id }}">{{ $forma->nombre }}</option>@endforeach</select></div>
-                    <div class="col-md-4 col-xl-3"><label for="cb-tipo" class="form-label">Tipo de movimiento</label><select id="cb-tipo" class="form-select" wire:model.defer="filters.tipo"><option value="">Todos</option>@foreach ($tipos as $tipo)<option value="{{ $tipo->id }}">{{ $tipo->name }}</option>@endforeach</select></div>
-                    <div class="col-md-4 col-xl-2"><label for="cb-estado" class="form-label">Estado</label><select id="cb-estado" class="form-select" wire:model.defer="filters.estado"><option value="activos">Activos</option><option value="anulados">Anulados</option><option value="todos">Todos</option></select></div>
-                    <div class="col-xl-4"><label for="cb-buscar" class="form-label">Buscar</label><input id="cb-buscar" class="form-control" wire:model.defer="filters.buscar" maxlength="120" placeholder="Cliente, identificación, comprobante o referencia"></div>
+                    <div class="col-md-4 col-xl-3"><label for="cb-forma" class="form-label">Forma de pago</label><select id="cb-forma" class="form-select" wire:model.lazy="filters.forma"><option value="">Todas</option>@foreach ($formas as $forma)<option value="{{ $forma->id }}">{{ $forma->nombre }}</option>@endforeach</select></div>
+                    <div class="col-md-4 col-xl-3"><label for="cb-tipo" class="form-label">Tipo de movimiento</label><select id="cb-tipo" class="form-select" wire:model.lazy="filters.tipo"><option value="">Todos</option>@foreach ($tipos as $tipo)<option value="{{ $tipo->id }}">{{ $tipo->name }}</option>@endforeach</select></div>
+                    <div class="col-md-4 col-xl-2"><label for="cb-estado" class="form-label">Estado</label><select id="cb-estado" class="form-select" wire:model.lazy="filters.estado"><option value="activos">Activos</option><option value="anulados">Anulados</option><option value="todos">Todos</option></select></div>
+                    <div class="col-xl-4"><label for="cb-buscar" class="form-label">Buscar</label><input id="cb-buscar" class="form-control" wire:model.debounce.400ms="filters.buscar" maxlength="120" placeholder="Cliente, identificación, comprobante o referencia"></div>
                 </div>
                 @if ($errors->any())<div class="alert alert-danger mt-3" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
                 <div class="d-flex flex-wrap gap-2 mt-3">
-                    <button class="btn btn-primary" type="submit" wire:loading.attr="disabled"><i class="fa fa-search me-1"></i> Consultar</button>
                     <button class="btn btn-default" type="button" wire:click="clearFilters" wire:loading.attr="disabled">Limpiar</button>
                     <button class="btn btn-success ms-md-auto" type="button" wire:click="exportExcel" wire:loading.attr="disabled"><i class="fa fa-file-excel me-1"></i> Excel</button>
                     <button class="btn btn-outline-danger" type="button" wire:click="exportPdf" wire:loading.attr="disabled"><i class="fa fa-file-pdf me-1"></i> PDF</button>

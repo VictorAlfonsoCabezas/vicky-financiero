@@ -22,7 +22,7 @@ El selector de banco ofrece Todos (opción inicial), Sin banco/cuenta identifica
 - Se excluyen de los importes bancarios los anulados, los movimientos sin banco identificado y las acciones distintas de `S`/`R`.
 - El neto es entradas menos salidas; no se usa `saldo_general` ni se afirma que sea el saldo bancario.
 - Los valores y la dirección se muestran tal como están registrados; el reporte no corrige inconsistencias históricas de captura.
-- Consultar aplica los filtros. Excel y PDF aplican los filtros actuales antes de exportar.
+- Todos los filtros se aplican automáticamente y vuelven a la primera página. La búsqueda espera 400 ms al escribir. Un rango inválido muestra el error y conserva el último resultado válido. No se necesita un botón Consultar. Excel y PDF aplican los filtros actuales antes de exportar.
 - Excel contiene todas las filas filtradas y distingue valor original de entrada/salida computable. Conserva referencias como texto y evita interpretar fórmulas ingresadas en campos de texto.
 - PDF incluye filtros y totales. Se limita a 2.000 movimientos para controlar el consumo de memoria; para períodos mayores se ofrece Excel, que procesa la consulta por bloques.
 

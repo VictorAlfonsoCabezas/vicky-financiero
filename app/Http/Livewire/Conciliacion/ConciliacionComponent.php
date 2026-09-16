@@ -23,6 +23,11 @@ class ConciliacionComponent extends Component
         $this->filters = $this->applied = BankMovementReport::defaults();
     }
 
+    public function updatedFilters($value, $key)
+    {
+        $this->applyFilters();
+    }
+
     public function applyFilters()
     {
         try {

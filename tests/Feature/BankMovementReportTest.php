@@ -156,7 +156,7 @@ class BankMovementReportTest extends TestCase
         $this->assertCount(25, $component->viewData('movimientos'));
         $component->call('gotoPage', 2);
         $this->assertCount(1, $component->viewData('movimientos'));
-        $component->set('filters.buscar', 'inexistente')->call('applyFilters')->assertSee('No se encontraron movimientos');
+        $component->set('filters.buscar', 'inexistente')->assertSee('No se encontraron movimientos');
         $component->assertSet('page', 1);
     }
 
