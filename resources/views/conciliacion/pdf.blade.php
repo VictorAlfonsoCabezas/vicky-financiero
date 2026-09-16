@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Movimientos bancarios</title>
+<style>body{font-family:DejaVu Sans,sans-serif;font-size:9px;color:#263238}h1{font-size:18px}table{width:100%;border-collapse:collapse}th,td{padding:5px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;word-wrap:break-word}th{background:#263238;color:white}thead{display:table-header-group}tr{page-break-inside:avoid}.number{text-align:right}.muted{color:#666}</style></head><body>
+<h1>Conciliación bancaria · Reporte de movimientos</h1>
+<p>Período: {{ $filters['desde'] }} al {{ $filters['hasta'] }} · Estado: {{ $filters['estado'] }} · Alcance: {{ $labels['alcance'] }}<br>Banco: {{ $labels['banco'] }} · Forma de pago: {{ $labels['forma'] }} · Tipo: {{ $labels['tipo'] }} · Búsqueda: {{ $filters['buscar'] ?: '—' }}</p>
+<p><strong>{{ $totales->cantidad }} movimientos · Entradas: {{ number_format($totales->entradas, 2) }} · Salidas: {{ number_format($totales->salidas, 2) }} · Neto: {{ number_format($totales->entradas - $totales->salidas, 2) }}</strong></p>
+<p class="muted">Totales de movimientos activos con banco/cuenta identificada y dirección reconocida. El neto no es el saldo del extracto. Registros por revisar: {{ $totales->revisar }}.</p>
+<table><thead><tr><th>Fecha</th><th>Banco / cuenta</th><th>Comprobante / referencia</th><th>Cliente</th><th>Concepto / forma</th><th>Dirección</th><th>Valor</th><th>Estado / observación</th></tr></thead><tbody>
+@forelse ($movimientos as $m)<tr><td>{{ $m->date_created }}<br>{{ $m->hour_created }}</td><td>{{ $m->banco_nombre ?? 'Sin banco/cuenta identificada' }}<br>{{ $m->banco_cuenta }}</td><td>{{ $m->comprobante ?: $m->code }}<br>{{ $m->numero_deposito }}</td><td>{{ $m->customer_name }}<br>{{ $m->customer_ruc }}</td><td>{{ $m->type_transaction_name }}<br>{{ $m->forma_pago_name }}</td><td>{{ $m->type_transaction_action === 'S' ? 'Entrada' : ($m->type_transaction_action === 'R' ? 'Salida' : 'Por revisar') }}</td><td class="number">{{ number_format($m->valor_movimiento, 2) }}</td><td>{{ $m->status ? 'Activo' : 'Anulado' }}<br>{{ $m->observation }}</td></tr>
+@empty<tr><td colspan="8">No se encontraron movimientos.</td></tr>@endforelse
+</tbody></table></body></html>
