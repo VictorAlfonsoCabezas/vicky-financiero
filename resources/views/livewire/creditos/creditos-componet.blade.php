@@ -304,7 +304,7 @@
                                         </td>
                                         <td>
                                             @if ($credit->totalLetrasImpagas > 0)
-                                            <span class="badge badge-{{ config('constants.STATUS_PRESTAMO.' . $credit->status . '.color') }}">
+                                            <span class="badge bg-{{ config('constants.STATUS_PRESTAMO.' . $credit->status . '.color') }}">
                                                 {{ config('constants.STATUS_PRESTAMO.' . $credit->status . '.label') }}
                                             </span>
                                             @else
