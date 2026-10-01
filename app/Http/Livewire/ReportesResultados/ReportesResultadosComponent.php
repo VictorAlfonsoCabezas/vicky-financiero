@@ -46,6 +46,7 @@ class ReportesResultadosComponent extends Component
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';

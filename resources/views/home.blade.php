@@ -9,7 +9,7 @@
                     <div class="text-center">
                         <div class="row">
                             <div class="col-5 text-center">
-                                <img src="uploads/companies/{{$company->photo}}" alt="user-avatar" class="img-circle img-fluid" style="max-width: 130px; height: auto;">
+                                <img src="{{ $company->logo_url }}" alt="user-avatar" class="img-circle img-fluid" style="max-width: 130px; height: auto;">
                             </div>
                             <div class="col-7">
                                 <h2 class="lead"><b>{{$company->comercial_name}}</b></h2>

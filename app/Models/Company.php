@@ -32,6 +32,16 @@ class Company extends Model {
         'caja_boveda',
     ];
 
+    public function getLogoPathAttribute()
+    {
+        return app(\App\Services\CompanyLogoStorage::class)->resolve($this->photo);
+    }
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo_path ? route('company.logo', $this->id) : asset('img/no-disponible.png');
+    }
+
     public function puedeContabilizar($fecha = null)
     {
         if (!$this->contabilidad || $this->fecha_inicio_contable === null) {

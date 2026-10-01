@@ -12,6 +12,110 @@ use Tests\TestCase;
 
 class CompanyModuleTest extends TestCase
 {
+    private $logoTestRoot;
+
+    protected function tearDown(): void
+    {
+        if ($this->logoTestRoot) \Illuminate\Support\Facades\File::deleteDirectory($this->logoTestRoot);
+        parent::tearDown();
+    }
+
+    public function testLogoSurvivesLossOfPublicCopyAndAnotherSave()
+    {
+        $writer = app(\App\Services\CompanyWriter::class);
+        $company = Company::find(1);
+        $writer->save($company, [], UploadedFile::fake()->image('logo.png'));
+        $name = $company->photo;
+        $public = public_path('uploads/companies/' . $name);
+        $hash = hash_file('sha256', $public);
+        $archive = app(\App\Services\CompanyLogoStorage::class)->archivePath($name);
+        $this->assertSame($hash, hash_file('sha256', $archive));
+        unlink($public);
+        $this->get('/company/1/logo')->assertOk();
+        $this->assertSame($hash, hash_file('sha256', $public));
+        $writer->save(Company::find(1), ['photo' => null, 'phone' => '123']);
+        $this->assertSame($name, Company::find(1)->photo);
+        $this->assertSame($hash, hash_file('sha256', $archive));
+    }
+
+    public function testReplacementThroughOwnCompanyKeepsPreviousLogo()
+    {
+        $company = Company::find(1);
+        app(\App\Services\CompanyWriter::class)->save($company, [], UploadedFile::fake()->image('first.png'));
+        $previous = $company->photo;
+        app(\App\Services\MiEmpresaWriter::class)->save($company, [], UploadedFile::fake()->image('second.png'));
+        $this->assertNotSame($previous, Company::find(1)->photo);
+        $this->assertFileExists(public_path('uploads/companies/' . $previous));
+        $this->assertFileExists(app(\App\Services\CompanyLogoStorage::class)->archivePath($previous));
+    }
+
+    public function testLogoCanBeServedWhenPublicDirectoryCannotBeRestored()
+    {
+        $company = Company::find(1);
+        app(\App\Services\CompanyWriter::class)->save($company, [], UploadedFile::fake()->image('logo.png'));
+        $blocker = $this->logoTestRoot . '/blocked-public';
+        file_put_contents($blocker, 'not a directory');
+        $this->app->instance('path.public', $blocker);
+        $this->get('/company/1/logo')->assertOk()->assertHeader('content-type', 'image/png');
+        $this->assertFileExists(app(\App\Services\CompanyLogoStorage::class)->archivePath($company->photo));
+    }
+
+    public function testLogoResolverRejectsPathsOutsideLogoDirectory()
+    {
+        $storage = app(\App\Services\CompanyLogoStorage::class);
+        foreach (['../secret.png', '..\\secret.png', '.', '..', '/secret.png'] as $name) {
+            $this->assertNull($storage->resolve($name));
+        }
+    }
+
+    public function testDatabaseFailureKeepsPreviousReferenceAndFiles()
+    {
+        $company = Company::find(1);
+        $writer = app(\App\Services\CompanyWriter::class);
+        $writer->save($company, [], UploadedFile::fake()->image('first.png'));
+        $previous = $company->photo;
+        try {
+            $writer->save($company, ['nonexistent_column' => true], UploadedFile::fake()->image('second.png'));
+            $this->fail('Expected database failure');
+        } catch (\Illuminate\Database\QueryException $error) {
+            $this->assertSame($previous, Company::find(1)->photo);
+            $this->assertFileExists(public_path('uploads/companies/' . $previous));
+            $this->assertFileExists(app(\App\Services\CompanyLogoStorage::class)->archivePath($previous));
+        }
+    }
+
+    public function testStorageFailureDoesNotChangeCompany()
+    {
+        $company = Company::find(1);
+        $writer = app(\App\Services\CompanyWriter::class);
+        $writer->save($company, [], UploadedFile::fake()->image('first.png'));
+        $previous = $company->photo;
+        $blocker = $this->logoTestRoot . '/not-a-directory';
+        file_put_contents($blocker, 'blocked');
+        config(['company_logos.root' => $blocker]);
+        try {
+            $writer->save($company, [], UploadedFile::fake()->image('second.png'));
+        } catch (\Throwable $error) {
+            $this->assertSame($previous, Company::find(1)->photo);
+            $this->assertFileExists(public_path('uploads/companies/' . $previous));
+            return;
+        }
+        $this->fail('Expected storage failure');
+    }
+
+    public function testLegacyLogoIsPreservedAndRecovered()
+    {
+        $name = 'legacy.png';
+        $legacy = config('company_logos.legacy_root');
+        \Illuminate\Support\Facades\File::ensureDirectoryExists($legacy);
+        $upload = UploadedFile::fake()->image($name);
+        copy($upload->getRealPath(), $legacy . '/' . $name);
+        DB::table('company')->where('id', 1)->update(['photo' => $name]);
+        $this->get('/company/1/edit')->assertOk()->assertSee('/company/1/logo');
+        $this->assertFileExists(public_path('uploads/companies/' . $name));
+        $this->assertFileExists(app(\App\Services\CompanyLogoStorage::class)->archivePath($name));
+        $this->assertSame($name, Company::find(1)->photo);
+    }
     public function testOwnCompanyRouteAndEditorOnlySaveTheSessionCompany()
     {
         $this->get('/mi-empresa?companyId=2')->assertOk()->assertSee('Mi empresa')->assertDontSee('Volver a empresas');
@@ -115,6 +219,9 @@ class CompanyModuleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->logoTestRoot = storage_path('framework/testing/company-logos-' . \Illuminate\Support\Str::uuid());
+        $this->app->instance('path.public', $this->logoTestRoot . '/public');
+        config(['company_logos.root' => $this->logoTestRoot . '/archive', 'company_logos.legacy_root' => $this->logoTestRoot . '/legacy']);
         config(['database.default' => 'company_test', 'database.connections.company_test' => [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
         ]]);

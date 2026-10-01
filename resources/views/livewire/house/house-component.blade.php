@@ -22,7 +22,7 @@
                         <div class="col-5 text-center">
 
                             @if (Auth::user()->company->photo !== '' && Auth::user()->company->photo !== null)
-                            <img alt="{{ Auth::user()->company->comercial_name }}" src="uploads/companies/{{ Auth::user()->company->photo }}" title="{{ Auth::user()->company->comercial_name }}" alt="user-avatar" class="img-circle img-fluid" />
+                            <img alt="{{ Auth::user()->company->comercial_name }}" src="{{ Auth::user()->company->logo_url }}" title="{{ Auth::user()->company->comercial_name }}" alt="user-avatar" class="img-circle img-fluid" />
                             @else
                             <img src="{{ URL::asset('img/no-disponible.png') }}" alt="{{ Auth::user()->company->comercial_name }}" title="{{ Auth::user()->company->comercial_name }}" alt="user-avatar" class="img-circle img-fluid" />
                             @endif

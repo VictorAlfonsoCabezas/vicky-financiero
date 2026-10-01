@@ -419,6 +419,7 @@ class CreditController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -452,6 +453,7 @@ class CreditController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -511,6 +513,7 @@ class CreditController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -563,6 +566,7 @@ class CreditController extends Controller
         CreditFolderHeader::where('company_id', Auth::user()->company_id)->findOrFail($id);
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -928,6 +932,7 @@ class CreditController extends Controller
         $data['valorComparar'] = round($valorVer, 2);
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -1019,6 +1024,7 @@ class CreditController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -1471,6 +1477,7 @@ class CreditController extends Controller
         $company = Company::find(Auth::user()->company_id);
         $customer = Customer::find($customer);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -1510,6 +1517,7 @@ class CreditController extends Controller
         $company = Company::find(Auth::user()->company_id);
         $customer = Customer::find($customer);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -1551,6 +1559,7 @@ class CreditController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';

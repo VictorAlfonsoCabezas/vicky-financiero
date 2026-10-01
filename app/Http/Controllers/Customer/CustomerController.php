@@ -455,6 +455,7 @@ class CustomerController extends Controller
     {
         $company = Company::find(Auth::user()->company_id);
         if ($company->photo != null && $company->photo != '') {
+            app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
                 $path = 'codev/negro.png';
@@ -655,6 +656,7 @@ class CustomerController extends Controller
             $customerMovimientosCalculadora = CustomerMovimientoDetalleCalculadora::where('customer_movimientos_id', $customerMovimientos->id)->get();
             $company = Company::find(Auth::user()->company_id);
             if ($company->photo != null && $company->photo != '') {
+                app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
                 $path = 'uploads/companies/' . $company->photo;
                 if (!file_exists(public_path($path))) {
                     $path = 'codev/negro.png';

@@ -45,7 +45,7 @@
                         @forelse($companies as $item)<tr wire:key="company-row-{{ $item->id }}">
                             <td>
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="company-avatar">@if($item->photo && is_file(public_path('uploads/companies/' . basename($item->photo))))<img src="{{ asset('uploads/companies/' . basename($item->photo)) }}" alt="Logo de {{ $item->comercial_name }}" loading="lazy">@else<i class="fa fa-building" aria-hidden="true"></i>@endif</div>
+                                    <div class="company-avatar">@if($item->logo_path)<img src="{{ $item->logo_url }}" alt="Logo de {{ $item->comercial_name }}" loading="lazy">@else<i class="fa fa-building" aria-hidden="true"></i>@endif</div>
                                     <div><a class="fw-bold text-decoration-none" href="{{ route('company.edit', $item) }}">{{ $item->comercial_name ?: $item->company_name }}</a>
                                         <div class="text-muted small">{{ $item->company_name }}</div>@if((int) auth()->user()->company_id === (int) $item->id)<span class="badge bg-primary mt-1">Empresa actual</span>@endif
                                     </div>

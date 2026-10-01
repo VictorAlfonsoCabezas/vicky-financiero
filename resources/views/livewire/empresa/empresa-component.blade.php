@@ -33,7 +33,7 @@
                                         <td>
                                             @if ($com->photo !== '' && $com->photo !== null)
                                                 <img alt="{{ $com->comercial_name }}"
-                                                    src="uploads/companies/{{ $com->photo }}" id="logo"
+                                                    src="{{ $com->logo_url }}" id="logo"
                                                     title="{{ $com->comercial_name }}"
                                                     class="img-thumbnail img-responsive superbox-img photo"
                                                     style="width: 55px;" />

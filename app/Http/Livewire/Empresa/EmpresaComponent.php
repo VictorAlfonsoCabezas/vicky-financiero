@@ -7,6 +7,7 @@ use Livewire\Component;
 
 class EmpresaComponent extends Component
 {
+    use \Livewire\WithFileUploads;
 
     public $id_seleccionado = 0;
     public $company_name = '';
@@ -24,7 +25,7 @@ class EmpresaComponent extends Component
     public $company_type = '';
     public $desgravament = '';
     public $mora = '';
-    public $photo = '';
+    public $photo;
     public $request = '';
 
     public function abrirModal($id)
@@ -36,6 +37,7 @@ class EmpresaComponent extends Component
 
     private function limpiarFormulario()
     {
+        $this->photo = null;
         $this->reset(['company_name','comercial_name','ruc','legal_representative','ciudad','pais','porcentaje_retener_credito','address','phone','email','company_type','desgravament','mora']);
         $this->resetErrorBag();
         $this->resetValidation();
@@ -43,6 +45,7 @@ class EmpresaComponent extends Component
 
     public function storeCompany()
     {
+        $this->validate(['photo' => (new \App\Http\Requests\SaveCompanyRequest())->rules()['photo']]);
         $this->validate([
             "company_name" => "required",
             "comercial_name" => "required",
@@ -78,16 +81,8 @@ class EmpresaComponent extends Component
         $company->desgravamen = $this->desgravamen;
         $company->mora = $this->mora;
 
-        if ($this->photo !== null) {
-            $path_archivo_destino = 'public/uploads/companies';
-            if (!Company::exists($path_archivo_destino)) {
-                Company::makeDirectory($path_archivo_destino, 0777, true);
-            }
-            $nombre = time() . '.' . $this->photo->getClientOriginalExtension();
-            $this->photo->storeAs('uploads/companies', $nombre, 'public');
-            $company->photo = $nombre;
-        }
-        $company->save();
+        app(\App\Services\CompanyWriter::class)->save($company, [], $this->photo);
+        $this->photo = null;
         $this->dispatchBrowserEvent('closeModal');
     }
 

@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 
+// Logos were already public assets; also serve the persistent copy when needed.
+Route::get('company/{company}/logo', 'Company\CompanyLogoController@show')->name('company.logo');
+
 // Acceso de clientes (Caja Web), además del acceso administrativo /login.
 Route::get('login2', 'Auth\Login2Controller@showLoginForm')->name('login2');
 Route::post('login2', 'Auth\Login2Controller@login');

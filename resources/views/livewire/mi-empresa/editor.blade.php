@@ -13,10 +13,10 @@
                 <div class="mi-empresa-form-sidebar">
                     <div class="card border-0 mb-3">
                         <div class="card-body text-center">
-                            <div class="mi-empresa-logo-preview mx-auto mb-3"><img id="mi-empresa-logo" src="{{ $photo && !$errors->has('photo') ? $photo->temporaryUrl() : ($company->photo && is_file(public_path('uploads/companies/' . basename($company->photo))) ? asset('uploads/companies/' . basename($company->photo)) : asset('img/no-disponible.png')) }}" alt="Logotipo de la empresa"></div>
+                            <div class="mi-empresa-logo-preview mx-auto mb-3"><img id="mi-empresa-logo" src="{{ $photo && !$errors->has('photo') ? $photo->temporaryUrl() : $company->logo_url }}" alt="Logotipo de la empresa"></div>
                             <h3 class="h5 mb-1" id="mi-empresa-preview-name">{{ ($data['comercial_name'] ?? '') ?: 'Tu empresa' }}</h3>
                             <p class="small text-muted">Logotipo para documentos</p><label for="photo" class="form-label small">Cambiar logotipo</label><input id="photo" name="photo" wire:model="photo" type="file" class="form-control form-control-sm @error('photo') is-invalid @enderror" accept="image/jpeg,image/png,image/webp">
-                            <div class="form-text">JPG, PNG o WebP · máximo 2 MB.</div><span wire:loading wire:target="photo" class="small text-primary" role="status">Subiendo logotipo...</span>
+                            <div class="form-text">Pulsa Guardar cambios para conservar el logotipo. JPG, PNG o WebP · máximo 2 MB.</div><span wire:loading wire:target="photo" class="small text-primary" role="status">Subiendo logotipo...</span>
                             <div id="mi-empresa-photo-message" class="small mt-2" role="status"></div>@error('photo')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     </div>
