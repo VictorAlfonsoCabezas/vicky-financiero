@@ -29,6 +29,18 @@ class DescargoBovedasHeaderComponent extends Component
     public $creditosVigentes = 0;
     public $valor_gasto = 0;
     public $descripcion_gasto = '';
+    public $bovedaNombre = '';
+
+    public function abrirOperacion($id, $tipo)
+    {
+        abort_unless(in_array($tipo, ['carga', 'gasto', 'transferencia'], true), 404);
+        $boveda = Bovedas::where('company_id', Auth::user()->company_id)->where('status', true)->findOrFail($id);
+        abort_if($tipo !== 'transferencia' && !$boveda->principal, 403);
+        $this->limpiarFormulario();
+        $this->boveda_id = $boveda->id;
+        $this->bovedaNombre = $boveda->nombre;
+        $this->dispatchBrowserEvent('bovedas-open', ['tipo' => $tipo]);
+    }
 
     public function storeCarga()
     {
@@ -103,6 +115,7 @@ class DescargoBovedasHeaderComponent extends Component
     {
         $this->boveda_id = '';
         $this->reset(['valor', 'banco_id', 'operacion_id', 'valor_gasto', 'descripcion_gasto']);
+        $this->reset(['trans_boveda_id', 'trans_banco_id', 'trans_observacion', 'trans_valor', 'bovedaNombre']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -166,7 +179,21 @@ class DescargoBovedasHeaderComponent extends Component
             ->get();
         $this->creditosVigentes = BovedasController::creditosVigentes();
         $bancosValores = Bancos::where('company_id', Auth::user()->company_id)->where('numero_cuenta', '!=', '')->where('status', true)->get();
+        $saldosBancos = [];
+        foreach ($bovedas->where('principal', true) as $boveda) {
+            foreach ($bancosValores as $banco) {
+                $saldosBancos[$boveda->id][$banco->id] = DescargoBovedasHeaderController::valorVancoTotal($banco->id, $boveda->id);
+            }
+        }
+        $transferencias = DB::table('descargo_bovedas_header as movimiento')
+            ->join('operaciones_descargo_bovedas as operacion', 'movimiento.operaciones_descargo_bovedas_id', '=', 'operacion.id')
+            ->leftJoin('bovedas as origen', 'movimiento.boveda_origen_id', '=', 'origen.id')
+            ->leftJoin('bovedas as destino', 'movimiento.boveda_destino_id', '=', 'destino.id')
+            ->where('movimiento.company_id', Auth::user()->company_id)
+            ->where('operacion.nombre_corto', 'TRANENV')
+            ->select('movimiento.*', 'origen.nombre as origen_nombre', 'destino.nombre as destino_nombre')
+            ->orderByDesc('movimiento.id')->limit(10)->get();
         
-        return view('livewire.descargo-bovedas-header.descargo-bovedas-header-component', compact('bovedas', 'valoresInicialesEmpresa', 'gastosIniciales', 'bancosValores'));
+        return view('livewire.descargo-bovedas-header.descargo-bovedas-header-component', compact('bovedas', 'valoresInicialesEmpresa', 'gastosIniciales', 'bancosValores', 'saldosBancos', 'transferencias'));
     }
 }

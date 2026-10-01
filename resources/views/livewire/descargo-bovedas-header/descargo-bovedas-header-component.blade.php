@@ -1,319 +1,125 @@
-<div>
-    <div class="container-fluid mt-2">
-        <div class="row flex-nowrap overflow-auto">
-            @foreach ($bovedas as $bov)
-            <div class="col-12 col-md-4">
-                <div class="card card-row card-{{ $bov->principal ? 'primary' : 'warning' }}">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <b>{{ $bov->nombre }}</b> <i class="fa fa-{{ $bov->principal ? 'server' : 'archive' }}"
-                                aria-hidden="true"></i><br>
-                            <small>{{ $bov->descripcion }}</small>
-                        </h3>
-                        <div class="text-end">
+<div class="vault-module">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="text-muted small mb-2">TESORERÍA / BÓVEDAS</div>
+            <h1 class="page-header mb-2">Descargos de bóvedas</h1>
+            <p class="text-muted mb-0">Consulta los saldos y administra las cargas, los gastos y las transferencias de tu empresa.</p>
+        </div>
+        <button type="button" class="btn btn-white" wire:click="$refresh" wire:loading.attr="disabled">
+            <i class="fa fa-sync-alt me-2" aria-hidden="true"></i>Actualizar saldos
+        </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+        @foreach ([
+            ['Bóvedas activas', $bovedas->count(), 'fa-archive', 'bg-blue', false],
+            ['Cargas iniciales registradas', $valoresInicialesEmpresa->sum('valor'), 'fa-arrow-down', 'bg-teal', true],
+            ['Gastos iniciales registrados', $gastosIniciales->sum('valor'), 'fa-arrow-up', 'bg-orange', true],
+            ['Créditos vigentes', $creditosVigentes, 'fa-file-invoice-dollar', 'bg-indigo', true],
+        ] as $resumen)
+            <div class="col-sm-6 col-xl-3">
+                <div class="widget widget-stats {{ $resumen[3] }} mb-0 h-100">
+                    <div class="stats-icon"><i class="fa {{ $resumen[2] }}" aria-hidden="true"></i></div>
+                    <div class="stats-info">
+                        <h2 class="vault-stat-label">{{ $resumen[0] }}</h2>
+                        <p class="vault-money">{{ $resumen[4] ? '$ ' . number_format($resumen[1], 2, '.', ',') : $resumen[1] }}</p>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 mb-0">Tus bóvedas</h2>
+        <span class="small text-muted" wire:loading role="status">Actualizando información…</span>
+    </div>
+    <div class="row g-4 mb-4">
+        @forelse ($bovedas as $bov)
+            @php($saldo = $bov->principal ? $bov->saldoBoveda - $creditosVigentes : $bov->saldoBoveda)
+            <div class="col-12 col-xl-6" wire:key="vault-{{ $bov->id }}">
+                <section class="panel panel-inverse h-100 mb-0 vault-panel" aria-labelledby="vault-title-{{ $bov->id }}">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" id="vault-title-{{ $bov->id }}"><i class="fa fa-university me-2" aria-hidden="true"></i>{{ $bov->nombre }}</h3>
+                        <span class="badge {{ $bov->principal ? 'bg-primary' : 'bg-secondary' }}">{{ $bov->principal ? 'Principal' : 'Bóveda' }}</span>
+                    </div>
+                    <div class="panel-body p-0">
+                        <div class="vault-balance p-4">
+                            <p class="small text-muted mb-2">{{ $bov->descripcion ?: 'Administración de fondos' }}</p>
+                            <span class="small fw-bold text-muted">Saldo de la bóveda</span>
+                            <div class="vault-balance-value vault-money {{ $saldo < 0 ? 'text-danger' : '' }}">$ {{ number_format($saldo, 2, '.', ',') }}</div>
+                            @if ($bov->principal)<p class="small text-muted mb-0">Este saldo descuenta los créditos vigentes.</p>@endif
+                        </div>
+                        <div class="p-3 border-bottom d-flex flex-wrap gap-2">
                             @if ($bov->principal)
-                            <h4>${{ number_format($bov->saldoBoveda - $this->creditosVigentes, 2, '.', '') }}</h4>
-                            @else
-                            <h4>${{ $bov->saldoBoveda }}</h4>
+                                <button type="button" class="btn btn-primary btn-sm" wire:click="abrirOperacion({{ $bov->id }}, 'carga')" wire:loading.attr="disabled"><i class="fa fa-plus me-1" aria-hidden="true"></i>Carga inicial</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" wire:click="abrirOperacion({{ $bov->id }}, 'gasto')" wire:loading.attr="disabled"><i class="fa fa-minus me-1" aria-hidden="true"></i>Gasto inicial</button>
                             @endif
+                            <button type="button" class="btn btn-outline-primary btn-sm" wire:click="abrirOperacion({{ $bov->id }}, 'transferencia')" wire:loading.attr="disabled" @if($bovedas->count() < 2) disabled @endif><i class="fa fa-exchange-alt me-1" aria-hidden="true"></i>Transferir</button>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {{-- Bodega Principal --}}
                         @if ($bov->principal)
-                        {{-- Cargas Iniciales --}}
-                        <div class="card card-info card-outline">
-                            <div class="card-header">
-                                <h5 class="card-title">Cargas Iniciales</h5>
-                                <div class="card-tools">
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})"
-                                        class="btn btn-tool btn-link" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral">Agregar</a>
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})" class="btn btn-tool"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral">
-                                        <i class="fas fa-plus"></i>
-                                    </a>
+                            <div class="p-4">
+                                <h4 class="h6 mb-3">Balance actual por banco</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead><tr><th scope="col">Banco</th><th scope="col" class="text-end">Saldo actual</th></tr></thead>
+                                        <tbody>
+                                            @forelse ($bancosValores as $banco)
+                                                <tr><td>{{ $banco->nombre }}<span class="d-block small text-muted">{{ $banco->numero_cuenta }}</span></td><td class="text-end vault-money fw-bold">$ {{ number_format($saldosBancos[$bov->id][$banco->id], 2, '.', ',') }}</td></tr>
+                                            @empty
+                                                <tr><td colspan="2" class="text-muted text-center py-4">No hay bancos activos con cuenta registrada.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
+                                <details class="vault-details mt-3">
+                                    <summary>Cargas iniciales <span class="badge bg-primary ms-1">{{ $valoresInicialesEmpresa->where('boveda_origen_id', $bov->id)->count() }}</span></summary>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead><tr><th scope="col">Banco</th><th scope="col" class="text-end">Valor registrado</th></tr></thead>
+                                            <tbody>@forelse($valoresInicialesEmpresa->where('boveda_origen_id', $bov->id) as $carga)
+                                                <tr><td>{{ $carga->nombre_banco }}</td><td class="text-end vault-money">$ {{ number_format($carga->valor, 2, '.', ',') }}</td></tr>
+                                            @empty<tr><td colspan="2" class="text-muted py-3">No hay cargas iniciales registradas.</td></tr>@endforelse</tbody>
+                                        </table>
+                                    </div>
+                                </details>
+                                <details class="vault-details mt-2">
+                                    <summary>Gastos iniciales <span class="badge bg-secondary ms-1">{{ $gastosIniciales->where('boveda_origen_id', $bov->id)->count() }}</span></summary>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead><tr><th scope="col">Descripción</th><th scope="col" class="text-end">Valor registrado</th></tr></thead>
+                                            <tbody>@forelse($gastosIniciales->where('boveda_origen_id', $bov->id) as $gasto)
+                                                <tr><td>{{ $gasto->observacion ?: 'Gasto inicial' }}</td><td class="text-end vault-money">$ {{ number_format($gasto->valor, 2, '.', ',') }}</td></tr>
+                                            @empty<tr><td colspan="2" class="text-muted py-3">No hay gastos iniciales registrados.</td></tr>@endforelse</tbody>
+                                        </table>
+                                    </div>
+                                </details>
                             </div>
-                            <div class="card-body">
-                                <label for="" style="color: blue;"> Balance Inicial</label>
-                                <table class="table">
-                                    <tbody>
-                                        @foreach ($valoresInicialesEmpresa as $carga)
-                                        <tr>
-                                            <td><b>{{ $carga->nombre_banco }}</b></td>
-                                            <td><b>$ {{ $carga->valor }}</b></td>
-                                        </tr>
-                                        @endforeach
-
-                                    </tbody>
-                                </table>
-                                <hr style="color: blue;">
-                                <label for="" style="color: green;">Balance Actual</label>
-                                <table class="table">
-                                    <tbody>
-                                        @if ($bov->principal)
-                                        @foreach ($bancosValores as $bancos)
-                                        <tr>
-                                            <td><b>{{ $bancos->nombre }}</b></td>
-                                            <td><b>$ {{App\Http\Controllers\DescargoBovedasHeader\DescargoBovedasHeaderController::valorVancoTotal($bancos->id, $bov->id)}}</b></td>
-                                        </tr>
-                                        @endforeach
-                                        @endif
-
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        {{-- Gastos Iniciales --}}
-                        <div class="card card-danger card-outline">
-                            <div class="card-header">
-                                <h5 class="card-title"><i class="fa fa-minus"></i> Gastos Iniciales</h5>
-                                <div class="card-tools">
-                                    <a wire:click="gastoInicial({{ $bov->id }})"
-                                        class="btn btn-tool btn-link" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral1">Agregar</a>
-                                    <a wire:click="gastoInicial({{ $bov->id }})" class="btn btn-tool"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral1">
-                                        <i class="fas fa-plus"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <table class="table">
-                                    <tbody>
-                                        @foreach ($gastosIniciales as $gast)
-                                        <tr>
-                                            <td><b>Gasto Inicial:</b></td>
-                                            <td><b>$ {{ $gast->valor }}</b></td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        {{-- Créditos Vigentes --}}
-                        <div class="card card-primary card-outline">
-                            <div class="card-header">
-                                <h5 class="card-title"><i class="fa fa-plus"></i> Créditos Vigentes</h5>
-                            </div>
-                            <div class="card-body">
-                                <table class="table">
-                                    <tbody>
-                                        <tr>
-                                            <td><b>Creditos Vigentes: </b></td>
-                                            <td><b>$ {{ $creditosVigentes }}</b></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                            </div>
-                        </div>
+                        @else
+                            <div class="p-4 text-muted"><i class="fa fa-exchange-alt me-2" aria-hidden="true"></i>Selecciona Transferir para enviar fondos a otra bóveda.</div>
                         @endif
-                        {{-- Transferencias --}}
-                        <div class="card card-info card-outline">
-                            <div class="card-header">
-                                <h5 class="card-title">Transferencias</h5>
-                                <div class="card-tools">
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})"
-                                        class="btn btn-tool btn-link" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral2">Transferir</a>
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})" class="btn btn-tool"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral2">
-                                        <i class="fa fa-truck" aria-hidden="true"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <table class="table">
-                                    <tbody>
-
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        {{-- Solicitudes de Caja --}}
-                        @if ($bov->boveda)
-                        <div class="card card-info card-outline">
-                            <div class="card-header">
-                                <h5 class="card-title">Solicitudes Caja</h5>
-                                <div class="card-tools">
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})"
-                                        class="btn btn-tool btn-link">Enviar Caja</a>
-                                    <a wire:click="seleccionarBoveda({{ $bov->id }})"
-                                        class="btn btn-tool">
-                                        <i class="fa fa-cash-register" aria-hidden="true"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                valores iniciales de los bancos
-                            </div>
-                        </div>
-                        @endif
+                        @if ($bovedas->count() < 2)<div class="px-4 pb-4 small text-muted">Necesitas otra bóveda activa para realizar transferencias.</div>@endif
                     </div>
-                </div>
+                </section>
             </div>
-            @endforeach
-        </div>
+        @empty
+            <div class="col-12"><div class="panel p-5 text-center"><i class="fa fa-university fa-2x text-muted mb-3" aria-hidden="true"></i><h3 class="h5">No hay bóvedas activas</h3><p class="text-muted mb-0">Las bóvedas activas de tu empresa aparecerán aquí.</p></div></div>
+        @endforelse
     </div>
 
-    {{-- MODAL CARGAS INICIALES --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" aria-hidden="true"
-        data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Cargas Iniciales </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <form wire:submit.prevent="storeCarga">
-                    <div class="modal-body">
-                        @if ($errors->any())
-                        <div class="callout callout-warning">
-                            <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach
-                        </div>
-                        @endif
-                        <div class="form-group">
-                            <label>Seleccione el Banco</label>
-                            <select class="form-control" wire:model="banco_id">
-                                <option> -Selecciones uno- </option>
-                                @foreach ($this->bancos as $banco)
-                                <option value="{{ $banco['id'] }}">{{ $banco['nombre'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <label>Valor</label>
-                                <input type="number" step="0.01" class="form-control" placeholder="0.00"
-                                    wire:model="valor">
-                            </div>
-                            <div class="col-6">
-                                <label>Operacion</label>
-                                <select class="form-control" wire:model="operacion_id">
-                                    <option> -Selecciones uno- </option>
-                                    @foreach ($this->cargaInicial as $carga)
-                                    <option value="{{ $carga['id'] }}">{{ $carga['nombre'] }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
-                    </div>
-                </form>
-            </div>
+    <section class="panel panel-inverse mb-0" aria-labelledby="vault-transfers-title">
+        <div class="panel-heading"><h2 class="panel-title" id="vault-transfers-title">Transferencias recientes</h2><span class="small">Últimos 10 registros</span></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Origen</th><th scope="col">Destino</th><th scope="col">Estado</th><th scope="col" class="text-end">Valor</th></tr></thead>
+                <tbody>
+                    @forelse ($transferencias as $transferencia)
+                        <tr><td class="text-nowrap">{{ $transferencia->fecha_creacion }}</td><td>{{ $transferencia->origen_nombre ?: 'Bóveda no disponible' }}</td><td>{{ $transferencia->destino_nombre ?: 'Bóveda no disponible' }}</td><td><span class="badge {{ $transferencia->estado === 'FINALIZADO' ? 'bg-success' : 'bg-secondary' }}">{{ $transferencia->estado }}</span></td><td class="text-end vault-money fw-bold">$ {{ number_format($transferencia->valor, 2, '.', ',') }}</td></tr>
+                    @empty
+                        <tr><td colspan="5" class="text-center text-muted py-5"><i class="fa fa-exchange-alt d-block fs-3 mb-2" aria-hidden="true"></i>Aún no hay transferencias registradas.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </div>
-
-    {{-- MODAL GASTOS INICIALES --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral1" style="display: none;" aria-hidden="true"
-        data-bs-backdrop="static">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Gastos Iniciales </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <form wire:submit.prevent="storeGastoInicial">
-                    <div class="modal-body">
-                        @if ($errors->any())
-                        <div class="callout callout-warning">
-                            <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach
-                        </div>
-                        @endif
-                        <div class="row">
-                            <div class="col-12">
-                                <label>Valor Gasto</label>
-                                <input type="number" step="0.01" class="form-control" placeholder="0.00"
-                                    wire:model="valor_gasto">
-                            </div>
-                            <div class="col-12">
-                                <label>Descripción</label>
-                                <textarea type="text" class="form-control" placeholder="Ingrese una Descripción" wire:model="descripcion_gasto"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    {{-- MODAL TRANSFERECNIAS --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral2" style="display: none;" aria-hidden="true"
-        data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Transferencia </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <form wire:submit.prevent="storeTransferencia">
-                    <div class="modal-body">
-                        @if ($errors->any())
-                        <div class="callout callout-warning">
-                            <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach
-                        </div>
-                        @endif
-                        <div class="form-group">
-                            <label>Seleccione el Boveda</label>
-                            <select class="form-control" wire:model="trans_boveda_id">
-                                <option> -Selecciones uno- </option>
-                                @foreach ($this->bovedasTransferencia as $bov)
-                                <option value="{{ $bov['id'] }}">{{ $bov['nombre'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Seleccione el Banco</label>
-                            <select class="form-control" wire:model="trans_banco_id">
-                                <option> -Selecciones uno- </option>
-                                @foreach ($this->bancos as $banco)
-                                <option value="{{ $banco['id'] }}">{{ $banco['nombre'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <label>Valor</label>
-                                <input type="number" step="0.01" class="form-control" placeholder="0.00"
-                                    wire:model="trans_valor">
-                            </div>
-                            <div class="col-12">
-                                <label>Observacion</label>
-                                <input type="text" class="form-control" placeholder="Ingrese Observacion"
-                                    wire:model="trans_observacion">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    </section>
+    @include('livewire.descargo-bovedas-header.modals')
 </div>

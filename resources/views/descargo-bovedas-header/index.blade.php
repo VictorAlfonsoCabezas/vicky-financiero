@@ -1,19 +1,11 @@
 @extends('layouts.app')
-@section('custom_css_rules')@stop
+@section('title', 'Descargos de bóvedas')
+@section('custom_css_rules')
+    <link rel="stylesheet" href="{{ asset('css/descargo-bovedas.css') }}?v={{ filemtime(public_path('css/descargo-bovedas.css')) }}">
+@endsection
 @section('content')
     <livewire:descargo-bovedas-header.descargo-bovedas-header-component />
 @endsection
 @section('scripts')
-    <script>
-        //evento escucha cerrar modal
-        window.addEventListener('closeModal', event => {
-            $('#modalGeneral').modal('hide');
-        });
-        window.addEventListener('closeModal', event => {
-            $('#modalGeneral1').modal('hide');
-        });
-        window.addEventListener('closeModal', event => {
-            $('#modalGeneral2').modal('hide');
-        });
-    </script>
-@stop
+    <script src="{{ asset('js/descargo-bovedas.js') }}?v={{ filemtime(public_path('js/descargo-bovedas.js')) }}"></script>
+@endsection
