@@ -13,9 +13,17 @@
     .resultados-table th { background: #f0f3f5; color: #495057; padding: 14px 18px; white-space: nowrap; }
     .resultados-table td { padding: 12px 18px; }
     .resultados-cuenta { padding-left: calc(var(--cuenta-nivel) * 14px); min-width: 230px; }
-    .resultados-table .resultados-nivel-1 { background: #e4edf7; color: #1f4268; font-weight: 700; }
-    .resultados-table .resultados-nivel-2 { background: #edf2f7; font-weight: 600; }
-    .resultados-table .resultados-nivel-3 { background: #f8f9fa; font-weight: 600; }
+    .resultados-table .resultados-nivel-1 { --bs-table-bg: #cce3f8; --bs-table-color: #15395a; --bs-table-hover-bg: #bddbf5; --bs-table-hover-color: #15395a; font-weight: 700; }
+    .resultados-table .resultados-nivel-2 { --bs-table-bg: #dadddf; --bs-table-color: #2b2f32; --bs-table-hover-bg: #cfd3d6; --bs-table-hover-color: #2b2f32; font-weight: 600; }
+    .resultados-table .resultados-nivel-3 { --bs-table-bg: #fde6c6; --bs-table-color: #623e0a; --bs-table-hover-bg: #fcddb2; --bs-table-hover-color: #623e0a; font-weight: 600; }
+    .resultados-table tr[class*="resultados-nivel-"] > td {
+        background-color: var(--bs-table-bg);
+        color: var(--bs-table-color);
+    }
+    .resultados-table tr[class*="resultados-nivel-"]:hover > td {
+        background-color: var(--bs-table-hover-bg);
+        color: var(--bs-table-hover-color);
+    }
     .resultados-legend { font-size: 12px; }
     .resultados-module .pagination { margin-bottom: 0; }
     @media (max-width: 767px) {
