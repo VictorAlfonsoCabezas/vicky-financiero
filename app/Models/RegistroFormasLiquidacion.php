@@ -33,6 +33,8 @@ class RegistroFormasLiquidacion extends Model
         'usuario_id_solicitud',
         'fecha_solicitud',
         'hora_solicitud',
+        'fecha_aprobacion',
+        'hora_aprobacion',
         'observacion',
     ];
 
