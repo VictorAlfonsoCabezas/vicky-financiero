@@ -35,11 +35,18 @@
             </div>
         </div>
     </div>
+    @error('fecha_inicio') <div class="alert alert-danger" role="alert">{{ $message }}</div> @enderror
+    @error('fecha_fin') <div class="alert alert-danger" role="alert">{{ $message }}</div> @enderror
     <div class="row">
         <div class="col-12">
             <div class="panel panel-inverse">
                 <div class="panel-heading">
                     <h4 class="panel-title"><i class="fa fa-list me-2"></i> Gastos registrados <span class="badge bg-primary ms-2">{{ $gastos->total() }}</span></h4>
+                    <button type="button" class="btn btn-success btn-sm" wire:click="descargarGastos" wire:loading.attr="disabled" wire:target="descargarGastos" title="Descargar todos los gastos de los filtros actuales en Excel" {{ $gastos->total() === 0 ? 'disabled' : '' }}>
+                        <i class="fa fa-file-excel me-1" aria-hidden="true"></i>
+                        <span wire:loading.remove wire:target="descargarGastos">Descargar Excel</span>
+                        <span wire:loading wire:target="descargarGastos">Generando...</span>
+                    </button>
                 </div>
                 <div class="panel-body table-responsive p-0 gasto-table-wrap">
                     <table class="table table-hover table-striped align-middle mb-0 gasto-table">

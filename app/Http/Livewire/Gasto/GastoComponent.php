@@ -2286,9 +2286,24 @@ class GastoComponent extends Component
     }
 
 
-    public function render()
+    public function descargarGastos()
     {
-        $gastos = DB::table('gastos')
+        $this->validate([
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+            'estadoFiltro' => 'required|in:TODOS,BORRADOR,PENDIENTE,APROBADO,PAGADO,RECHAZADO',
+        ]);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\Gastos\GastosRegistradosExport($this->consultaGastos()->get()),
+            'gastos-registrados-' . Carbon::parse($this->fecha_inicio)->format('Y-m-d')
+                . '-al-' . Carbon::parse($this->fecha_fin)->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    protected function consultaGastos()
+    {
+        return DB::table('gastos')
             ->select([
                 'gastos.id',
                 'gastos.fecha_creacion',
@@ -2334,9 +2349,13 @@ class GastoComponent extends Component
             ->when($this->estadoFiltro !== 'TODOS', function ($query) {
                 $query->where('estado', $this->estadoFiltro);
             })
-            ->orderBy('gastos.id', 'desc') // <-- NUEVO: último gasto primero
-            ->paginate(15);
+            ->orderBy('gastos.id', 'desc');
 
+    }
+
+    public function render()
+    {
+        $gastos = $this->consultaGastos()->paginate(15);
         $gastosAprobar = Gastos::find($this->id_aprobar);
         $cuentasGastos = GastosPlanCuentas::where('company_id', Auth::user()->company_id)
             ->where('gasto_id', $this->id_aprobar)
