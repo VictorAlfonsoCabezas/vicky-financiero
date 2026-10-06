@@ -40,6 +40,33 @@
         .gasto-module .modal-header, .gasto-module .modal-body, .gasto-module .modal-footer { padding: 16px; }
         .gasto-module .modal-footer > .btn { flex: 1 1 auto; }
     }
+    .gasto-module .modal-dialog-scrollable .modal-content > form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .gasto-module .modal-dialog-scrollable .modal-content > form > .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+    .gasto-module .modal-dialog-scrollable .modal-footer { flex-shrink: 0; }
+    .gasto-module .modal-content { border-radius: 6px; }
+    .gasto-module .modal-header { background: #fff; }
+    .gasto-module .modal-title { font-size: 16px; font-weight: 600; }
+    .gasto-module .modal-body .form-label { font-size: 12px; color: #495057; }
+    .gasto-module .modal-body .form-control:not(.form-control-lg),
+    .gasto-module .modal-body .form-select { min-height: 38px; font-size: 13px; }
+    .gasto-module .modal-body hr { margin: 20px 0; opacity: .12; }
+    .gasto-section-title { color: #212529; font-size: 14px; font-weight: 600; margin: 0 0 4px; padding-bottom: 10px; border-bottom: 1px solid #e9ecef; }
+    .gasto-section-title > i { color: var(--bs-primary, #348fe2); }
+    .gasto-upload-box { padding: 24px; background: #f8f9fa; border: 1px dashed #adb5bd; border-radius: 6px; }
+    .gasto-module .modal-body .invoice { border: 1px solid #dee2e6; border-radius: 6px; }
+    .gasto-module .modal-footer .btn { min-height: 36px; padding: 7px 14px; }
+    .gasto-module .modal-body .table-responsive { max-width: 100%; }
+    .gasto-module .modal-body input[type="number"] { font-variant-numeric: tabular-nums; }
 </style>
 @stop
 @section('content')
