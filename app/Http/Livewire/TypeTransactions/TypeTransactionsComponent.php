@@ -21,6 +21,23 @@ class TypeTransactionsComponent extends Component
     public $description = '';
     public $action = '';
     public $afecta = '';
+    public $search = '';
+    public $actionFiltro = '';
+    public $afectaFiltro = '';
+    public $estadoFiltro = '';
+
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'actionFiltro', 'afectaFiltro', 'estadoFiltro'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['search', 'actionFiltro', 'afectaFiltro', 'estadoFiltro']);
+        $this->resetPage();
+    }
 
     public function abrirModal($id)
     {
@@ -40,7 +57,7 @@ class TypeTransactionsComponent extends Component
     {
         $this->validate();
         if ($this->id_seleccionado > 0) {
-            $transaciones = TypeTransaction::find($this->id_seleccionado);
+            $transaciones = TypeTransaction::where('company_id', Auth::user()->company_id)->findOrFail($this->id_seleccionado);
         } else {
             $transaciones = new TypeTransaction();
         }
@@ -56,7 +73,8 @@ class TypeTransactionsComponent extends Component
     }
     public function consultarDatosEdit($id)
     {
-        $tipoTans = TypeTransaction::find($id);
+        $this->resetValidation();
+        $tipoTans = TypeTransaction::where('company_id', Auth::user()->company_id)->findOrFail($id);
         $this->id_seleccionado = $id;
         $this->name = $tipoTans->name;
         $this->name_corto = $tipoTans->name_corto;
@@ -75,7 +93,26 @@ class TypeTransactionsComponent extends Component
 
     public function render()
     {
-        $typetransaction = TypeTransaction::where('company_id', Auth::user()->company_id)->paginate(10);
+        $typetransaction = TypeTransaction::where('company_id', Auth::user()->company_id)
+            ->when(trim($this->search) !== '', function ($query) {
+                $search = '%' . trim($this->search) . '%';
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', $search)
+                        ->orWhere('name_corto', 'like', $search)
+                        ->orWhere('nombre_cartola', 'like', $search)
+                        ->orWhere('description', 'like', $search);
+                });
+            })
+            ->when($this->actionFiltro !== '', function ($query) {
+                $query->where('action', $this->actionFiltro);
+            })
+            ->when($this->afectaFiltro !== '', function ($query) {
+                $query->where('afecta', $this->afectaFiltro);
+            })
+            ->when($this->estadoFiltro !== '', function ($query) {
+                $query->where('status', $this->estadoFiltro);
+            })
+            ->orderBy('name')->orderBy('id')->paginate(15);
         return view('livewire.type-transactions.type-transactions-component', compact('typetransaction'));
     }
 }
