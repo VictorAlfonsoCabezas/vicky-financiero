@@ -88,6 +88,7 @@ class GastoComponent extends Component
     public $listaRetenciones = [];
     public $listaEstados = [];
     public $estadoFiltro = 'TODOS';
+    public $proveedorFiltro = '';
     public $sustentoTributario = [];
     public $tipoComprobante = [];
     public $sustentoTributario_id;
@@ -2286,6 +2287,12 @@ class GastoComponent extends Component
     }
 
 
+    public function updated($propertyName)
+    {
+        if (in_array($propertyName, ['proveedorFiltro', 'estadoFiltro', 'fecha_inicio', 'fecha_fin'], true)) {
+            $this->resetPage();
+        }
+    }
     public function descargarGastos()
     {
         $this->validate([
@@ -2349,6 +2356,9 @@ class GastoComponent extends Component
             ->when($this->estadoFiltro !== 'TODOS', function ($query) {
                 $query->where('estado', $this->estadoFiltro);
             })
+            ->when($this->proveedorFiltro !== '' && $this->proveedorFiltro !== null, function ($query) {
+                $query->where('gastos.proveedor_id', $this->proveedorFiltro);
+            })
             ->orderBy('gastos.id', 'desc');
 
     }
@@ -2356,6 +2366,9 @@ class GastoComponent extends Component
     public function render()
     {
         $gastos = $this->consultaGastos()->paginate(15);
+        $proveedoresFiltro = Proveedores::where('company_id', Auth::user()->company_id)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'ruc']);
         $gastosAprobar = Gastos::find($this->id_aprobar);
         $cuentasGastos = GastosPlanCuentas::where('company_id', Auth::user()->company_id)
             ->where('gasto_id', $this->id_aprobar)
@@ -2382,6 +2395,7 @@ class GastoComponent extends Component
             'livewire.gasto.gasto-component',
             compact(
                 'gastos',
+                'proveedoresFiltro',
                 'gastosAprobar',
                 'cuentasGastos',
                 'valorTotalCuentas',

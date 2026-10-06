@@ -13,7 +13,7 @@
         <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtrar gastos</h4></div>
         <div class="panel-body">
             <div class="row g-3">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6 col-xl-3">
                     <label class="form-label" for="gasto-estado">Estado</label>
                     <select id="gasto-estado" class="form-select" wire:model="estadoFiltro">
                         <option value="TODOS">Todos los estados</option>
@@ -24,11 +24,20 @@
                         <option value="RECHAZADO">Rechazado</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-4">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label" for="gasto-proveedor"><i class="fa fa-building me-1" aria-hidden="true"></i> Proveedor</label>
+                    <select id="gasto-proveedor" class="form-select" wire:model="proveedorFiltro">
+                        <option value="">Todos los proveedores</option>
+                        @foreach ($proveedoresFiltro as $proveedor)
+                            <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }} — {{ $proveedor->ruc }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-xl-3">
                     <label class="form-label" for="gasto-desde">Fecha de registro desde</label>
                     <input id="gasto-desde" type="date" wire:model="fecha_inicio" class="form-control">
                 </div>
-                <div class="col-6 col-md-4">
+                <div class="col-6 col-xl-3">
                     <label class="form-label" for="gasto-hasta">Fecha de registro hasta</label>
                     <input id="gasto-hasta" type="date" wire:model="fecha_fin" class="form-control">
                 </div>
