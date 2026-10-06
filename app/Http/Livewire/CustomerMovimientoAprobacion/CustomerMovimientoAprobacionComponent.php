@@ -19,10 +19,40 @@ use App\Models\TypeTransaction;
 use App\Models\WhaEnvios;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithPagination;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CustomerMovimientoAprobacionComponent extends Component
 {
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+    public $estadoFiltro = 'PENDIENTE';
     public $id_seleccionado = 0;
+
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'estadoFiltro'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    private function solicitudEmpresa($id, $lock = false)
+    {
+        $query = CustomerMovimientoSolicitud::where('company_id', Auth::user()->company_id);
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+        return $query->findOrFail($id);
+    }
+
+    private function validarPendiente($solicitud)
+    {
+        if ($solicitud->estado !== 'PENDIENTE') {
+            throw ValidationException::withMessages(['solicitud' => 'Esta solicitud ya fue procesada. Actualiza la lista.']);
+        }
+    }
     public $valor = 0;
     public $observacion = '';
     public $path = '';
@@ -44,15 +74,16 @@ class CustomerMovimientoAprobacionComponent extends Component
         $this->id_seleccionado = $id;
         $this->limpiarFormulario();
         if ($this->id_seleccionado !== 0) {
-            $solocitud = CustomerMovimientoSolicitud::find($this->id_seleccionado);
+            $solocitud = $this->solicitudEmpresa($this->id_seleccionado);
             $this->valor = $solocitud->valor;
             $this->observacion = $solocitud->observacion;
             $this->path = $solocitud->path;
             $this->fecha_creacion = $solocitud->fecha_creacion;
-            $this->user_nombres = $solocitud->user->firstname . ' ' . $solocitud->user->lastname;
+            $this->user_nombres = trim(optional($solocitud->user)->firstname . ' ' . optional($solocitud->user)->lastname);
             if ($solocitud->banco_id != null && $solocitud->banco_id != 0 && $solocitud->banco_id != '') {
-                $this->banco = Bancos::find($solocitud->banco_id)->nombre;
-                $this->numero_cuenta = Bancos::find($solocitud->banco_id)->numero_cuenta;
+                $banco = Bancos::where('company_id', Auth::user()->company_id)->find($solocitud->banco_id);
+                $this->banco = optional($banco)->nombre ?? '';
+                $this->numero_cuenta = optional($banco)->numero_cuenta ?? '';
             } else {
                 $this->banco = "";
                 $this->numero_cuenta = "";
@@ -67,13 +98,23 @@ class CustomerMovimientoAprobacionComponent extends Component
     private function limpiarFormulario()
     {
         $this->valor = 0;
-        $this->reset(['observacion', 'path', 'fecha_creacion', 'user_nombres', 'razon_rechazo']);
+        $this->reset(['observacion', 'path', 'fecha_creacion', 'user_nombres', 'razon_rechazo', 'banco', 'numero_cuenta', 'observacionTransferencia', 'comprobante', 'numero_deposito']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
 
     public function aceptar($id)
     {
+        DB::transaction(function () use ($id) {
+            $solicitud = $this->solicitudEmpresa($id, true);
+            $this->validarPendiente($solicitud);
+            $this->procesarAprobacion($solicitud);
+        });
+    }
+
+    private function procesarAprobacion($solicitud)
+    {
+        $id = $solicitud->id;
         $bovedaPrincipal = Bovedas::where('company_id', Auth::user()->company_id)
             ->where('principal', 1)
             ->first();
@@ -88,13 +129,13 @@ class CustomerMovimientoAprobacionComponent extends Component
             $this->dispatchBrowserEvent('alerta', $data);
             return;
         }
-        $solicitud = CustomerMovimientoSolicitud::find($id);
-        $customer = Customer::find($solicitud->customer_id);
+
+        $customer = Customer::where('company_id', Auth::user()->company_id)->findOrFail($solicitud->customer_id);
         $transaccion = 'SOL';
 
         // Si viene desde Depositos buscar
         if (!empty($solicitud->type_transaction_id)) {
-            $transactionBuscar = TypeTransaction::find($solicitud->type_transaction_id);
+            $transactionBuscar = TypeTransaction::where('company_id', Auth::user()->company_id)->findOrFail($solicitud->type_transaction_id);
             $transaccion = $transactionBuscar->name_corto;
         }
 
@@ -106,17 +147,21 @@ class CustomerMovimientoAprobacionComponent extends Component
             ->where('nombre_corto', $transaccionBoveda)
             ->first();
 
+        if (!$transaction || !$transactionBoveda || (float) $solicitud->valor <= 0) {
+            throw ValidationException::withMessages(['solicitud' => 'Verifica el valor y la configuración del tipo de transacción y de la operación INVA.']);
+        }
+
         // Dividir Pagos
         $dividirPagos = false;
-        $cuenta = CustomerTipoAhorros::find($solicitud->customer_tipo_ahorro_id);
-        $cliente = Customer::find($solicitud->customer_id);
-        $sumaValores = TipoAhorrosDetalle::where('tipo_ahorros_id', $cuenta->tipo_ahorros_id)->sum('valor');
+        $cuenta = CustomerTipoAhorros::where('company_id', Auth::user()->company_id)->where('customer_id', $solicitud->customer_id)->lockForUpdate()->findOrFail($solicitud->customer_tipo_ahorro_id);
+        $cliente = Customer::where('company_id', Auth::user()->company_id)->findOrFail($solicitud->customer_id);
+        $sumaValores = TipoAhorrosDetalle::where('company_id', Auth::user()->company_id)->where('tipo_ahorros_id', $cuenta->tipo_ahorros_id)->sum('valor');
         if (($this->saldoEnCuenta($cliente->id, $cuenta->id)) == 0 && $sumaValores != 0) {
             $customerTipoAhorro = CustomerTipoAhorros::find($cuenta->id);
             $cliente = Customer::find($cliente->id);
             $saldoCuenta = $this->saldoEnCuenta($cliente->id, $cuenta->id);
             $saldo = $saldoCuenta + $solicitud->valor;
-            if ($sumaValores != $saldo) {
+            if (round((float) $sumaValores, 2) !== round((float) $saldo, 2)) {
                 $mensaje = "<b>Cuenta de con valores iniciales: </b> la transacción que ingresa es <b> {$solicitud->valor} $</b> y lo que se debe ingresar es:<b> {$sumaValores} $</b>";
                 $data = [
                     'titulo' => 'Adevertencia',
@@ -133,13 +178,13 @@ class CustomerMovimientoAprobacionComponent extends Component
         if (!$dividirPagos) {
             $tabla = 'customer_movimientos';
             $code = BaseController::generarCodigo($tabla, 9);
-            $valorTotal = BaseController::valorTotal();
+            $valorTotal = $this->valorTotalEmpresa();
             $data = [
                 "code" => $code,
                 "comprobante" => $solicitud->comprobante,
                 // Nuevos
-                "banco_id" => ($solicitud->forma_pago_id !== 1) ? $solicitud->banco_id : null,
-                "numero_deposito" => ($solicitud->forma_pago_id !== 1) ? $solicitud->numero_deposito : null,
+                "banco_id" => ((int) $solicitud->forma_pago_id !== 1) ? $solicitud->banco_id : null,
+                "numero_deposito" => ((int) $solicitud->forma_pago_id !== 1) ? $solicitud->numero_deposito : null,
                 "forma_pago_id" => $solicitud->forma_pago_id,
                 "forma_pago_name" => (FormasPago::find($solicitud->forma_pago_id) != null) ?  FormasPago::find($solicitud->forma_pago_id)->nombre : '',
 
@@ -165,7 +210,7 @@ class CustomerMovimientoAprobacionComponent extends Component
             $movimientos = CustomerMovimiento::create($data);
             $dataBov = [
                 "company_id" => Auth::user()->company_id,
-                "bancos_id" => $solicitud->banco_id ?? null,
+                "bancos_id" => (int) $solicitud->forma_pago_id !== 1 ? $solicitud->banco_id : null,
                 "operaciones_descargo_bovedas_id" => $transactionBoveda->id,
                 "boveda_origen_id" => $bovedaPrincipal->id,
                 "boveda_destino_id" => $bovedaPrincipal->id,
@@ -177,7 +222,7 @@ class CustomerMovimientoAprobacionComponent extends Component
                 "customer_movimiento_id" => $movimientos->id,
             ];
             DescargoBovedasHeader::create($dataBov);
-            CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $solicitud->valor, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
+            CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $movimientos->valor_movimiento, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
             BaseController::guardarValoresCartola($solicitud->customer_tipo_ahorro_id, $customer->id, $movimientos, $transaction);
 
             $whatsappEnviar = 'Estimad@, *' . $customer->nombres . ' ' . $customer->apellidos . '* tu transacción ha sido procesada exitosamente, por el monto de: *' . $solicitud->valor . '$* Gracias por usar nuestros servicios de Caja de ' . Auth::user()->company->comercial_name;
@@ -210,9 +255,9 @@ class CustomerMovimientoAprobacionComponent extends Component
             ];
             $this->dispatchBrowserEvent('alerta', $data);
         } else {
-            $cuenta = CustomerTipoAhorros::find($solicitud->customer_tipo_ahorro_id);
-            $detalle = TipoAhorrosDetalle::where('tipo_ahorros_id', $cuenta->tipoAhorros->id)->get();
-            $customer = Customer::find($solicitud->customer_id);
+            $cuenta = CustomerTipoAhorros::where('company_id', Auth::user()->company_id)->where('customer_id', $solicitud->customer_id)->lockForUpdate()->findOrFail($solicitud->customer_tipo_ahorro_id);
+            $detalle = TipoAhorrosDetalle::where('company_id', Auth::user()->company_id)->where('tipo_ahorros_id', $cuenta->tipo_ahorros_id)->get();
+            $customer = Customer::where('company_id', Auth::user()->company_id)->findOrFail($solicitud->customer_id);
             foreach ($detalle as $key => $value) {
                 if ($value->afecta == 'E') {
                     $transaccion = 'SE';
@@ -221,16 +266,16 @@ class CustomerMovimientoAprobacionComponent extends Component
                 }
                 $transaction = TypeTransaction::where('company_id', Auth::user()->company_id)
                     ->where('name_corto', $transaccion)
-                    ->first();
+                    ->firstOrFail();
                 $tabla = 'customer_movimientos';
                 $code = BaseController::generarCodigo($tabla, 9);
-                $valorTotal = BaseController::valorTotal();
+                $valorTotal = $this->valorTotalEmpresa();
                 $data = [
                     "code" => $code,
                     "comprobante" => $solicitud->comprobante,
                     // Nuevos
-                    "banco_id" => ($solicitud->forma_pago_id !== 1) ? $solicitud->banco_id : null,
-                    "numero_deposito" => ($solicitud->forma_pago_id !== 1) ? $solicitud->numero_deposito : null,
+                    "banco_id" => ((int) $solicitud->forma_pago_id !== 1) ? $solicitud->banco_id : null,
+                    "numero_deposito" => ((int) $solicitud->forma_pago_id !== 1) ? $solicitud->numero_deposito : null,
                     "forma_pago_id" => $solicitud->forma_pago_id,
                     "forma_pago_name" => (FormasPago::find($solicitud->forma_pago_id) != null) ? FormasPago::find($solicitud->forma_pago_id)->nombre : '',
 
@@ -257,7 +302,7 @@ class CustomerMovimientoAprobacionComponent extends Component
                 $movimientos = CustomerMovimiento::create($data);
                 $dataBov = [
                     "company_id" => Auth::user()->company_id,
-                    "bancos_id" => $solicitud->banco_id ?? null,
+                    "bancos_id" => (int) $solicitud->forma_pago_id !== 1 ? $solicitud->banco_id : null,
                     "operaciones_descargo_bovedas_id" => $transactionBoveda->id,
                     "boveda_origen_id" => $bovedaPrincipal->id,
                     "boveda_destino_id" => $bovedaPrincipal->id,
@@ -269,7 +314,7 @@ class CustomerMovimientoAprobacionComponent extends Component
                     "customer_movimiento_id" => $movimientos->id,
                 ];
                 DescargoBovedasHeader::create($dataBov);
-                CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $solicitud->valor, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
+                CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $movimientos->valor_movimiento, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
                 BaseController::guardarValoresCartola($solicitud->customer_tipo_ahorro_id, $customer->id, $movimientos, $transaction);
 
                 $whatsappEnviar = 'Estimad@, *' . $customer->nombres . ' ' . $customer->apellidos . '* tu transacción ha sido procesada exitosamente, por el monto de: *' . $solicitud->valor . '$* Gracias por usar nuestros servicios de ' . Auth::user()->company->comercial_name;
@@ -305,16 +350,25 @@ class CustomerMovimientoAprobacionComponent extends Component
         }
     }
 
+    private function valorTotalEmpresa()
+    {
+        $saldo = CustomerHistorial::where('company_id', Auth::user()->company_id)
+            ->whereNotNull('customer_movimiento_code')->where('customer_movimiento_code', '!=', '')
+            ->where('status', true)
+            ->sum(DB::raw("CASE WHEN type_transaction_action = 'S' THEN valor_movimiento WHEN type_transaction_action = 'R' THEN -valor_movimiento ELSE 0 END"));
+        return max(0, $saldo);
+    }
+
     public function saldoEnCuenta($cliente_id, $cuenta_id)
     {
-        $cliente = Customer::find($cliente_id);
-        $ingresos = CustomerHistorial::where('customer_code', $cliente->code)
+        $cliente = Customer::where('company_id', Auth::user()->company_id)->findOrFail($cliente_id);
+        $ingresos = CustomerHistorial::where('company_id', Auth::user()->company_id)->where('customer_code', $cliente->code)
             ->where('type_transaction_action', 'S')
             // ->where('type_transaction_name', 'INGRESOS')
             ->where('customer_tipo_ahorro_id', $cuenta_id)
             ->where('status', true)
             ->sum('valor_movimiento');
-        $egresos = CustomerHistorial::where('customer_code', $cliente->code)
+        $egresos = CustomerHistorial::where('company_id', Auth::user()->company_id)->where('customer_code', $cliente->code)
             ->where('type_transaction_action', 'R')
             // ->where('type_transaction_name', 'EGRESOS')
             ->where('customer_tipo_ahorro_id', $cuenta_id)
@@ -327,23 +381,30 @@ class CustomerMovimientoAprobacionComponent extends Component
 
     public function seleccionar($id)
     {
+        $this->limpiarFormulario();
+        $solicitud = $this->solicitudEmpresa($id);
+        $this->validarPendiente($solicitud);
         $this->movimiento = $id;
     }
 
     public function storeRechazar()
     {
+        $this->razon_rechazo = trim($this->razon_rechazo);
         $this->validate([
-            "razon_rechazo" => "required",
+            "razon_rechazo" => "required|string|max:1000",
         ]);
 
-        $solicitud = CustomerMovimientoSolicitud::find($this->movimiento);
-        $solicitud->estado = "RECHAZADO";
-        $solicitud->razon_rechazado = $this->razon_rechazo;
-        $solicitud->fecha_rechazado = date('Y-m-d H:i:s');
-        $solicitud->user_rechazado = Auth::user()->id;
-        $solicitud->save();
+        DB::transaction(function () {
+            $solicitud = $this->solicitudEmpresa($this->movimiento, true);
+            $this->validarPendiente($solicitud);
+            $solicitud->estado = "RECHAZADO";
+            $solicitud->razon_rechazado = $this->razon_rechazo;
+            $solicitud->fecha_rechazado = date('Y-m-d H:i:s');
+            $solicitud->user_rechazado = Auth::user()->id;
+            $solicitud->save();
+        });
         $color = 'success';
-        $mensaje = 'Solicitud Rechazada correctamemte';
+        $mensaje = 'Solicitud rechazada correctamente';
         $data = [
             'titulo' => 'Notificación',
             'color' => $color,
@@ -369,14 +430,20 @@ class CustomerMovimientoAprobacionComponent extends Component
             ->leftJoin('customer', 'customer_movimiento_solicitud.customer_id', '=', 'customer.id')
             ->leftJoin('bancos', 'customer_movimiento_solicitud.banco_id', '=', 'bancos.id')
             ->leftJoin('customer_tipo_ahorros as cta', 'customer_movimiento_solicitud.customer_tipo_ahorro_id', '=', 'cta.id')
+            ->where('customer_movimiento_solicitud.company_id', Auth::user()->company_id)
             ->where('customer.company_id', Auth::user()->company_id)
-            ->where('customer_movimiento_solicitud.estado', 'PENDIENTE')
+            ->with('customerTipoAhorro.tipoAhorros')
+            ->when($this->estadoFiltro !== '', function ($query) {
+                $query->where('customer_movimiento_solicitud.estado', $this->estadoFiltro);
+            })
             ->where(function ($query) {
                 $query->where('customer.numero_documento', 'like', '%' . $this->search . '%')
                     ->orWhere('customer.nombres', 'like', '%' . $this->search . '%')
-                    ->orWhere('customer.apellidos', 'like', '%' . $this->search . '%');
+                    ->orWhere('customer.apellidos', 'like', '%' . $this->search . '%')
+                    ->orWhere('cta.codigo', 'like', '%' . $this->search . '%')
+                    ->orWhere('customer_movimiento_solicitud.comprobante', 'like', '%' . $this->search . '%');
             })
-            ->orderBy('id', 'desc')
+            ->orderBy('customer_movimiento_solicitud.id', 'desc')
             ->paginate(20);
 
         return view('livewire.customer-movimiento-aprobacion.customer-movimiento-aprobacion-component', compact('movimientos'));

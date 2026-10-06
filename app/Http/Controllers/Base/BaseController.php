@@ -1250,18 +1250,18 @@ class BaseController extends Controller
 
     public static function guardarValoresCartola($ahrroID, $customerID, $movimiento, $transaction)
     {
-        $cartolaActiva = CartolaHeader::where('customer_tipo_ahorro_id', $ahrroID)
+        $cartolaActiva = CartolaHeader::where('company_id', Auth::user()->company_id)->where('customer_tipo_ahorro_id', $ahrroID)
             ->where('customer_id', $customerID)
             ->where('status', 'ACTIVA')
             ->first();
         if ($cartolaActiva == null) {
             $clientes = Customer::find($customerID);
             $tabla = 'cartola_headers';
-            $code = BaseController::generarCodigoCron($tabla, 3);
+            $code = BaseController::generarCodigo($tabla, 3);
             $cartolaNew = [
                 "code" => $code,
                 "numero" => $code,
-                "company_id" => 1,
+                "company_id" => Auth::user()->company_id,
                 "customer_id" => $clientes->id,
                 "customer_code" => $clientes->code,
                 "customer_name" => $clientes->nombres . ' ' . $clientes->apellidos,
@@ -1453,7 +1453,7 @@ class BaseController extends Controller
         $cartolaOld->status = 'CERRADA';
         $cartolaOld->save();
         $tabla = 'cartola_headers';
-        $code = BaseController::generarCodigoCron($tabla, 3);
+        $code = BaseController::generarCodigo($tabla, 3);
         $clientes = Customer::find($customerID);
         $cartolaNew = [
             "code" => $code,
