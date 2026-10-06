@@ -1,90 +1,92 @@
-<div>
-    <div class="row d-flex justify-content-between align-items-center mb-2 mt-2">
-        <div class="col-auto">
-            <button type="button" class="btn btn-primary" wire:click="abrirModal(0);" data-bs-toggle="modal"
-                data-bs-target="#modalGeneral" title="Nuevo Gasto">
-                <i class="fa fa-plus"></i>
-            </button>
-            <button wire:click="abrirModalXML(0)" type="button" data-bs-toggle="modal"
-                data-bs-target="#modalGeneral1" type="button"
-                class="btn btn-warning" title="Cargar XML de la Factura"><b>XML</b>
-            </button>
+<div class="gasto-module">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="page-header mb-1"><i class="fa fa-receipt text-primary me-2" aria-hidden="true"></i> Gastos</h1>
+            <p class="text-muted mb-0">Gestiona tus facturas, aprobaciones y pagos.</p>
         </div>
-
-        <div class="col-auto d-flex gap-3">
-            <div class="input-group me-4">
-                <span class="input-group-text">Estado:</span>
-                <select class="form-control" wire:model="estadoFiltro">
-                    <option value="TODOS">TODOS</option>
-                    <option value="BORRADOR">BORRADOR</option>
-                    <option value="PENDIENTE">PENDIENTE</option>
-                    <option value="APROBADO">APROBADO</option>
-                    <option value="PAGADO">PAGADO</option>
-                    <option value="RECHAZADO">RECHAZADO</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <span class="input-group-text">Fecha:</span>
-                <input type="date" wire:model="fecha_inicio" class="form-control">
-                <input type="date" wire:model="fecha_fin" class="form-control">
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" wire:click="abrirModal(0)" data-bs-toggle="modal" data-bs-target="#modalGeneral"><i class="fa fa-plus me-1" aria-hidden="true"></i> Nuevo gasto</button>
+            <button type="button" class="btn btn-outline-primary" wire:click="abrirModalXML(0)" data-bs-toggle="modal" data-bs-target="#modalGeneral1"><i class="fa fa-file-code me-1" aria-hidden="true"></i> Importar XML</button>
+        </div>
+    </div>
+    <div class="panel panel-inverse mb-4">
+        <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtrar gastos</h4></div>
+        <div class="panel-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="gasto-estado">Estado</label>
+                    <select id="gasto-estado" class="form-select" wire:model="estadoFiltro">
+                        <option value="TODOS">Todos los estados</option>
+                        <option value="BORRADOR">Borrador</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="APROBADO">Aprobado</option>
+                        <option value="PAGADO">Pagado</option>
+                        <option value="RECHAZADO">Rechazado</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="gasto-desde">Fecha de registro desde</label>
+                    <input id="gasto-desde" type="date" wire:model="fecha_inicio" class="form-control">
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="gasto-hasta">Fecha de registro hasta</label>
+                    <input id="gasto-hasta" type="date" wire:model="fecha_fin" class="form-control">
+                </div>
             </div>
         </div>
     </div>
-
-
     <div class="row">
         <div class="col-12">
-            <div class="card card-default">
-                <div class="card-header" style="padding: 8px;">
-                    <h5 class="card-title"><i class="fa fa-dollar-sign"></i> <b>Gastos</b></h5>
+            <div class="panel panel-inverse">
+                <div class="panel-heading">
+                    <h4 class="panel-title"><i class="fa fa-list me-2"></i> Gastos registrados <span class="badge bg-primary ms-2">{{ $gastos->total() }}</span></h4>
                 </div>
-                <div class="card-body table-responsive p-2">
-                    <table class="table table-sm table-bordered table-striped">
+                <div class="panel-body table-responsive p-0 gasto-table-wrap">
+                    <table class="table table-hover table-striped align-middle mb-0 gasto-table">
                         <thead>
                             <tr style="padding: 10px;">
                                 <th style="width: 1%;">#</th>
-                                <th>Categorias</th>
+                                <th>Categorías</th>
                                 <th>Proveedor</th>
                                 <th># Factura</th>
                                 <th>Fecha Emisión</th>
                                 <th>Subtotal</th>
                                 <th>Descuento</th>
-                                <th>Subtotal Descuento</th>
-                                <th>Subtotales %</th>
-                                <th>Iva %</th>
+                                <th>Subtotal con descuento</th>
+                                <th>Base imponible</th>
+                                <th>IVA</th>
                                 <th>TOTAL</th>
                                 <th>Monto Pagado</th>
                                 <th>Monto Retenciones</th>
                                 <th>Monto Pendiente</th>
                                 <th>Estado</th>
-                                <th>Acción</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($gastos as $gas)
-                            <tr>
+                            <tr wire:key="gasto-{{ $gas->id }}">
                                 <td>{{ $gas->id }}</td>
                                 <td><b>{{ $gas->categoria_nombre }}</b></td>
-                                <td><i class="fa fa-truck"></i> <b>{{ $gas->nombreProveedor }}</b> - {{ $gas->ruc }}</td>
+                                <td><i class="fa fa-building text-muted me-1"></i> <b>{{ $gas->nombreProveedor }}</b><small class="d-block text-muted">{{ $gas->ruc }}</small></td>
                                 <td>{{ $gas->establecimiento }}-{{ $gas->punto_emision }}-{{ $gas->numero }}</td>
                                 <td>{{ $gas->fecha_emision }}</td>
-                                <td>{{ $gas->valor }}</td>
-                                <td>{{ $gas->descuento }}</td>
-                                <td>{{ $gas->subtotal_descuento }}</td>
-                                <td>{{ $gas->suma_subtotal }}</td>
-                                <td>{{ $gas->suma_iva }}</td>
-                                <td>{{ $gas->total }}</td>
-                                <td>{{ $gas->monto_pagado }}</td>
-                                <td>{{ $gas->monto_retencion }}</td>
-                                <td>
-                                    <b style="color: {{ ($gas->valor_pendiente !== '0.00') ? 'red': '#212550' }};">$ {{ $gas->valor_pendiente }}</b>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->valor, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->descuento, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->subtotal_descuento, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->suma_subtotal, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->suma_iva, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->total, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->monto_pagado, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">{{ number_format((float) $gas->monto_retencion, 2, '.', ',') }}</td>
+                                <td class="text-end gasto-money">
+                                    <b style="color: {{ ((float) $gas->valor_pendiente > 0) ? 'red': '#212550' }};">$ {{ number_format((float) $gas->valor_pendiente, 2, '.', ',') }}</b>
                                 </td>
                                 <td>
                                     @if ($gas->estado == 'BORRADOR')
-                                    <small class="badge bg-warning">{{ $gas->estado }}</small>
+                                    <small class="badge bg-warning text-dark">{{ $gas->estado }}</small>
                                     @elseif ($gas->estado == 'PENDIENTE')
-                                    <small class="badge badge-default">{{ $gas->estado }}</small>
+                                    <small class="badge bg-secondary">{{ $gas->estado }}</small>
                                     @elseif ($gas->estado == 'APROBADO')
                                     <small class="badge bg-primary">{{ $gas->estado }}</small>
                                     @elseif ($gas->estado == 'PAGADO')
@@ -101,74 +103,77 @@
                                 <td>
                                     @if ($gas->estado == 'BORRADOR')
                                     <button wire:click="abrirModal({{ $gas->id }})" type="button" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral" type="button"
-                                        class="btn bg-light btn-xs"><i class="fa fa-pen">
+                                        data-bs-target="#modalGeneral"
+                                        title="Editar gasto" aria-label="Editar gasto" class="btn btn-outline-primary btn-xs"><i class="fa fa-pen"></i>
                                     </button>
                                     <button wire:click="confirmarBorrarGasto({{ $gas->id }})"
-                                        class="btn bg-danger btn-xs"><i class="fa fa-trash"></i></button>
+                                        type="button" title="Eliminar gasto" aria-label="Eliminar gasto" class="btn btn-outline-danger btn-xs"><i class="fa fa-trash"></i></button>
                                     @elseif ($gas->estado == 'PENDIENTE')
                                     <button wire:click="abrirModalXML({{ $gas->id }})" type="button" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral1" type="button"
-                                        class="btn btn-warning btn-xs" title="Cargar XML de la Factura">XML</button>
+                                        data-bs-target="#modalGeneral1"
+                                        class="btn btn-warning btn-xs" title="Importar XML de la factura" aria-label="Importar XML de la factura"><i class="fa fa-file-code"></i></button>
                                     <button wire:click="abrirModal({{ $gas->id }})" type="button" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral" type="button"
-                                        class="btn bg-light btn-xs"><i class="fa fa-pen"></i></button>
+                                        data-bs-target="#modalGeneral"
+                                        title="Editar gasto" aria-label="Editar gasto" class="btn btn-outline-primary btn-xs"><i class="fa fa-pen"></i></button>
 
 
                                     <button wire:click="verGasto({{ $gas->id }})" type="button" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral2" type="button"
-                                        class="btn bg-light btn-xs"><i class="fa fa-user-check"></i></button>
+                                        data-bs-target="#modalGeneral2"
+                                        title="Revisar aprobación" aria-label="Revisar aprobación" class="btn btn-outline-success btn-xs"><i class="fa fa-clipboard-check"></i></button>
 
 
                                     <button wire:click="confirmarBorrarGasto({{ $gas->id }})"
-                                        class="btn bg-danger btn-xs"><i class="fa fa-trash"></i></button>
+                                        type="button" title="Eliminar gasto" aria-label="Eliminar gasto" class="btn btn-outline-danger btn-xs"><i class="fa fa-trash"></i></button>
                                     @elseif ($gas->estado == 'APROBADO')
-                                    <a wire:click="abrirModal({{ $gas->id }})" type="button" data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral" type="button"
-                                        class="btn bg-light btn-xs"><i class="fa fa-eye"></i></a>
+                                    <button type="button" wire:click="abrirModal({{ $gas->id }})" data-bs-toggle="modal"
+                                        data-bs-target="#modalGeneral"
+                                        title="Ver gasto" aria-label="Ver gasto" class="btn btn-outline-primary btn-xs"><i class="fa fa-eye"></i></button>
 
-                                    <a class="btn btn-{{($gas->monto_pagado > 0) ? 'danger' : 'primary'}} btn-xs text-white"
+                                    <button type="button" class="btn btn-{{($gas->monto_pagado > 0) ? 'danger' : 'primary'}} btn-xs text-white"
                                         wire:click="abrirModalFP({{ $gas->id }})"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral4">FP</a>
+                                        data-bs-toggle="modal" data-bs-target="#modalGeneral4" title="Gestionar pagos" aria-label="Gestionar pagos"><i class="fa fa-credit-card"></i></button>
 
-                                    <a class="btn btn-{{($gas->monto_retencion > 0) ? 'danger' : 'primary'}} btn-xs text-white"
+                                    <button type="button" class="btn btn-{{($gas->monto_retencion > 0) ? 'danger' : 'primary'}} btn-xs text-white"
                                         wire:click="abrirModalRET({{ $gas->id }})"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral5">RET</a>
+                                        data-bs-toggle="modal" data-bs-target="#modalGeneral5" title="Gestionar retenciones" aria-label="Gestionar retenciones"><i class="fa fa-file-invoice-dollar"></i></button>
 
-                                    <a class="btn btn-warning btn-xs text-white"
+                                    <button type="button" class="btn btn-warning btn-xs text-white"
                                         wire:click="reversarPendiente({{ $gas->id }})"
-                                        title="Reversar a Pendiente"><i class="fa fa-undo"></i></a>
+                                        title="Reversar a Pendiente"><i class="fa fa-undo"></i></button>
 
                                     @if ($gas->valor_pendiente == '0.00')
-                                    <a class="btn btn-success btn-xs text-white"
+                                    <button type="button" class="btn btn-success btn-xs text-white"
                                         wire:click="pagado({{ $gas->id }})"
-                                        title="Enviar a Pagado"><i class="fa fa-dollar-sign"></i></a>
+                                        title="Marcar como pagado"><i class="fa fa-check-circle"></i></button>
                                     @endif
 
                                     @elseif ($gas->estado == 'PAGADO')
-                                    <a class="btn btn-primary btn-xs text-white"
+                                    <button type="button" class="btn btn-primary btn-xs text-white"
                                         wire:click="abrirModalAsientos({{ $gas->id }})"
-                                        data-bs-toggle="modal" data-bs-target="#modalGeneral3"><i class="fa fa-chair"></i></a>
+                                        data-bs-toggle="modal" data-bs-target="#modalGeneral3" title="Ver asientos contables" aria-label="Ver asientos contables"><i class="fa fa-book"></i></button>
                                     <a class="btn btn-default btn-xs" href="{{URL::to('gastos/ticket/' . $gas->id)}}"
                                         title="Ticket">
                                         <i class="far fa-file-pdf"></i>
                                     </a>
-                                    <a class="btn btn-warning btn-xs text-white"
+                                    <button type="button" class="btn btn-warning btn-xs text-white"
                                         wire:click="reversarAprobado({{ $gas->id }})"
                                         title="Reversar a Aprobado"><i class="fa fa-undo"></i>
-                                    </a>
+                                    </button>
                                     @elseif ($gas->estado == 'RECHAZADO')
-                                    <a class="btn btn-warning btn-xs text-white"
+                                    <button type="button" class="btn btn-warning btn-xs text-white"
                                         wire:click="reversarPendiente({{ $gas->id }})"
-                                        title="Reversar a Pendiente"><i class="fa fa-undo"></i></a>
+                                        title="Reversar a Pendiente"><i class="fa fa-undo"></i></button>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td class="text-center" colspan="15">
+                                <td class="text-center py-5" colspan="16">
+                                    <i class="fa fa-receipt fa-2x text-muted mb-3 d-block" aria-hidden="true"></i>
+                                    <h5>No hay gastos para estos filtros</h5>
+                                    <p class="text-muted">Ajusta el estado o las fechas, o registra un nuevo gasto.</p>
                                     <button type="button" class="btn btn-primary btn-xs" wire:click="abrirModal(0);" data-bs-toggle="modal" data-bs-target="#modalGeneral" title="Nuevo Gasto">
-                                        <i class="fa fa-plus"></i> Primer Gastos
+                                        <i class="fa fa-plus"></i> Nuevo gasto
                                     </button>
                                 </td>
                             </tr>
@@ -176,7 +181,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3 ms-3">
+                <div class="p-3 border-top">
                     {{ $gastos->links() }}
                 </div>
             </div>
@@ -184,18 +189,16 @@
     </div>
 
     {{-- MODAL --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" aria-hidden="true"
+    <div wire:ignore.self class="modal fade" id="modalGeneral" aria-labelledby="modalGeneral-title" tabindex="-1" style="display: none;" aria-hidden="true"
         data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"><i class="fa fa-dollar-sign"></i> Gastos </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" style="color: gray;">×</span>
-                    </button>
+                    <h4 class="modal-title" id="modalGeneral-title"><i class="fa fa-receipt"></i> Gastos </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeGasto">
-                    <div class="modal-body">
+                    <div class="modal-body"><div class="gasto-modal-intro">Registra el proveedor, la categoría y los importes de la factura.</div>
                         @if ($errors->any())
                         <div class="col-12">
                             <div class="info-box bg-light">
@@ -210,25 +213,25 @@
                         </div>
                         @endif
                         <div class="row mb-2">
-                            <div class="col-7" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-7" style="margin-bottom: 10px;">
                                 <label>Proveedores</label>
                                 <a href="/proveedores" target="_blank">
                                     <i class="fa fa-plus-circle"></i>
                                 </a>
-                                <select class="form-control" wire:model="proveedor_id" {{($this->estado !== 'APROBADO') ? '' : 'readonly'}}>
+                                <select class="form-select" wire:model="proveedor_id" {{($this->estado !== 'APROBADO') ? '' : 'readonly'}}>
                                     <option value="0"> Seleccione </option>
                                     @foreach ($this->proveedores as $prove)
                                     <option value="{{ $prove['id'] }}">{{ $prove['nombre'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-5" style="margin-bottom: 10px;">
-                                <label>Categorias</label>
+                            <div class="col-12 col-md-5" style="margin-bottom: 10px;">
+                                <label>Categorías</label>
                                 <a href="/gastos-categorias" target="_blank">
                                     <i class="fa fa-plus-circle"></i>
                                 </a>
-                                
-                                <select class="form-control" wire:model="gastos_categorias_id" {{($this->estado !== 'APROBADO') ? '' : 'readonly'}}>
+
+                                <select class="form-select" wire:model="gastos_categorias_id" {{($this->estado !== 'APROBADO') ? '' : 'readonly'}}>
                                     <option value="0"> Seleccione una</option>
                                     @foreach ($this->categorias as $cat)
                                     <option value="{{ $cat['id'] }}">{{ $cat['nombre'] }}</option>
@@ -247,17 +250,15 @@
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
-                            
+
 
                             <hr class="w-100">
                             <div class="col-12" style="margin-bottom: 10px;">
-                                <label>SUBTOTAL:</label>
+                                <label>Subtotal</label>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">
+                                    <span class="input-group-text">
                                             <i class="fas fa-dollar-sign"></i>
                                         </span>
-                                    </div>
 
                                     <input type="number"
                                         step="0.01"
@@ -299,18 +300,16 @@
                                 </div>
                             </div>
                             @if((int) $this->tiene_impuestos === 1)
-                                <div class="card-body mt-0 p-0">
-                                    <table class="table table-sm">
+                                <div class="card-body mt-0 p-0 table-responsive">
+                                    <table class="table table-hover align-middle gasto-modal-table">
                                         <tbody>
                                             <tr>
                                                 <td class="text-end"><b>Subtotal Descuento: </b></td>
                                                 <td>
                                                     <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">
+                                                        <span class="input-group-text">
                                                                 <i class="fas fa-dollar-sign"></i>
                                                             </span>
-                                                        </div>
                                                         <input type="number"
                                                             class="form-control form-control-sm"
                                                             step="0.01"
@@ -323,11 +322,9 @@
                                                 <td class="text-end">Descuento:</td>
                                                 <td>
                                                     <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">
+                                                        <span class="input-group-text">
                                                                 <i class="fas fa-dollar-sign"></i>
                                                             </span>
-                                                        </div>
                                                         <input type="number"
                                                             class="form-control form-control-sm"
                                                             step="0.01"
@@ -343,11 +340,9 @@
                                                 <td class="text-end">Subtotal Exento: </td>
                                                 <td>
                                                     <div class="input-group mb-0">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">
+                                                        <span class="input-group-text">
                                                                 <i class="fas fa-dollar-sign"></i>
                                                             </span>
-                                                        </div>
                                                         <input type="number"
                                                             class="form-control form-control-sm"
                                                             step="0.01"
@@ -382,11 +377,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="input-group">
-                                                            <div class="input-group-prepend">
-                                                                <span class="input-group-text">
+                                                            <span class="input-group-text">
                                                                     <i class="fas fa-dollar-sign"></i>
                                                                 </span>
-                                                            </div>
 
                                                             <input type="number"
                                                                 class="form-control form-control-sm"
@@ -403,11 +396,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="input-group">
-                                                            <div class="input-group-prepend">
-                                                                <span class="input-group-text">
+                                                            <span class="input-group-text">
                                                                     <i class="fas fa-dollar-sign"></i>
                                                                 </span>
-                                                            </div>
 
                                                             <input type="number"
                                                                 class="form-control form-control-sm"
@@ -430,11 +421,9 @@
                                                 <td class="text-end"><b>Subtotales: </b></td>
                                                 <td>
                                                     <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">
+                                                        <span class="input-group-text">
                                                                 <i class="fas fa-dollar-sign"></i>
                                                             </span>
-                                                        </div>
                                                         <input type="number"
                                                             class="form-control form-control-sm"
                                                             step="0.01"
@@ -447,11 +436,9 @@
                                                 <td class="text-end"><b>Ivas: </b></td>
                                                 <td>
                                                     <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">
+                                                        <span class="input-group-text">
                                                                 <i class="fas fa-dollar-sign"></i>
                                                             </span>
-                                                        </div>
                                                         <input type="number"
                                                             class="form-control form-control-sm"
                                                             step="0.01"
@@ -466,11 +453,9 @@
                                 </div>
                             @endif
                             <div class="col-12" style="margin-bottom: 10px;">
-                                <label>TOTALES:</label>
+                                <label>Total del gasto</label>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     <input type="number" class="form-control form-control-lg" step="0.01" placeholder="0.00"
                                         wire:model="total" readonly>
                                 </div>
@@ -480,9 +465,7 @@
                             <div class="col-12" style="margin-bottom: 10px;">
                                 <label>Observación: </label>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-comments"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fas fa-comments"></i></span>
                                     <input type="text" class="form-control" placeholder="Descripcion"
                                         wire:model="descripcion" {{($this->estado !== 'APROBADO') ? '' : 'readonly'}}>
                                 </div>
@@ -490,21 +473,19 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default me-auto" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal">
                             Cerrar
                         </button>
 
                         @if($this->estado !== 'APROBADO')
                             {{-- GUARDA EN BORRADOR --}}
-                            <button type="submit" class="btn btn-primary">
-                                Guardar
-                            </button>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-save me-1" aria-hidden="true"></i> Guardar borrador</button>
 
                             {{-- CAMBIA A PENDIENTE --}}
                             <button type="button"
                                 class="btn btn-success text-white"
                                 wire:click="solicitarAprobacion">
-                                <i class="fa fa-thumbs-up"></i> Solicitar Aprobación
+                                <i class="fa fa-paper-plane"></i> Solicitar aprobación
                             </button>
                         @endif
                     </div>
@@ -514,21 +495,19 @@
     </div>
 
     {{-- MODAL XML --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral1" style="display: none;" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+    <div wire:ignore.self class="modal fade" id="modalGeneral1" aria-labelledby="modalGeneral1-title" tabindex="-1" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"><i class="fa fa-file"></i> Cargar XML </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" style="color: gray;">×</span>
-                    </button>
+                    <h4 class="modal-title" id="modalGeneral1-title"><i class="fa fa-file-code"></i> Importar XML </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <h2>Subir Archivos</h2>
+                    <div class="gasto-modal-intro"><i class="fa fa-file-upload me-2" aria-hidden="true"></i> Selecciona el XML de la factura para revisar sus datos antes de guardar.</div>
 
                     <div class="form-group">
-                        <label for="fileInput" class="font-weight-bold">📂 Cargar XML</label>
-                        <input type="file" wire:model="xmlFile" class="form-control">
+                        <label for="fileInput" class="form-label">Archivo XML de la factura</label>
+                        <input id="fileInput" type="file" accept=".xml,text/xml,application/xml" wire:model="xmlFile" class="form-control"><div class="form-text mb-3" wire:loading wire:target="xmlFile" role="status"><i class="fa fa-spinner fa-spin me-1"></i> Procesando archivo...</div>
                         @error('xmlFile') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
 
@@ -539,7 +518,7 @@
                         {!! $htmlXml !!}
                         <div class="row">
                             <!-- accepted payments column -->
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <p class="lead">Métodos de Pago:</p>
 
                                 {!! $htmlXmlTabla1 !!}
@@ -548,8 +527,8 @@
                                 </table>
                             </div>
                             <!-- /.col -->
-                            <div class="col-6">
-                                <p class="lead">Desgloce</p>
+                            <div class="col-12 col-md-6">
+                                <p class="lead">Desglose de impuestos</p>
                                 <div class="table-responsive">
                                     {!! $htmlXmlTabla2 !!}
 
@@ -559,9 +538,9 @@
 
                         <div class="row no-print">
                             <div class="col-12">
-                                <a type="button" class="btn btn-primary float-end text-white" style="margin-right: 5px;" wire:click="guardarGastos()">
-                                    <i class="fas fa-download"></i> Guardar
-                                </a>
+                                <button type="button" class="btn btn-primary float-end text-white" style="margin-right: 5px;" wire:click="guardarGastos()">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -569,7 +548,7 @@
 
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -577,19 +556,17 @@
 
 
     {{-- MODAL APROBAR --}}
-<div wire:ignore.self class="modal fade" id="modalGeneral2" tabindex="-1" role="dialog"
+<div wire:ignore.self class="modal fade" id="modalGeneral2" aria-labelledby="modalGeneral2-title" tabindex="-1" role="dialog"
     aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title"><i class="fa fa-dollar-sign"></i> Contabilidad Gasto </h4>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="color: gray;">×</span>
-                </button>
+                <h4 class="modal-title" id="modalGeneral2-title"><i class="fa fa-clipboard-check"></i> Revisión del gasto </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <form wire:submit.prevent="storeGasto">
-                <div class="modal-body">
+                <div class="modal-body"><div class="gasto-modal-intro">Verifica los datos tributarios y la distribución contable antes de aprobar el gasto.</div>
                     <div class="row mb-2">
 
                         @if ($this->id_aprobar !== 0)
@@ -621,9 +598,9 @@
                                  CAMPOS TRIBUTARIOS
                             ========================== --}}
 
-                            <div class="col-4" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                 <label>Sustento Tributario</label>
-                                <select class="form-control form-control-sm"
+                                <select class="form-select"
                                     wire:model="sustento_tributario_id"
                                     {{ $bloquearTributarios ? 'disabled' : '' }}>
                                     <option value="">Seleccione</option>
@@ -635,9 +612,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-4" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                 <label>Tipo de Comprobante</label>
-                                <select class="form-control form-control-sm"
+                                <select class="form-select"
                                     wire:model="tipo_comprobante_id"
                                     {{ $bloquearTributarios ? 'disabled' : '' }}>
                                     <option value="">Seleccione</option>
@@ -649,12 +626,10 @@
                                 </select>
                             </div>
 
-                            <div class="col-4" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                 <label># Factura</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fa fa-info"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-file-invoice" aria-hidden="true"></i></span>
                                     <input type="number"
                                         class="form-control form-control-sm"
                                         placeholder="0000000001"
@@ -664,12 +639,10 @@
                             </div>
 
 
-                            <div class="col-2" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-2" style="margin-bottom: 10px;">
                                 <label>Establecimiento</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fa fa-info"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-building" aria-hidden="true"></i></span>
                                     <input type="number"
                                         class="form-control form-control-sm"
                                         placeholder="001"
@@ -678,12 +651,10 @@
                                 </div>
                             </div>
 
-                            <div class="col-2" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-2" style="margin-bottom: 10px;">
                                 <label>Punto de Emisión</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fa fa-info"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-map-marker-alt" aria-hidden="true"></i></span>
                                     <input type="number"
                                         class="form-control form-control-sm"
                                         placeholder="001"
@@ -693,12 +664,10 @@
                             </div>
 
                             {{-- AUTORIZACIÓN --}}
-                            <div class="col-6" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-6" style="margin-bottom: 10px;">
                                 <label>Autorización</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fa fa-info"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-shield-alt" aria-hidden="true"></i></span>
                                     <input type="text"
                                         wire:model.defer="autorizacion"
                                         class="form-control form-control-sm"
@@ -707,12 +676,10 @@
                             </div>
 
                             {{-- FECHA AUTORIZACIÓN --}}
-                            <div class="col-2" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-2" style="margin-bottom: 10px;">
                                 <label>Fecha de Autorización</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fa fa-info"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-calendar-check" aria-hidden="true"></i></span>
                                     <input type="date"
                                         wire:model.defer="fecha_autorizacion"
                                         class="form-control form-control-sm"
@@ -725,15 +692,13 @@
                             {{-- =========================
                                     VALOR GASTO
                                 ========================== --}}
-                                <div class="card-body p-0">
+                                <div class="card-body p-0 table-responsive">
                                     <div class="col-12" style="margin-bottom: 10px;">
-                                        <label>VALOR:</label>
+                                        <label>Valor del gasto</label>
                                         <div class="input-group mb-3">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text">
-                                                    <i class="fa fa-info"></i>
+                                            <span class="input-group-text">
+                                                    <i class="fa fa-dollar-sign" aria-hidden="true"></i>
                                                 </span>
-                                            </div>
                                             <input type="number"
                                                 class="form-control form-control-lg"
                                                 step="0.01"
@@ -746,14 +711,14 @@
 
                             <hr class="w-100">
 
-                            
+
 
                             {{-- =========================
                                     CUENTAS CONTABLES
                                 ========================== --}}
-                                <div class="col-4" style="margin-bottom: 10px;">
+                                <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                     <label>Plan cuentas</label>
-                                    <select class="form-control form-control-sm" wire:model="gastos_plan_cuentas_id">
+                                    <select class="form-select" wire:model="gastos_plan_cuentas_id">
                                         <option value="">Seleccione</option>
                                         @foreach ($this->planCuentas as $plan)
                                             <option value="{{ $plan['id'] }}">{{ $plan['nombre'] }}</option>
@@ -761,9 +726,9 @@
                                     </select>
                                 </div>
 
-                                <div class="col-4" style="margin-bottom: 10px;">
+                                <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                     <label>C. Costos</label>
-                                    <select class="form-control form-control-sm" wire:model="gastos_centro_costos_id">
+                                    <select class="form-select" wire:model="gastos_centro_costos_id">
                                         <option value="">Seleccione</option>
                                         @foreach ($this->centroCostos as $centro)
                                             <option value="{{ $centro['id'] }}">{{ $centro['name'] }}</option>
@@ -771,14 +736,12 @@
                                     </select>
                                 </div>
 
-                                <div class="col-3" style="margin-bottom: 10px;">
+                                <div class="col-12 col-md-3" style="margin-bottom: 10px;">
                                     <label>Valor</label>
                                     <div class="input-group mb-4">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">
+                                        <span class="input-group-text">
                                                 <i class="fas fa-dollar-sign"></i>
                                             </span>
-                                        </div>
                                         <input type="number"
                                             class="form-control form-control-sm"
                                             step="0.01"
@@ -788,18 +751,18 @@
                                     </div>
                                 </div>
 
-                                <div class="col-1 mt-4 p-2">
-                                    <a type="button"
-                                        class="btn btn-default btn-sm"
+                                <div class="col-12 mt-2 mb-3">
+                                    <button type="button"
+                                        class="btn btn-outline-secondary btn-sm"
                                         wire:click="aumentarCuenta({{ $this->id_aprobar }})">
-                                        <i class="fa fa-plus"></i>
-                                    </a>
+                                        <i class="fa fa-plus me-1"></i> Agregar cuenta
+                                    </button>
                                 </div>
 
                             {{-- =========================
                                     TABLA DE CUENTAS
                                 ========================== --}}
-                                <div class="card-body p-0 w-100">
+                                <div class="card-body p-0 w-100 table-responsive">
                                     <table class="table table-sm table-hover">
                                         <thead>
                                             <tr>
@@ -816,10 +779,10 @@
                                                     <td>{{ $cuenta->centroCostos->name ?? '' }}</td>
                                                     <td>$ {{ number_format($cuenta->valor, 2, '.', ',') }}</td>
                                                     <td>
-                                                        <a class="btn btn-default btn-sm"
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm"
                                                             wire:click="eliminarCuenta({{ $cuenta->id }})">
                                                             <i class="fa fa-trash"></i>
-                                                        </a>
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             @empty
@@ -849,24 +812,22 @@
                             class="form-control"
                             placeholder="Observación obligatoria si se deniega..."
                             wire:model="razon_rechaza">
-                        <div class="input-group-append">
-                            <span class="input-group-text"><i class="fas fa-comment"></i></span>
-                        </div>
+                        <span class="input-group-text"><i class="fas fa-comment"></i></span>
                     </div>
 
-                    <a class="btn btn-primary text-white"
+                    <button type="button" class="btn btn-primary text-white"
                         wire:click="aprobar({{ $this->id_aprobar }})">
-                        <i class="fa fa-thumbs-up"></i> Aprobar
-                    </a>
+                        <i class="fa fa-check-circle me-1"></i> Aprobar gasto
+                    </button>
 
-                    <a class="btn btn-danger text-white"
+                    <button type="button" class="btn btn-danger text-white"
                         wire:click="denegar({{ $this->id_aprobar }})">
-                        <i class="fa fa-thumbs-down"></i> Denegar
-                    </a>
+                        <i class="fa fa-times-circle me-1"></i> Rechazar gasto
+                    </button>
                 </div>
 
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </form>
         </div>
@@ -874,18 +835,16 @@
 </div>
 
     {{-- MODAL ASIENTOS --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral3" style="display: none;" aria-hidden="true"
+    <div wire:ignore.self class="modal fade" id="modalGeneral3" aria-labelledby="modalGeneral3-title" tabindex="-1" style="display: none;" aria-hidden="true"
         data-bs-backdrop="static" role="dialog">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> ASIENTOS </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title" id="modalGeneral3-title"><i class="fa fa-book me-2"></i> Asientos contables </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="store">
-                    <div class="modal-body">
+                    <div class="modal-body"><div class="gasto-modal-intro">Consulta el detalle de las cuentas y abre el comprobante de cada asiento.</div>
                         @if ($errors->any())
                         <div class="callout callout-warning">
                             <h5>Verifica estas observaciones.</h5>
@@ -894,8 +853,8 @@
                             @endforeach
                         </div>
                         @endif
-                        <div class="row mt-4">
-                            <table class="table table-sm" style="border-collapse: collapse;">
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover align-middle gasto-modal-table" style="border-collapse: collapse;">
                                 <thead>
                                     <tr>
                                         <th>Asiento</th>
@@ -905,26 +864,25 @@
                                         <th>Cuenta</th>
                                         <th>Debe</th>
                                         <th>Haber</th>
-                                        <!-- <th>Acción</th> -->
+                                        <th>Comprobante</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($asientosHeader as $a)
-                                    <tr>
                                     <tr class="bg-primary text-white">
                                         <td colspan="7">
                                             <b>
                                                 {{
                                                     isset($a->customerMovimiento->typeTransaction->name) ?
                                                      $a->customerMovimiento->typeTransaction->name :
-                                                      'FACTURA DE PROVEEDORES' 
+                                                      'FACTURA DE PROVEEDORES'
                                                     }} -
                                                 {{ $a->concepto->nombre }}
                                                 <i>({{ $a->concepto->tipoConcepto->nombre }})</i>
                                             </b>
                                         </td>
                                         <td style="border: 1px solid #dee2e6; text-align: center;">
-                                            <a class="text-white"
+                                            <a class="text-white" title="Imprimir comprobante contable" aria-label="Imprimir comprobante contable"
                                                 href="/asientos/comprobante/{{ $a->id }}"> <i
                                                     class="fa fa-print"></i></a>
                                         </td>
@@ -964,14 +922,14 @@
                                         </td>
                                     </tr>
                                     @endforeach
-                                    </tr>
+
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </form>
             </div>
@@ -979,18 +937,16 @@
     </div>
 
     {{-- MODAL FP --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral4" style="display: none;" aria-hidden="true"
+    <div wire:ignore.self class="modal fade" id="modalGeneral4" aria-labelledby="modalGeneral4-title" tabindex="-1" style="display: none;" aria-hidden="true"
         data-bs-backdrop="static" role="dialog">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Formas de Pago </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title" id="modalGeneral4-title"><i class="fa fa-credit-card me-2"></i> Formas de pago </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form>
-                    <div class="modal-body">
+                    <div class="modal-body"><div class="gasto-modal-intro">Registra los pagos del gasto y los datos del comprobante cuando corresponda.</div>
                         @if ($errors->any())
                         <div class="callout callout-warning">
                             <h5>Verifica estas observaciones.</h5>
@@ -1000,42 +956,40 @@
                         </div>
                         @endif
                         <div class="row">
-                            <div class="col-4" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-4" style="margin-bottom: 10px;">
                                 <label>Forma Pago</label>
-                                <select class="form-control form-control-sm" wire:model="forma_pago_id">
+                                <select class="form-select" wire:model="forma_pago_id">
                                     <option> Seleccione </option>
                                     @foreach ($this->formasPago as $fp)
                                     <option value="{{ $fp['id'] }}">{{ $fp['nombre'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-3" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-3" style="margin-bottom: 10px;">
                                 <label>Fecha</label>
                                 <input type="date" class="form-control form-control-sm"
                                     wire:model="fecha_creacion">
                             </div>
-                            <div class="col-3" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-3" style="margin-bottom: 10px;">
                                 <label>Valor</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     <input type="number" class="form-control form-control-sm" step="0.01" placeholder="0.00"
                                         wire:model="fp_valor">
                                 </div>
                             </div>
-                            <div class="col-1 mt-4 p-2">
-                                <a type="submit" class="btn btn-default btn-sm"
-                                    wire:click="aumentarFP()"><i class="fa fa-plus"></i></a>
+                            <div class="col-12 mt-2 mb-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    wire:click="aumentarFP()"><i class="fa fa-plus me-1"></i> Agregar pago</button>
                             </div>
                         </div>
 
                         @if($mostrarTransferencia)
                         <div class="row">
 
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <label>Banco</label>
-                                <select class="form-control form-control-sm" wire:model="banco_id">
+                                <select class="form-select" wire:model="banco_id">
                                     <option value="">Seleccione Banco</option>
                                     @foreach($bancos as $banco)
                                     <option value="{{ $banco->id }}">
@@ -1045,7 +999,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-6">
+                            <div class="col-12 col-md-6">
                                 <label># Comprobante</label>
                                 <input type="text" class="form-control form-control-sm"
                                     wire:model="numero_comprobante"
@@ -1059,10 +1013,10 @@
                         <hr class="w-100">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Lista Formas de Pago</h3>
+                                <h5 class="mb-0"><i class="fa fa-credit-card me-2"></i> Pagos registrados</h5>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table table-sm">
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle gasto-modal-table">
                                     <thead>
                                         <tr>
                                             <th style="width: 10px">#</th>
@@ -1090,12 +1044,12 @@
 
                                             <td><b>$ {{$fp->valor}}</b></td>
                                             <td>
-                                                <a class="btn btn-default btn-sm" wire:click="confirmarQuitarFP({{$fp->id}})"><i class="fa fa-trash"></i></a>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" title="Eliminar pago" aria-label="Eliminar pago" wire:click="confirmarQuitarFP({{$fp->id}})"><i class="fa fa-trash"></i></button>
                                             </td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="4" class="text-center">Sin Formas de pago</td>
+                                            <td colspan="5" class="text-center text-muted py-4">Aún no hay pagos registrados</td>
                                         </tr>
                                         @endforelse
                                     </tbody>
@@ -1109,7 +1063,7 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </form>
             </div>
@@ -1117,18 +1071,16 @@
     </div>
 
     {{-- MODAL RET --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral5" style="display: none;" aria-hidden="true"
+    <div wire:ignore.self class="modal fade" id="modalGeneral5" aria-labelledby="modalGeneral5-title" tabindex="-1" style="display: none;" aria-hidden="true"
         data-bs-backdrop="static" role="dialog">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Retenciones </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title" id="modalGeneral5-title"><i class="fa fa-file-invoice-dollar me-2"></i> Retenciones </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="store">
-                    <div class="modal-body">
+                    <div class="modal-body"><div class="gasto-modal-intro">Selecciona la retención y revisa la base y el valor calculado antes de agregarla.</div>
                         @if ($errors->any())
                         <div class="callout callout-warning">
                             <h5>Verifica estas observaciones.</h5>
@@ -1138,47 +1090,43 @@
                         </div>
                         @endif
                         <div class="row">
-                            <div class="col-5" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-5" style="margin-bottom: 10px;">
                                 <label>Retenciones</label>
-                                <select class="form-control form-control-sm" wire:model="lista_retencion_id" wire:change="verTipoRetencion()">
+                                <select class="form-select" wire:model="lista_retencion_id" wire:change="verTipoRetencion()">
                                     <option value="0"> - Seleccione - </option>
                                     @foreach ($this->listaRetenciones as $ret)
                                     <option value="{{ $ret['id'] }}">{{ $ret['name'] }} - {{ $ret['codigo'] }} - {{ $ret['porcentaje'] }}% - {{ $ret['nombre'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-3" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-3" style="margin-bottom: 10px;">
                                 <label>Base</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     <input type="number" class="form-control form-control-sm" step="0.01" placeholder="0.00"
                                         wire:model="ret_valor" readonly>
                                 </div>
                             </div>
-                            <div class="col-3" style="margin-bottom: 10px;">
+                            <div class="col-12 col-md-3" style="margin-bottom: 10px;">
                                 <label>Resultado</label>
                                 <div class="input-group mb-4">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     <input type="number" class="form-control form-control-sm" step="0.01" placeholder="0.00"
                                         wire:model="ret_calculo" readonly>
                                 </div>
                             </div>
-                            <div class="col-1 mt-4 p-2">
-                                <a type="submit" class="btn btn-default btn-sm"
-                                    wire:click="aumentarRET()"><i class="fa fa-plus"></i></a>
+                            <div class="col-12 mt-2 mb-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    wire:click="aumentarRET()"><i class="fa fa-plus me-1"></i> Agregar retención</button>
                             </div>
                         </div>
                         <hr class="w-100">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Lista Retenciones</h3>
+                                <h5 class="mb-0"><i class="fa fa-file-invoice-dollar me-2"></i> Retenciones registradas</h5>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table table-sm">
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle gasto-modal-table">
                                     <thead>
                                         <tr>
                                             <th style="width: 10px">#</th>
@@ -1196,12 +1144,12 @@
                                             <td><b>$ {{$ret->valor}}</b></td>
                                             <td><b>$ {{$ret->calculo}}</b></td>
                                             <td>
-                                                <a class="btn btn-default btn-sm" wire:click="quitarRET({{$ret->id}})" title="Eliminar"><i class="fa fa-trash"></i></a>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" wire:click="quitarRET({{$ret->id}})" title="Eliminar retención" aria-label="Eliminar retención"><i class="fa fa-trash"></i></button>
                                             </td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="5" class="text-center">Sin Retenciones</td>
+                                            <td colspan="5" class="text-center text-muted py-4">Aún no hay retenciones registradas</td>
                                         </tr>
                                         @endforelse
                                     </tbody>
@@ -1215,7 +1163,7 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </form>
             </div>
