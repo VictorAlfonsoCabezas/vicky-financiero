@@ -35,6 +35,7 @@
         </div>
     </div>
     <div wire:loading class="alert alert-info" role="status"><span class="spinner-border spinner-border-sm me-2"></span>Preparando reporte…</div>
+    <p class="text-muted">Incluye las cargas iniciales de bóvedas finalizadas en el período seleccionado, asociadas a su banco. Para consultarlas por separado, selecciona «Carga inicial de bóveda» en Tipo de movimiento. Las cargas no tienen forma de pago asignada; selecciona «Todas» para incluirlas.</p>
     <div class="row">
         @foreach ([['Movimientos', number_format($totales->cantidad), 'primary'], ['Entradas registradas', number_format($totales->entradas, 2), 'success'], ['Salidas registradas', number_format($totales->salidas, 2), 'danger'], ['Neto del período', number_format($totales->entradas - $totales->salidas, 2), 'dark']] as $resumen)
             <div class="col-sm-6 col-xl-3"><div class="panel panel-inverse"><div class="panel-body"><div class="text-muted mb-2">{{ $resumen[0] }}</div><div class="fs-24px fw-bold text-{{ $resumen[2] }}">{{ $resumen[1] }}</div></div></div></div>
@@ -50,7 +51,7 @@
                     <thead><tr><th>Fecha</th><th>Banco / cuenta</th><th>Comprobante / referencia</th><th>Cliente</th><th>Concepto / forma de pago</th><th class="text-end">Valor</th><th>Dirección</th><th>Estado / detalle</th></tr></thead>
                     <tbody>
                         @forelse ($movimientos as $movimiento)
-                            <tr wire:key="cb-mov-{{ $movimiento->id }}">
+                            <tr wire:key="cb-mov-{{ $movimiento->origen }}-{{ $movimiento->id }}">
                                 <td class="text-nowrap">{{ $movimiento->date_created }}<small class="d-block text-muted">{{ $movimiento->hour_created }}</small></td>
                                 <td>{{ $movimiento->banco_nombre ?? 'Sin banco/cuenta identificada' }}<small class="d-block text-muted">{{ $movimiento->banco_cuenta }}</small></td>
                                 <td><strong>{{ $movimiento->comprobante ?: $movimiento->code }}</strong><small class="d-block">Ref.: {{ $movimiento->numero_deposito ?: 'Sin referencia' }}</small></td>

@@ -48,6 +48,21 @@ class BankMovementReportTest extends TestCase
             ['id' => 1, 'company_id' => 10, 'nombre' => 'Banco propio', 'numero_cuenta' => '00123'],
             ['id' => 2, 'company_id' => 20, 'nombre' => 'Banco ajeno', 'numero_cuenta' => '00999'],
         ]);
+        Schema::create('operaciones_descargo_bovedas', function (Blueprint $t) {
+            $t->increments('id'); $t->integer('company_id'); $t->string('nombre_corto');
+        });
+        DB::table('operaciones_descargo_bovedas')->insert([
+            ['id' => 1, 'company_id' => 10, 'nombre_corto' => 'CAREM'],
+            ['id' => 2, 'company_id' => 10, 'nombre_corto' => 'CARCLI'],
+            ['id' => 3, 'company_id' => 10, 'nombre_corto' => 'TRANRECI'],
+            ['id' => 4, 'company_id' => 20, 'nombre_corto' => 'CAREM'],
+        ]);
+        Schema::create('descargo_bovedas_header', function (Blueprint $t) {
+            $t->increments('id'); $t->integer('company_id'); $t->integer('bancos_id')->nullable();
+            $t->integer('operaciones_descargo_bovedas_id'); $t->integer('customer_movimiento_id')->nullable();
+            $t->boolean('status')->default(1); $t->decimal('valor', 12, 2);
+            $t->dateTime('fecha_creacion'); $t->string('estado'); $t->string('observacion')->nullable();
+        });
         DB::table('formas_pago')->insert(['id' => 1, 'company_id' => 10, 'nombre' => 'Transferencia']);
         DB::table('type_transactions')->insert(['id' => 1, 'company_id' => 10, 'name' => 'Depósito']);
         $user = new User(); $user->id = 1; $user->company_id = 10;
@@ -61,6 +76,76 @@ class BankMovementReportTest extends TestCase
             'date_created' => date('Y-m-15'), 'hour_created' => '12:00:00', 'code' => 'MOV-01',
             'customer_name' => 'Ana', 'forma_pago_id' => 1, 'type_transaction_id' => 1,
         ], $data));
+    }
+
+    private function opening(array $data = [])
+    {
+        return DB::table('descargo_bovedas_header')->insertGetId(array_merge([
+            'company_id' => 10, 'bancos_id' => 1, 'operaciones_descargo_bovedas_id' => 1,
+            'valor' => '250.50', 'fecha_creacion' => date('Y-m-15') . ' 23:59:59',
+            'estado' => 'FINALIZADO', 'observacion' => 'CARGA INICIAL',
+        ], $data));
+    }
+
+    public function testVaultOpeningsAppearByBankInScreenTotalsAndExports()
+    {
+        $this->movement();
+        $this->opening();
+        $this->opening(['operaciones_descargo_bovedas_id' => 2, 'valor' => '49.50']);
+        $filters = array_merge(BankMovementReport::defaults(), ['banco' => 1]);
+        $report = app(BankMovementReport::class);
+        $this->assertEquals(400.10, $report->totals($filters)->entradas);
+        $this->assertEquals(3, $report->query($filters)->count());
+        $component = Livewire::test(ConciliacionComponent::class)
+            ->set('filters.banco', '1')->assertSee('Carga inicial de bóveda')->assertSee('400.10');
+        $this->assertCount(3, $component->viewData('movimientos'));
+        $component->set('filters.tipo', 'carga_inicial');
+        $this->assertEquals(300, $component->viewData('totales')->entradas);
+        $this->assertCount(2, $component->viewData('movimientos'));
+
+        $export = new BankMovementExport($filters);
+        $rows = $export->query()->get();
+        $this->assertCount(3, $rows);
+        $mapped = $export->map($rows->firstWhere('origen', 'boveda'));
+        $this->assertSame('Banco propio', $mapped[2]);
+        $this->assertSame(250.50, $mapped[13]);
+        $this->assertStringContainsString('Carga inicial de bóveda', view('conciliacion.pdf', [
+            'movimientos' => $rows, 'totales' => $report->totals($filters),
+            'filters' => $filters, 'labels' => $report->filterLabels($filters),
+        ])->render());
+        $this->assertEquals(1, DB::table('customer_movimientos')->count());
+        $day = array_merge($filters, ['desde' => date('Y-m-15'), 'hasta' => date('Y-m-15')]);
+        $this->assertEquals(400.10, $report->totals($day)->entradas);
+        $this->assertEquals(100.10, $report->totals(array_merge($filters, ['forma' => 1]))->entradas);
+        $this->assertEquals(100.10, $report->totals(array_merge($filters, ['tipo' => 1]))->entradas);
+        $this->assertEquals(300, $report->totals(array_merge($filters, ['buscar' => 'CARGA-BOVEDA']))->entradas);
+    }
+
+    public function testVaultOpeningsRespectDatesStateCompanyAndAvoidLinkedDuplicates()
+    {
+        $linked = $this->movement();
+        $this->opening(['customer_movimiento_id' => $linked]);
+        $this->opening(['estado' => 'PENDIENTE']);
+        $this->opening(['fecha_creacion' => '2000-01-01 12:00:00']);
+        $this->opening(['company_id' => 20, 'bancos_id' => 2, 'operaciones_descargo_bovedas_id' => 4]);
+        $this->opening(['operaciones_descargo_bovedas_id' => 3]);
+        $this->opening(['operaciones_descargo_bovedas_id' => 4]);
+        $this->opening(['status' => 0]);
+        $this->opening(['bancos_id' => 2]);
+        $this->opening(['bancos_id' => null]);
+        $report = app(BankMovementReport::class);
+        $f = array_merge(BankMovementReport::defaults(), ['banco' => 1]);
+        $this->assertEquals(1, $report->query($f)->count());
+        $this->assertEquals(100.10, $report->totals($f)->entradas);
+        $f['estado'] = 'todos';
+        $this->assertEquals(2, $report->query($f)->count());
+        $this->assertEquals(100.10, $report->totals($f)->entradas);
+        $f['estado'] = 'anulados';
+        $this->assertEquals(1, $report->query($f)->count());
+        $this->assertEquals(0, $report->totals($f)->entradas);
+        $f = array_merge(BankMovementReport::defaults(), ['tipo' => 'carga_inicial']);
+        $this->assertEquals(2, $report->totals($f)->revisar);
+        $this->assertEquals(0, $report->totals($f)->entradas);
     }
 
     public function testTotalsExcludeCancelledUnidentifiedAndForeignMovements()
@@ -169,12 +254,15 @@ class BankMovementReportTest extends TestCase
     public function testExcelContainsAllRowsAndPreservesTextReferences()
     {
         for ($i = 0; $i < 26; $i++) $this->movement(['numero_deposito' => '=1+1', 'customer_ruc' => '001234']);
+        $this->opening();
         $bytes = \Maatwebsite\Excel\Facades\Excel::raw(new BankMovementExport(BankMovementReport::defaults()), \Maatwebsite\Excel\Excel::XLSX);
         $file = tempnam(sys_get_temp_dir(), 'bank-test-');
         try {
             file_put_contents($file, $bytes);
             $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file)->getActiveSheet();
-            $this->assertEquals(27, $sheet->getHighestRow());
+            $this->assertEquals(28, $sheet->getHighestRow());
+            $this->assertSame('Carga inicial de bóveda', $sheet->getCell('J28')->getValue());
+            $this->assertEquals(250.50, $sheet->getCell('N28')->getValue());
             $this->assertSame('=1+1', $sheet->getCell('G2')->getValue());
             $this->assertSame('s', $sheet->getCell('G2')->getDataType());
             $this->assertSame('001234', $sheet->getCell('I2')->getValue());
@@ -184,6 +272,7 @@ class BankMovementReportTest extends TestCase
     public function testPdfDownloadIsGeneratedWithoutChangingMovements()
     {
         $this->movement();
+        $this->opening();
         $component = new ConciliacionComponent(); $component->mount();
         $response = $component->exportPdf();
         ob_start(); $response->sendContent(); $bytes = ob_get_clean();

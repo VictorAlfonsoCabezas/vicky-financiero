@@ -1,7 +1,7 @@
 (() => {
     'use strict';
     let trigger;
-    const ids = ['carga', 'gasto', 'transferencia'];
+    const ids = ['crear', 'carga', 'gasto', 'transferencia', 'detalle-carga'];
     window.addEventListener('bovedas-open', event => {
         if (!ids.includes(event.detail.tipo)) return;
         trigger = document.activeElement;
@@ -15,7 +15,7 @@
         });
     });
     document.querySelectorAll('.vault-module .modal').forEach(modal => {
-        modal.addEventListener('shown.bs.modal', () => modal.querySelector('select, input, textarea')?.focus());
+        modal.addEventListener('shown.bs.modal', () => (modal.querySelector('select, input, textarea') || modal.querySelector('button'))?.focus());
         modal.addEventListener('hidden.bs.modal', () => trigger?.focus());
     });
 })();

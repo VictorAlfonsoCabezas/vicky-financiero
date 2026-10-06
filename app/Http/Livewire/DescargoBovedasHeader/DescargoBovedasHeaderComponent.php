@@ -30,6 +30,77 @@ class DescargoBovedasHeaderComponent extends Component
     public $valor_gasto = 0;
     public $descripcion_gasto = '';
     public $bovedaNombre = '';
+    public $nuevoNombre = '';
+    public $nuevaDescripcion = '';
+    public $nuevaPrincipal = false;
+    public $detalleCarga = [];
+
+    public function verDetalleCarga($id)
+    {
+        abort_unless(Auth::check() && Auth::user()->company_id, 403);
+        $this->detalleCarga = [];
+        $company = Auth::user()->company_id;
+        $carga = DB::table('descargo_bovedas_header as d')
+            ->join('operaciones_descargo_bovedas as o', function ($join) use ($company) {
+                $join->on('o.id', '=', 'd.operaciones_descargo_bovedas_id')->where('o.company_id', $company);
+            })
+            ->leftJoin('bancos as b', function ($join) use ($company) {
+                $join->on('b.id', '=', 'd.bancos_id')->where('b.company_id', $company);
+            })
+            ->leftJoin('bovedas as v', function ($join) use ($company) {
+                $join->on('v.id', '=', 'd.boveda_origen_id')->where('v.company_id', $company);
+            })
+            ->where('d.company_id', $company)->where('d.id', $id)
+            ->whereIn('o.nombre_corto', ['CAREM', 'CARCLI'])
+            ->select('d.id', 'd.fecha_creacion', 'd.created_at', 'd.valor', 'd.estado', 'd.status',
+                'd.observacion', 'o.nombre as operacion', 'b.nombre as banco',
+                'b.numero_cuenta as cuenta', 'v.nombre as boveda')->first();
+        abort_unless($carga, 404);
+        $this->detalleCarga = (array) $carga;
+        $this->dispatchBrowserEvent('bovedas-open', ['tipo' => 'detalle-carga']);
+    }
+
+    public function abrirCrearBoveda()
+    {
+        abort_unless(Auth::check() && Auth::user()->company_id, 403);
+        $this->reset(['nuevoNombre', 'nuevaDescripcion', 'nuevaPrincipal']);
+        $this->resetValidation();
+        $this->dispatchBrowserEvent('bovedas-open', ['tipo' => 'crear']);
+    }
+
+    public function storeBoveda()
+    {
+        abort_unless(Auth::check() && Auth::user()->company_id, 403);
+        $this->nuevoNombre = trim($this->nuevoNombre);
+        $this->nuevaDescripcion = trim($this->nuevaDescripcion);
+        $this->validate([
+            'nuevoNombre' => 'required|string|max:255',
+            'nuevaDescripcion' => 'required|string|max:255',
+            'nuevaPrincipal' => 'boolean',
+        ], [], [
+            'nuevoNombre' => 'nombre',
+            'nuevaDescripcion' => 'descripción',
+            'nuevaPrincipal' => 'bóveda principal',
+        ]);
+
+        $boveda = new Bovedas();
+        $boveda->company_id = Auth::user()->company_id;
+        $boveda->fecha_creacion = now();
+        $boveda->nombre = $this->nuevoNombre;
+        $boveda->descripcion = $this->nuevaDescripcion;
+        $boveda->principal = (bool) $this->nuevaPrincipal;
+        $boveda->boveda = true;
+        $boveda->caja = false;
+        $boveda->status = true;
+        $boveda->save();
+
+        $this->bovedasTransferencia = Bovedas::where('company_id', Auth::user()->company_id)->where('status', true)->get()->toArray();
+        $this->reset(['nuevoNombre', 'nuevaDescripcion', 'nuevaPrincipal']);
+        $this->dispatchBrowserEvent('closeModal');
+        $this->dispatchBrowserEvent('alerta', [
+            'titulo' => 'Notificación', 'color' => 'success', 'mensaje' => 'Bóveda creada correctamente',
+        ]);
+    }
 
     public function abrirOperacion($id, $tipo)
     {

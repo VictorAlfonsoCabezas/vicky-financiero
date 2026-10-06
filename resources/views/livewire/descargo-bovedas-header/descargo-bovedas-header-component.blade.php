@@ -5,9 +5,14 @@
             <h1 class="page-header mb-2">Descargos de bóvedas</h1>
             <p class="text-muted mb-0">Consulta los saldos y administra las cargas, los gastos y las transferencias de tu empresa.</p>
         </div>
+        <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-primary" wire:click="abrirCrearBoveda" wire:loading.attr="disabled">
+            <i class="fa fa-plus me-2" aria-hidden="true"></i>Crear bóveda
+        </button>
         <button type="button" class="btn btn-white" wire:click="$refresh" wire:loading.attr="disabled">
             <i class="fa fa-sync-alt me-2" aria-hidden="true"></i>Actualizar saldos
         </button>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -77,7 +82,7 @@
                                         <table class="table table-sm align-middle mb-0">
                                             <thead><tr><th scope="col">Banco</th><th scope="col" class="text-end">Valor registrado</th></tr></thead>
                                             <tbody>@forelse($valoresInicialesEmpresa->where('boveda_origen_id', $bov->id) as $carga)
-                                                <tr><td>{{ $carga->nombre_banco }}</td><td class="text-end vault-money">$ {{ number_format($carga->valor, 2, '.', ',') }}</td></tr>
+                                                <tr><td><button type="button" class="btn btn-link p-0 text-start" wire:click="verDetalleCarga({{ $carga->id }})" wire:loading.attr="disabled" wire:target="verDetalleCarga">{{ $carga->nombre_banco }}<span class="d-block small">Ver detalle de carga #{{ $carga->id }}</span></button></td><td class="text-end vault-money">$ {{ number_format($carga->valor, 2, '.', ',') }}</td></tr>
                                             @empty<tr><td colspan="2" class="text-muted py-3">No hay cargas iniciales registradas.</td></tr>@endforelse</tbody>
                                         </table>
                                     </div>
