@@ -1,420 +1,56 @@
-<div>
-    <div class="row">
-        <div class="col-md-12">
-            <div class="row mt-2">
-                <div class="col-3">
-                    <div class="input-group input-group-sm">
-                        <input type="text" wire:model="buscarCedula" class="form-control" placeholder="Buscar por cédula o nombre">
-                        <div class="input-group-append">
-                            <div class="btn btn-primary">
-                                <i class="fas fa-search"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="credit-payments-module">
+    <div class="mb-4"><h1 class="page-header mb-1"><i class="fa fa-file-invoice-dollar text-primary me-2" aria-hidden="true"></i> Solicitudes de pagos de créditos</h1><p class="text-muted mb-0">Revisa las transferencias y las formas de pago antes de aprobar una cuota.</p></div>
+    <div class="panel panel-inverse mb-4"><div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Buscar solicitudes</h4></div><div class="panel-body"><div class="row g-3">
+        <div class="col-12 col-md-8"><label for="credit-payments-search" class="form-label">Cliente</label><div class="input-group"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span><input id="credit-payments-search" type="search" class="form-control" wire:model.debounce.350ms="buscarCedula" placeholder="Identificación, nombres o apellidos"></div></div>
+        <div class="col-12 col-md-4"><label for="credit-payments-state" class="form-label">Estado del pago</label><select id="credit-payments-state" class="form-select" wire:model="estadoFiltro"><option value="3">Pendiente de revisión</option><option value="1">Aprobado</option><option value="2">Rechazado</option></select></div>
+    </div></div></div>
+    @error('solicitud')<div class="alert alert-warning" role="alert">{{ $message }}</div>@enderror
+    @if($errorPago)<div class="alert alert-danger" role="alert">{{ $errorPago }}</div>@endif
+    <div class="panel panel-inverse"><div class="panel-heading"><h4 class="panel-title"><i class="fa fa-list me-2" aria-hidden="true"></i> Pagos registrados <span class="badge bg-primary ms-2">{{ $letras->total() }}</span></h4><span wire:loading wire:target="buscarCedula,estadoFiltro,page" role="status"><i class="fa fa-spinner fa-spin me-1" aria-hidden="true"></i> Buscando...</span></div>
+        <div class="panel-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0 credit-payments-table">
+            <thead><tr><th>Cliente</th><th>Crédito / cuota</th><th>Fecha de registro</th><th>Registrado por</th><th class="text-end">Transferencia</th><th class="text-end">Otros pagos</th><th class="text-end">Total recibido</th><th>Estado</th><th>Revisado por</th><th>Acciones</th></tr></thead>
+            <tbody>
+                @forelse($letras as $letra)
+                <tr wire:key="solicitud-pago-{{ $letra->letra_id }}-{{ $letra->prestamo_id }}"><td class="fw-bold">{{ $letra->apellidos }} {{ $letra->nombres }}<small class="d-block text-muted fw-normal">{{ $letra->numero_documento }}</small></td><td class="text-nowrap">#{{ $letra->codeFolderHeader }}<small class="d-block text-muted">Cuota {{ $letra->numeroCuota }}</small></td><td class="text-nowrap">{{ $letra->fecha }}<small class="d-block text-muted">{{ $letra->hora }}</small></td><td>{{ $letra->usuario }}</td><td class="text-end credit-payments-money">$ {{ number_format((float) $letra->valor_transferencia, 2, '.', ',') }}</td><td class="text-end credit-payments-money">$ {{ number_format((float) $letra->valor_otros, 2, '.', ',') }}</td><td class="text-end credit-payments-money fw-bold">$ {{ number_format((float) $letra->valor_total, 2, '.', ',') }}</td><td><span class="badge {{ $estadoFiltro === '3' ? 'bg-warning text-dark' : ($estadoFiltro === '1' ? 'bg-success' : 'bg-danger') }}">{{ $estadoFiltro === '3' ? 'Pendiente' : ($estadoFiltro === '1' ? 'Aprobado' : 'Rechazado') }}</span></td><td>{{ $letra->aprobado_por ?: 'Sin revisar' }}</td><td><button type="button" class="btn btn-outline-primary btn-sm text-nowrap" wire:click="cargarDatosPago({{ $letra->letra_id }})" data-bs-toggle="modal" data-bs-target="#modalPagos"><i class="fa fa-eye me-1" aria-hidden="true"></i> Revisar pago</button></td></tr>
+                @empty
+                <tr><td colspan="10" class="text-center py-5"><i class="fa fa-file-invoice-dollar fa-2x text-muted d-block mb-3" aria-hidden="true"></i><h5>No hay solicitudes para estos filtros</h5><p class="text-muted mb-0">Prueba con otro cliente o estado.</p></td></tr>
+                @endforelse
+            </tbody>
+        </table></div><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top"><small class="text-muted">Mostrando {{ $letras->firstItem() ?? 0 }}–{{ $letras->lastItem() ?? 0 }} de {{ $letras->total() }} solicitudes</small><div>{{ $letras->links() }}</div></div></div>
     </div>
-
-    <div class="tab-content">
-        <div class="card-body table-responsive">
-
-            <table class="table table-sm table-striped">
-                <thead>
-                    <tr>
-                        <th><b>Cliente</b></th>
-                        <th><b>Crédito</b></th>
-                        <th><b>Letra</b></th>
-                        <th><b>Fecha / Hora</b></th>
-                        <th><b>Creado por</b></th>
-                        <th><b>Valor Transferencia</b></th>
-                        <!-- <th><b>Comprobante</b></th> -->
-                        <th><b>Valor Otros</b></th>
-                        <th><b>Valor Total</b></th>
-                        <th><b>Aprobado por</b></th>
-                        <th><b>Acciones</b></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @forelse($letras as $letra)
-
-                    <tr>
-                        <td>{{ $letra->apellidos }} {{ $letra->nombres }}</td>
-                        <td>#{{ $letra->codeFolderHeader }}</td>
-                        <td>#{{ $letra->numeroCuota }}</td>
-                        <td>{{ $letra->fecha }} <b>/</b> {{ $letra->hora }}</td>
-                        <td>{{ $letra->usuario }}</td>
-
-                        <td>$ {{ number_format($letra->valor_transferencia,2) }}</td>
-
-                        <!-- <td>{{$letra -> numero_comprobante}}</td> -->
-
-                        <td>
-                            $ {{ number_format($letra->valor_otros ?? 0,2) }}
-                        </td>
-
-                        <td>
-                            <strong>$ {{ number_format($letra->valor_total,2) }}</strong>
-                        </td>
-
-                        <td>
-                            {{ $letra->aprobado_por ?? '—' }}
-                        </td>
-
-                        <td>
-                            <a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalPagos" title="Pago Crédito" wire:click="cargarDatosPago({{ $letra->letra_id }})" style="color: white;">
-                                <i class="far fa-money-bill-alt"></i> Ver
-                            </a>
-                            <!--<button class="btn btn-sm btn-success" wire:click="aprobarSolicitud(1, {{ $letra->letra_id }})">
-                                Aprobar
-                            </button>
-                            <button class="btn btn-sm btn-danger" wire:click="aprobarSolicitud(0, {{ $letra->letra_id }})">
-                                Rechazar
-                            </button>-->
-
-                            @if($letra->estado_solicitud == 3)
-                            <button wire:click="aprobarSolicitud({{ $letra->letra_id }})" class="btn btn-success btn-sm">
-                                Aceptar
-                            </button>
-                            <button data-bs-toggle="modal" data-bs-target="#modalPagos" title="Pago Crédito" wire:click="cargarDatosPago({{ $letra->letra_id }})" class="btn btn-danger btn-sm">
-                                Rechazar
-                            </button>
-                            @else
-                            @if($letra->estado_solicitud == 1)
-                            <span class="badge bg-success" style="padding: 8px; font-size: 11px;">
-                                <i class="fas fa-check-circle"></i> APROBADO
-                            </span>
-                            @elseif ($letra->estado_solicitud == 2)
-                            <span class="badge bg-danger" style="padding: 8px; font-size: 11px;">
-                                <i class="fas fa-ban"></i> RECHAZADO
-                            </span>
-                            @endif
-                            @endif
-                        </td>
-                    </tr>
-
-                    @empty
-                    <tr>
-                        <td colspan="11" class="text-center">
-                            No existen registros
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
-            <div wire:ignore.self class="modal fade" id="modalPagos" tabindex="-1">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-
-                        <div class="modal-header bg-info">
-                            <h3 class="modal-title text-white"><i class="fas fa-file-invoice-dollar me-2"></i>Detalle del Pago</h3>
-                            <button type="button" class="close text-white" data-bs-dismiss="modal">
-                                &times;
-                            </button>
-                        </div>
-
-                        <div class="modal-body">
-
-                            @if($registro)
-
-                            <div class="row">
-                                <div class="col-md-6 border-right pe-4">
-                                    <h5>
-                                        <i class="fas fa-user text-primary me-2"></i>
-                                        <b class="text-primary">Información del Cliente:</b>
-
-                                    </h5>
-                                    <hr>
-
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label>Apellidos</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->apellidos ?? '----' }}" readonly>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Nombres</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->nombres ?? '----' }}" readonly>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Cédula</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->numero_documento ?? '----' }}" readonly>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Crédito</label>
-                                            <input type="text" class="form-control"
-                                                value="#{{ $registro->codeFolderHeader }}" readonly>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label>Letra</label>
-                                            <input type="text" class="form-control"
-                                                value="#{{ $registro->numeroCuota }}" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6 ps-4">
-                                    <h5>
-                                        <i class="fas fa-money-check-alt me-2"></i>
-                                        <b>Información del Pago:</b>
-                                        <hr>
-                                    </h5>
-                                    <div class="row">
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Creado por:</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->user_name ?? '----' }}" readonly>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Fecha creación:</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->date_create ?? '----' }}" readonly>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Aprobado por:</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->usuario_solicitud ?? '----' }}" readonly>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label>Fecha aprobación:</label>
-                                            <input type="text" class="form-control"
-                                                value="{{ $registro->fecha_solicitud ?? '----' }}" readonly>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <div class="custom-control custom-checkbox mb-2" wire:ignore>
-                                                <input type="checkbox"
-                                                    id="chkInteresMora"
-                                                    class="custom-control-input"
-                                                    wire:model="aplicarInteresMora">
-
-                                                <label class="custom-control-label" for="chkInteresMora">
-                                                    Aplicar interés mora:
-                                                </label>
-                                            </div>
-
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                value="$ {{ number_format($interesMoraOriginal, 2) }}"
-                                                readonly>
-                                        </div>
-
-
-
-                                        <div class="col-md-6 mb-3">
-                                            <label>Total a aprobar:</label>
-
-                                            <input
-                                                type="text"
-                                                class="form-control font-weight-bold"
-                                                value="$ {{ number_format($totalAprobar,2) }}"
-                                                readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            <hr>
-
-                            <h5><i class="fas fa-wallet me-2"></i><b>Formas de pago:</b></h5>
-
-                            @foreach($detallePagos as $pago)
-                            <div class="border rounded p-2 mb-2">
-                                <div class="row">
-
-                                    <div class="col-md-3 mb-3 pe-1 ps-2">
-                                        <label>Forma de Pago:</label>
-                                        <input type="text" class="form-control" value="{{ $pago->forma_pago ?? '----'}} " readonly>
-                                    </div>
-                                    <div class="col-md-3 mb-3 pe-1">
-                                        <label>Valor:</label>
-                                        <input type="text" class="form-control" value="{{ number_format($pago->valor,2) ?? '----'}} " readonly>
-                                    </div>
-
-                                    @if(strtoupper(trim($pago->forma_pago)) == 'TRANSFERENCIA')
-
-                                    <div class="col-md-3 mb-3 pe-1 ps-2">
-                                        <label>Comprobante:</label>
-                                        <input type="text" class="form-control" value="{{ $pago->numero_comprobante ?? '----'}} " readonly>
-                                    </div>
-                                    <div class="col-md-3 mb-3  ps-2">
-                                        <label>Banco:</label>
-                                        <input type="text" class="form-control" value="{{ $pago->banco->nombre ?? '----'}}" readonly>
-                                    </div>
-
-                                    <div class="col-md-3 mb-3 pe-1 ps-2">
-                                        <label>Fecha del Comprobante:</label>
-                                        <input type="text" class="form-control" value="{{ $pago->fecha_comprobante ?? '----'}} " readonly>
-                                    </div>
-                                    <div class="col-md-3 mb-3 pe-1 ps-2">
-                                        <label>Hora del Comprobante:</label>
-                                        <input type="text" class="form-control" value="{{ $pago->hora_comprobante ?? '----'}} " readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-3 ps-2">
-                                        <label>Comprobante:</label>
-
-                                        <div class="input-group">
-
-                                            <div class="input-group-append">
-                                                @if(!empty($pago->path))
-                                                <button type="button"
-                                                    class="btn btn-info"
-                                                    title="Ver comprobante"
-                                                    data-comprobante-url="{{ route('solicitud-pagos-creditos.comprobante', $pago->letra_id) }}"
-                                                    onclick="abrirComprobantePago(this)">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                @endif
-                                            </div>
-
-                                            <input type="text" class="form-control" value="{{ !empty($pago->path) ? basename($pago->path) : 'Sin archivo' }}" readonly>
-                                        </div>
-
-                                    </div>
-
-                                    @endif
-
-                                </div>
-                            </div>
-
-                            <!--<div class="border rounded p-2 mb-2">
-                                <b>Forma:</b> {{ $pago->forma_pago }} |
-                                <b>Comprobante:</b> {{ $pago->numero_comprobante ?? '—'}} |
-                                <b>Valor:</b> ${{ number_format($pago->valor,2) }} |
-                                <b>Banco:</b> {{ $pago->banco_id ?? '—' }}
-                            </div>-->
-                            @endforeach
-
-                            @else
-                            <div class="text-center text-muted">
-                                Sin información
-                            </div>
-                            @endif
-
-                            <div class="modal-footer">
-
-                                @if($registro && $registro->solicitado == 3)
-
-                                <!--<div class="col-md-12 mb-3">
-                                    <label><b>Observación de rechazo:</b></label>
-                                    <textarea wire:model.defer="observacionRechazo" class="form-control" rows="3" placeholder="Ingrese el motivo por el cual se rechaza la solicitud..."></textarea>
-                                </div>-->
-
-                                <button type="button" class="btn btn-success" data-bs-dismiss="modal"
-                                    wire:click="aprobarSolicitud({{ $letraSeleccionada }})">
-                                    Aceptar
-                                </button>
-
-                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                                    wire:click="rechazarSolicitud({{ $letraSeleccionada }})">
-                                    Rechazar
-                                </button>
-
-                                @endif
-
-                                <button class="btn btn-secondary" data-bs-dismiss="modal">
-                                    Cerrar
-                                </button>
-
-                            </div>
-
-                        </div>
-
+    <div wire:ignore.self class="modal fade" id="modalPagos" tabindex="-1" aria-labelledby="credit-payment-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title" id="credit-payment-title"><i class="fa fa-file-invoice-dollar text-primary me-2" aria-hidden="true"></i> Revisión del pago</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body">
+                <div wire:loading wire:target="cargarDatosPago" class="alert alert-info" role="status">Cargando detalle...</div>
+                <div wire:loading.remove wire:target="cargarDatosPago">
+                    @error('solicitud')<div class="alert alert-warning" role="alert">{{ $message }}</div>@enderror
+                    @if($errorPago)<div class="alert alert-danger" role="alert">{{ $errorPago }}</div>@endif
+                    @if($registro)
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-lg-6"><h5 class="credit-payments-section"><i class="fa fa-user me-2" aria-hidden="true"></i> Cliente y crédito</h5><dl class="row g-2"><dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ $registro->apellidos }} {{ $registro->nombres }}</dd><dt class="col-sm-4">Identificación</dt><dd class="col-sm-8">{{ $registro->numero_documento }}</dd><dt class="col-sm-4">Crédito</dt><dd class="col-sm-8">#{{ $registro->codeFolderHeader }}</dd><dt class="col-sm-4">Cuota</dt><dd class="col-sm-8">{{ $registro->numeroCuota }}</dd></dl></div>
+                        <div class="col-12 col-lg-6"><h5 class="credit-payments-section"><i class="fa fa-calendar-check me-2" aria-hidden="true"></i> Registro y revisión</h5><dl class="row g-2"><dt class="col-sm-4">Registrado por</dt><dd class="col-sm-8">{{ $registro->user_name ?: 'No disponible' }}</dd><dt class="col-sm-4">Fecha</dt><dd class="col-sm-8">{{ $registro->date_create }} {{ $registro->hour_create }}</dd><dt class="col-sm-4">Revisado por</dt><dd class="col-sm-8">{{ $registro->usuario_solicitud ?: 'Sin revisar' }}</dd><dt class="col-sm-4">Fecha de revisión</dt><dd class="col-sm-8">{{ $registro->fecha_solicitud ?: 'Sin revisar' }}</dd></dl></div>
                     </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><span class="text-muted">Total recibido</span><h3 class="mb-0 credit-payments-money">$ {{ number_format((float) $totalRecibido, 2, '.', ',') }}</h3></div></div>
+                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><div class="form-check mb-2"><input id="chkInteresMora" class="form-check-input" type="checkbox" wire:model="aplicarInteresMora" {{ (int) $registro->status !== 3 ? 'disabled' : '' }}><label class="form-check-label" for="chkInteresMora">Aplicar interés de mora</label></div><span class="credit-payments-money">$ {{ number_format((float) $interesMoraOriginal, 2, '.', ',') }}</span><small class="text-muted d-block mt-1">Al exonerar la mora, el dinero recibido se mantiene. El excedente se aplica a las próximas cuotas.</small></div></div>
+                    </div>
+                    <h5 class="credit-payments-section"><i class="fa fa-wallet me-2" aria-hidden="true"></i> Formas de pago</h5>
+                    <div class="table-responsive"><table class="table table-hover align-middle credit-payments-table"><thead><tr><th>Forma de pago</th><th class="text-end">Valor</th><th>Banco</th><th>Comprobante</th><th>Fecha del comprobante</th></tr></thead><tbody>
+                        @foreach($detallePagos as $pago)<tr wire:key="detalle-pago-{{ $pago->id }}"><td>{{ $pago->forma_pago }}</td><td class="text-end credit-payments-money">$ {{ number_format((float) $pago->valor, 2, '.', ',') }}</td><td>{{ $pago->banco->nombre ?? 'No aplica' }}</td><td>{{ $pago->numero_comprobante ?: 'No registrado' }}</td><td>{{ $pago->fecha_comprobante }} {{ $pago->hora_comprobante }}</td></tr>@endforeach
+                    </tbody></table></div>
+                    @if($detallePagos->contains(function ($pago) { return !empty($pago->path); }))
+                    <a class="btn btn-outline-primary btn-sm" href="{{ route('solicitud-pagos-creditos.comprobante', $letraSeleccionada) }}" target="_blank" rel="noopener"><i class="fa fa-paperclip me-1" aria-hidden="true"></i> Abrir comprobante</a>
+                    @else<div class="alert alert-light mb-0">No hay un comprobante adjunto.</div>@endif
+                    @else<div class="text-muted py-4 text-center">Selecciona una solicitud para revisar sus pagos.</div>@endif
                 </div>
             </div>
-
-            <div wire:ignore.self class="modal fade" id="modalComprobantePago" tabindex="-1"
-                role="dialog" aria-labelledby="tituloModalComprobantePago" aria-hidden="true">
-                <div class="modal-dialog modal-xl" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header bg-info">
-                            <h4 class="modal-title text-white" id="tituloModalComprobantePago">
-                                <i class="fas fa-receipt me-2"></i>Comprobante del Pago
-                            </h4>
-                            <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Cerrar">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-
-                        <div class="modal-body p-2">
-                            <iframe id="visorComprobantePago"
-                                title="Comprobante del pago"
-                                style="width: 100%; height: 70vh; border: 0;"
-                                src="about:blank">
-                            </iframe>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div class="modal-footer"><button type="button" class="btn btn-white me-auto" data-bs-dismiss="modal">Cerrar</button>
+                @if($registro && (int) $registro->status === 3)
+                <button type="button" class="btn btn-outline-danger" data-payment-action="rechazarSolicitud" data-letra="{{ $letraSeleccionada }}" wire:loading.attr="disabled" wire:target="cargarDatosPago,aprobarSolicitud,rechazarSolicitud,aplicarInteresMora"><i class="fa fa-times-circle me-1" aria-hidden="true"></i> Rechazar pagos no efectivos</button>
+                <button type="button" class="btn btn-success" data-payment-action="aprobarSolicitud" data-letra="{{ $letraSeleccionada }}" data-total="{{ number_format((float) $totalAprobar, 2, '.', ',') }}" wire:loading.attr="disabled" wire:target="cargarDatosPago,aprobarSolicitud,rechazarSolicitud,aplicarInteresMora"><i class="fa fa-check-circle me-1" aria-hidden="true"></i> Aprobar pago</button>
+                @endif
             </div>
-
-            {{ $letras->links() }}
-            <style>
-                #modalComprobantePago {
-                    z-index: 1060;
-                }
-
-                .modal-backdrop.modal-comprobante-backdrop {
-                    z-index: 1055;
-                }
-            </style>
-            <script>
-                function abrirComprobantePago(boton) {
-                    var url = boton.getAttribute('data-comprobante-url');
-
-                    if (!url) {
-                        return;
-                    }
-
-                    document.getElementById('visorComprobantePago').src = url;
-                    $('#modalComprobantePago').modal('show');
-                }
-
-                $('#modalComprobantePago')
-                    .off('shown.bs.modal.comprobantePago hidden.bs.modal.comprobantePago')
-                    .on('shown.bs.modal.comprobantePago', function() {
-                        $('.modal-backdrop').last().addClass('modal-comprobante-backdrop');
-                    })
-                    .on('hidden.bs.modal.comprobantePago', function() {
-                        document.getElementById('visorComprobantePago').src = 'about:blank';
-
-                        if ($('#modalPagos').hasClass('show')) {
-                            $('body').addClass('modal-open');
-                        }
-                    });
-
-                window.addEventListener('close-modal-pagos', function () {
-                    // Esperar a que Livewire termine de actualizar el DOM antes de
-                    // pedirle a Bootstrap que cierre completamente los modales.
-                    setTimeout(function () {
-                        $('#modalComprobantePago').modal('hide');
-                        $('#modalPagos').modal('hide');
-
-                        $('.modal-backdrop').remove();
-                        $('body').removeClass('modal-open').css('padding-right', '');
-                    }, 0);
-                });
-            </script>
-
-        </div>
+        </div></div>
     </div>
-
-
 </div>
