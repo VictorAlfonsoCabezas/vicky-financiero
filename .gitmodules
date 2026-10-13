@@ -1,3 +1,2 @@
-[submodule "public/plugins/public/plugins/treeview"]
-	path = public/plugins/public/plugins/treeview
-	url = https://github.com/johnny-dev-1992/sigcrm.git
+# Este proyecto no utiliza submodulos de Git.
+# El repositorio principal se configura en el remoto origin, no en este archivo.

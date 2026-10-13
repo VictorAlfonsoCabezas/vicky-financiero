@@ -81,10 +81,10 @@ class AccionesDetalleController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $detalle = AccionesDetalle::find($id);
         $customer  = Customer::find($detalle->customer_id);
@@ -122,10 +122,10 @@ class AccionesDetalleController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $detalle = AccionesDetalle::find($id);
         $customer  = Customer::find($detalle->customer_id);

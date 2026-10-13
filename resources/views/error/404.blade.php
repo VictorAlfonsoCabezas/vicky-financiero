@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Vicky Financiero | 404 Error</title>
-    <link rel="icon" href="{{ asset('codev/negro.png') }}" type="image/png" />
+    <link rel="icon" href="{{ asset('vicky/icono-fondo-blanc.png') }}" type="image/png" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <meta content="" name="vicky-financiero" />
     <meta content="" name="VictorAlfonsoCabezas" />

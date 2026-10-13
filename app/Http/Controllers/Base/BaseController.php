@@ -1481,10 +1481,10 @@ class BaseController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
 
 
@@ -1652,10 +1652,10 @@ class BaseController extends Controller
                 app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
                 $path = 'uploads/companies/' . $company->photo;
                 if (!file_exists(public_path($path))) {
-                    $path = 'codev/negro.png';
+                    $path = 'vicky/icono-fondo-blanc.png';
                 }
             } else {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
             $data['company'] = $company;
             $data['caja'] = $caja;
@@ -1701,10 +1701,10 @@ class BaseController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         if ($caja != null) {
             $pdfFilePath = $caja['path'];

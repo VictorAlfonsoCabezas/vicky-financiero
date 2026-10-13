@@ -549,7 +549,7 @@
                 detalle += '        <span class="direct-chat-name float-start">Codev</span>';
                 detalle += '        <span class="direct-chat-timestamp float-end">' + value.fecha_creacion + '</span>';
                 detalle += '    </div>';
-                detalle += '    <img class="direct-chat-img" src="../codev/negro.png" alt="Message User Image">';
+                detalle += '    <img class="direct-chat-img" src="../vicky/icono-fondo-blanc.png" alt="Message User Image">';
                 detalle += '    <div class="direct-chat-text">' + value.whatsapp + '</div>';
                 detalle += '</div>';
 

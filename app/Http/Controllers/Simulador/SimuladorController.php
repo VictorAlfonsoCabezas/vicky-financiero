@@ -112,10 +112,10 @@ class SimuladorController extends Controller {
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         
         $data['company'] = $company;

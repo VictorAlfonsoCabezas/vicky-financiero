@@ -7,7 +7,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Onix</title>
-    <link rel="icon" href="{{ asset('codev/negro.png') }}" type="image/png" />
+    <link rel="icon" href="{{ asset('vicky/icono-fondo-blanc.png') }}" type="image/png" />
     <!-- CSS GLOBALES -->
     @include('layouts.css_stylesheet')
     

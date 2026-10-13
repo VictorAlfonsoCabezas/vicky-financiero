@@ -458,15 +458,15 @@ class CustomerController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $data['company'] = $company;
         $man = file_get_contents(public_path($path));
         $data['imagen'] = base64_encode($man);
-        $path2 = 'codev/negro.png';
+        $path2 = 'vicky/icono-fondo-blanc.png';
         $data['cartolaHeader'] = CartolaHeader::find($code);
         $data['customer'] = Customer::where('code', $data['cartolaHeader']->customer_code)->first();
         $data['detalleCartola'] = CartolaDetail::where('cartola_header_code', $data['cartolaHeader']->code)->get();
@@ -659,10 +659,10 @@ class CustomerController extends Controller
                 app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
                 $path = 'uploads/companies/' . $company->photo;
                 if (!file_exists(public_path($path))) {
-                    $path = 'codev/negro.png';
+                    $path = 'vicky/icono-fondo-blanc.png';
                 }
             } else {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
             $interes = $customerMovimientos->customerTipoAhorro->tipoAhorrosProgramadosDetalle->id;
             $pagoPlazo = $customerMovimientos->customerTipoAhorro->pago;

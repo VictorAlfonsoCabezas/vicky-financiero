@@ -422,12 +422,12 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
-        $path2 = 'codev/negro.png';
+        $path2 = 'vicky/icono-fondo-blanc.png';
         $man = file_get_contents(public_path($path));
         $data['company'] = $company;
         $data['imagen'] = base64_encode($man);
@@ -456,12 +456,12 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
-        $path2 = 'codev/negro.png';
+        $path2 = 'vicky/icono-fondo-blanc.png';
         $man = file_get_contents(public_path($path));
         $data['company'] = $company;
         $data['imagen'] = base64_encode($man);
@@ -516,10 +516,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
 
 
@@ -569,10 +569,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
 
         $data['textoPlazo']  = "El pago se realizará cada 30 días";
@@ -935,10 +935,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $data['company'] = $company;
         $man = file_get_contents(public_path($path));
@@ -1027,10 +1027,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $man = file_get_contents(public_path($path));
         $data['imagen'] = base64_encode($man);
@@ -1480,10 +1480,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $data['company'] = $company;
         $data['customer'] = $customer;
@@ -1520,10 +1520,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $data['company'] = $company;
         $data['customer'] = $customer;
@@ -1562,10 +1562,10 @@ class CreditController extends Controller
             app(\App\Services\CompanyLogoStorage::class)->resolve($company->photo);
             $path = 'uploads/companies/' . $company->photo;
             if (!file_exists(public_path($path))) {
-                $path = 'codev/negro.png';
+                $path = 'vicky/icono-fondo-blanc.png';
             }
         } else {
-            $path = 'codev/negro.png';
+            $path = 'vicky/icono-fondo-blanc.png';
         }
         $man = file_get_contents(public_path($path));
         $data['imagen'] = base64_encode($man);

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <title>Vicky Financiero | @yield('title', 'Onix')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ asset('codev/negro.png') }}" type="image/png" />
+    <link rel="icon" href="{{ asset('vicky/icono-fondo-blanc.png') }}" type="image/png" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <meta content="" name="vicky-financiero" />
     <meta content="" name="VictorAlfonsoCabezas" />
@@ -31,7 +31,7 @@
         <div id="header" class="app-header">
             <!-- BEGIN navbar-header -->
             <div class="navbar-header">
-                <a href="{{URL::to('/')}}" class="navbar-brand"><img src="{{ URL::asset('/codev/negro.png') }}" style="width: 20px; height: 20px;"><b>Vicky</b> Financiero</a>
+                <a href="{{URL::to('/')}}" class="navbar-brand"><img src="{{ URL::asset('/vicky/icono-fondo-blanc.png') }}" style="width: 20px; height: 20px;"><b>Vicky</b> Financiero</a>
                 <button type="button" class="navbar-mobile-toggler" data-toggle="app-sidebar-mobile">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>

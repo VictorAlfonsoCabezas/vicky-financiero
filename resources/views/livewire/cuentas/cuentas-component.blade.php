@@ -594,7 +594,7 @@
                                                 @endif
                                             </span>
                                         </div>
-                                        <img class="direct-chat-img" src="../codev/negro.png"
+                                        <img class="direct-chat-img" src="../vicky/icono-fondo-blanc.png"
                                             alt="Message User Image">
                                         <div class="direct-chat-text">
                                             @if ($this->whatsapp !== '')
