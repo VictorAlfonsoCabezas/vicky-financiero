@@ -13,6 +13,30 @@ use Tests\TestCase;
 
 class SolicitudPagosLiquidacionTest extends TestCase
 {
+    use \Tests\Concerns\ContabilidadDePrueba;
+
+    public function testApprovalCommitsLiquidationWithUnbalancedAccounting()
+    {
+        $this->habilitarContabilidadDePrueba();
+        $payment = $this->payment();
+        (new SolicitudPagosLiquidacion)->aprobarSolicitud(1, '2026-10-06', '10:00:00');
+        $this->assertEquals(1, $payment->fresh()->solicitado);
+        $this->assertEquals(200, CustomerMovimiento::sum('valor_movimiento'));
+        $this->assertSame(1, AsientosHeader::count());
+        $this->assertFalse(AsientosHeader::estaCuadrado(AsientosHeader::first()->id));
+    }
+
+    public function testApprovalCommitsLiquidationWithoutAccountingConfiguration()
+    {
+        $this->habilitarContabilidadDePrueba(false);
+        $payment = $this->payment();
+        (new SolicitudPagosLiquidacion)->aprobarSolicitud(1, '2026-10-06', '10:00:00');
+        $this->assertEquals(1, $payment->fresh()->solicitado);
+        $this->assertEquals(200, CustomerMovimiento::sum('valor_movimiento'));
+        $this->assertSame(1, AsientosHeader::count());
+        $this->assertTrue(AsientosHeader::first()->pendiente_contable);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -139,12 +163,14 @@ class SolicitudPagosLiquidacionTest extends TestCase
         }
     }
 
-    public function testAccountingFailureRollsBackPayment()
+    public function testMissingConceptsKeepLiquidationAndPendingEntry()
     {
         Company::where('id', 10)->update(['contabilidad' => 1, 'fecha_inicio_contable' => '2020-01-01']);
-        auth()->user()->setRelation('company', Company::find(10)); $pago = $this->payment();
-        try { $this->approve(); $this->fail('Accounting error accepted'); }
-        catch (ValidationException $e) { $this->assertEquals(3, $pago->fresh()->solicitado); $this->assertSame('PENDIENTE', CreditFolderDetail::find(1)->status); $this->assertSame(0, CustomerMovimiento::count()); }
+        $payment = $this->payment();
+        $this->approve();
+        $this->assertEquals(1, $payment->fresh()->solicitado);
+        $this->assertSame(1, CustomerMovimiento::count());
+        $this->assertTrue(AsientosHeader::first()->pendiente_contable);
     }
 
     public function testStaleSettlementAmountIsNotApproved()

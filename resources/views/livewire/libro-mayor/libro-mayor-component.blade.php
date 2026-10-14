@@ -205,7 +205,7 @@
                         </thead>
                         <tbody>
                             @forelse ($asientosHeader as $a)
-                            <tr class="bg-primary text-white">
+                            <tr class="bg-{{ !$a->pendiente_contable && number_format($a->suma_debe, 2, '.', '') === number_format($a->suma_haber, 2, '.', '') && $a->suma_debe > 0 ? 'primary' : 'danger' }} text-white">
                                 <td colspan="3">
                                     <div class="d-flex flex-wrap align-items-center">
                                         <span class="badge bg-light me-2">#{{ $a->id }}</span>
@@ -218,6 +218,9 @@
                                         @endif
                                     </div>
                                     <small>Observacion: {{ $a->descripcion ?: 'Sin observacion' }}</small>
+                                    @if ($a->pendiente_contable || number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', '') || $a->suma_debe <= 0)
+                                        <br><strong>Asiento pendiente de revision contable</strong>
+                                    @endif
                                 </td>
                                 <td colspan="2" class="align-middle text-end"><strong>Total asiento:</strong></td>
                                 <td class="align-middle text-end">

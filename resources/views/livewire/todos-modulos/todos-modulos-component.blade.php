@@ -69,10 +69,13 @@
                                     <td>{{ $mod->valor_movimiento }}</td>
                                     <td class="text-center">
                                         @if ($mod->asiento_header_id !== null)
-                                            <a class="btn btn-{{ $mod->suma_debe == $mod->suma_haber ? 'success' : 'primary' }} btn-sm text-white"
+                                            <a class="btn btn-{{ strpos((string) $mod->asiento_descripcion, '[PENDIENTE CONTABLE] ') !== 0 && number_format($mod->suma_debe, 2, '.', '') === number_format($mod->suma_haber, 2, '.', '') && $mod->suma_debe > 0 ? 'success' : 'danger' }} btn-sm text-white"
                                                 wire:click="abrirModal({{ $mod->asiento_header_id }})"
                                                 data-bs-toggle="modal" data-bs-target="#modalGeneral"><i
                                                     class="fa fa-chair"></i></a>
+                                            @if (strpos((string) $mod->asiento_descripcion, '[PENDIENTE CONTABLE] ') === 0 || number_format($mod->suma_debe, 2, '.', '') !== number_format($mod->suma_haber, 2, '.', '') || $mod->suma_debe <= 0)
+                                                <small class="d-block text-danger">Pendiente de revision</small>
+                                            @endif
                                         @else
                                             <a class="btn btn-default btn-sm"
                                                 wire:click="abrirModalManual({{ $mod->id }})"

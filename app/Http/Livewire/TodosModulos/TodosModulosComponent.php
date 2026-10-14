@@ -76,7 +76,7 @@ class TodosModulosComponent extends Component
         $typeTransaction = TypeTransaction::where('id', $this->modulo_id)->first();
         foreach ($customerMovimientoIds as $customerMovimientoId) {
             $respuesta = AsientosHeader::recalcularAsientos($customerMovimientoId);
-            $color = ($respuesta['code'] == '200') ? 'success' : 'danger';
+            $color = !empty($respuesta['warning']) ? 'warning' : (($respuesta['code'] == '200') ? 'success' : 'danger');
             $mensaje = $respuesta['msg'];
             $data = [
                 'titulo' => 'Notificación',
@@ -87,7 +87,7 @@ class TodosModulosComponent extends Component
         }
         foreach ($generalesAsientosHeaderIds as $asientoHeaderId) {
             $respuesta = AsientosHeader::recalcularAsientos($asientoHeaderId, 'customer_movimientos', true, $typeTransaction);
-            $color = ($respuesta['code'] == '200') ? 'success' : 'danger';
+            $color = !empty($respuesta['warning']) ? 'warning' : (($respuesta['code'] == '200') ? 'success' : 'danger');
             $mensaje = $respuesta['msg'];
             $data = [
                 'titulo' => 'Notificación',
@@ -108,7 +108,7 @@ class TodosModulosComponent extends Component
     {
         $typeTransaction = TypeTransaction::where('id', $type_transaction_id)->first();
         $respuesta = AsientosHeader::recalcularAsientos($id_asiento_header, 'customer_movimientos', true, $typeTransaction);
-        $color = ($respuesta['code'] == '200') ? 'success' : 'danger';
+        $color = !empty($respuesta['warning']) ? 'warning' : (($respuesta['code'] == '200') ? 'success' : 'danger');
         $mensaje = $respuesta['msg'];
         $data = [
             'titulo' => 'Notificación',
@@ -121,7 +121,7 @@ class TodosModulosComponent extends Component
     public function recalcularAsiento($id)
     {
         $respuesta = AsientosHeader::recalcularAsientos($id);
-        $color = ($respuesta['code'] == '200') ? 'success' : 'danger';
+        $color = !empty($respuesta['warning']) ? 'warning' : (($respuesta['code'] == '200') ? 'success' : 'danger');
         $mensaje = $respuesta['msg'];
         $data = [
             'titulo' => 'Notificación',
@@ -231,21 +231,7 @@ class TodosModulosComponent extends Component
             return;
         }
 
-        $totalDebe = array_reduce($this->asientos, function ($carry, $item) {
-            return $carry + (float) $item['debe'];
-        }, 0.00);
-        $totalHaber = array_reduce($this->asientos, function ($carry, $item) {
-            return $carry + (float) $item['haber'];
-        }, 0.00);
-
-        if (number_format($totalDebe, 2, '.', '') !== number_format($totalHaber, 2, '.', '') || $totalDebe <= 0) {
-            $this->dispatchBrowserEvent('alertaGrande', [
-                'titulo' => '<i class="fa fa-exclamation-circle" aria-hidden="true"></i><b>No cuadra el asiento</b>',
-                'color' => 'danger',
-                'mensaje' => 'Los totales del Debe y Haber deben ser iguales y mayores a cero.'
-            ]);
-            return;
-        }
+        // Los asientos descuadrados se conservan para revision.
 
         foreach ($this->asientos as $asiento) {
             if (empty($asiento['sedes_centro_costos'])) {
@@ -297,6 +283,9 @@ class TodosModulosComponent extends Component
                 $detalle->observacion = 'ASIENTO MANUAL DESDE TODOS MODULOS';
                 $detalle->status = true;
                 $detalle->save();
+            }
+            if (!AsientosHeader::estaCuadrado($header->id)) {
+                AsientosHeader::advertirDescuadre($header);
             }
         });
 
@@ -367,6 +356,7 @@ class TodosModulosComponent extends Component
                 'customer_movimientos.type_transaction_name',
                 'customer_movimientos.valor_movimiento',
                 'asientos_header.id as asiento_header_id',
+                'asientos_header.descripcion as asiento_descripcion',
                 DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as suma_debe"),
                 DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = false) as suma_haber"),
                 DB::raw("'MODULO' as origen")
@@ -384,6 +374,7 @@ class TodosModulosComponent extends Component
                 DB::raw("'Asiento General' as type_transaction_name"),
                 DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as valor_movimiento"),
                 'asientos_header.id as asiento_header_id',
+                'asientos_header.descripcion as asiento_descripcion',
                 DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as suma_debe"),
                 DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = false) as suma_haber"),
                 DB::raw("'GENERAL' as origen")

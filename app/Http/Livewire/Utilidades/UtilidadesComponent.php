@@ -487,50 +487,30 @@ class UtilidadesComponent extends Component
                 ->where('concepto_id', 1)
                 ->first();
 
-            if (!$configHeader || !$configHeaderGeneral) {
-
-                //alerta de color rojo
-                /*
-                $color = 'danger';
-                $mensaje = "Advertencia: No se encontró la configuración contable (ConfigPlanHeader) para la transacción 'EUS'. Asegúrese de que existe y está activa.";
-                $data = [
-                    'titulo' => 'Notificación',
-                    'color' => $color,
-                    'mensaje' => $mensaje
-                ];
-                $this->dispatchBrowserEvent('alerta', $data);
-                return;*/
-
-                //segunda alerta pop up grande
-                $titulo = '<i class="fa fa-exclamation-circle" aria-hidden="true"></i><b>No se encontró la configuración contable</b>';
-                $mensaje = "Advertencia: No se encontró la configuración contable (ConfigPlanHeader) para la transacción 'EUS'. Asegúrese de que existe y está activa.";
-                $this->dispatchBrowserEvent('alertaGrande', [
-                    'titulo' => $titulo,
-                    'color' => 'danger',
-                    'mensaje' => $mensaje
-                ]);
-                return;
-                /*
-                throw new \Exception("Advertencia: No se encontró la configuración contable (ConfigPlanHeader) para la transacción 'EUS'. Asegúrese de que existe y está activa.");
-                */
-            }
-            $detalleDEBE = ConfigPlanDetalle::where('config_plan_header_id', $configHeader->id)
+            // Las configuraciones incompletas dejan asientos pendientes y no detienen el lote.
+            $detalleDEBE = ConfigPlanDetalle::where('config_plan_header_id', optional($configHeader)->id)
                 ->where('debe_haber', true)
                 ->where('status', 1)
                 ->first();
-            $detalleHABER = ConfigPlanDetalle::where('config_plan_header_id', $configHeader->id)
+            $detalleHABER = ConfigPlanDetalle::where('config_plan_header_id', optional($configHeader)->id)
                 ->where('debe_haber', false)
                 ->where('plan_cuentas_id', $this->cuenta_pasivo_id)
                 ->where('status', 1)
                 ->first();
-            $detalleDEBEGeneral = ConfigPlanDetalle::where('config_plan_header_id', $configHeaderGeneral->id)
+            $detalleDEBEGeneral = ConfigPlanDetalle::where('config_plan_header_id', optional($configHeaderGeneral)->id)
                 ->where('debe_haber', true)
                 ->where('status', 1)
                 ->first();
-            $detalleHABERGeneral = ConfigPlanDetalle::where('config_plan_header_id', $configHeaderGeneral->id)
+            $detalleHABERGeneral = ConfigPlanDetalle::where('config_plan_header_id', optional($configHeaderGeneral)->id)
                 ->where('debe_haber', false)
                 ->where('status', 1)
                 ->first();
+            foreach (['detalleDEBE', 'detalleHABER', 'detalleDEBEGeneral', 'detalleHABERGeneral'] as $nombreDetalle) {
+                if ($$nombreDetalle && !PlanCuentas::where('company_id', $companyId)
+                    ->where('id', $$nombreDetalle->plan_cuentas_id)->exists()) {
+                    $$nombreDetalle = null;
+                }
+            }
             foreach ($solicitudes as $solicitud) {
                 $customer = Customer::find($solicitud->customer_id);
                 if (!$customer) {
@@ -568,49 +548,64 @@ class UtilidadesComponent extends Component
                     "hour_created" => date("H:i:s"),
                 ];
                 $movimientos = CustomerMovimiento::create($dataMovimiento);
-                $headerAsiento = AsientosHeader::create([
+                $headerAsiento = AsientosHeader::firstOrNew(['company_id' => $companyId,
+                    'customer_movimiento_id' => $movimientos->id, 'status' => 1]);
+                $headerAsiento->fill([
                     'company_id' => $companyId,
                     'manual' => 0,
                     'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
                     'fecha_creacion' => date('Y-m-d H:i:s'),
                     'user_created' => Auth::user()->id,
-                    'concepto_id' => $configHeader->concepto_id,
-                    'config_plan_header_id' => $configHeader->id,
+                    'concepto_id' => optional($configHeader)->concepto_id,
+                    'config_plan_header_id' => optional($configHeader)->id,
                     'descripcion' => $asientoDescription,
                     'customer_movimiento_id' => $movimientos->id,
                     // 'gasto_id'
-                    'descargo_bovedas_header_id' => $configHeader->operaciones_descargo_bovedas_id,
+                    'descargo_bovedas_header_id' => optional($configHeader)->operaciones_descargo_bovedas_id,
                     'status' => 1,
                 ]);
+                $headerAsiento->save();
+                AsientosDetalle::where('company_id', $companyId)
+                    ->where('asientos_header_id', $headerAsiento->id)->delete();
                 // Crear detalles del asiento usando ConfigPlanDetalle
                 // DETALLE DEBE
-                AsientosDetalle::create([
-                    'company_id' => $companyId,
-                    'asientos_header_id' => $headerAsiento->id,
-                    'plan_cuentas_id' => $detalleDEBE->plan_cuentas_id,
-                    'valor' => $movimientos->valor_movimiento,
-                    'sedes_centro_costos_id' => $detalleDEBE->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
-                    'debe_haber' => true, // 1=DEBE, 0=HABER
-                    'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
-                    'fecha_creacion' => date('Y-m-d H:i:s'),
-                    'user_created' => Auth::user()->id,
-                    'observacion' => $asientoDescription,
-                    'status' => 1,
-                ]);
+                if ($detalleDEBE) {
+                    AsientosDetalle::create([
+                        'company_id' => $companyId,
+                        'asientos_header_id' => $headerAsiento->id,
+                        'plan_cuentas_id' => $detalleDEBE->plan_cuentas_id,
+                        'valor' => $movimientos->valor_movimiento,
+                        'sedes_centro_costos_id' => $detalleDEBE->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
+                        'debe_haber' => true, // 1=DEBE, 0=HABER
+                        'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
+                        'fecha_creacion' => date('Y-m-d H:i:s'),
+                        'user_created' => Auth::user()->id,
+                        'observacion' => $asientoDescription,
+                        'status' => 1,
+                    ]);
+                }
                 // DETALLE HABER (Pasivo/Abono: Cuenta seleccionada por el usuario)
-                AsientosDetalle::create([
-                    'company_id' => $companyId,
-                    'asientos_header_id' => $headerAsiento->id,
-                    'plan_cuentas_id' => $this->cuenta_pasivo_id, // Cuenta HABER seleccionada (Pasivo)
-                    'valor' => $movimientos->valor_movimiento,
-                    'sedes_centro_costos_id' => $detalleHABER->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
-                    'debe_haber' => false, // HABER (0)
-                    'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
-                    'fecha_creacion' => date('Y-m-d H:i:s'),
-                    'user_created' => Auth::user()->id,
-                    'observacion' => $asientoDescription,
-                    'status' => 1,
-                ]);
+                if ($detalleHABER) {
+                    AsientosDetalle::create([
+                        'company_id' => $companyId,
+                        'asientos_header_id' => $headerAsiento->id,
+                        'plan_cuentas_id' => $this->cuenta_pasivo_id, // Cuenta HABER seleccionada (Pasivo)
+                        'valor' => $movimientos->valor_movimiento,
+                        'sedes_centro_costos_id' => $detalleHABER->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
+                        'debe_haber' => false, // HABER (0)
+                        'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
+                        'fecha_creacion' => date('Y-m-d H:i:s'),
+                        'user_created' => Auth::user()->id,
+                        'observacion' => $asientoDescription,
+                        'status' => 1,
+                    ]);
+                }
+
+                if (!$configHeader || !$detalleDEBE || !$detalleHABER) {
+                    AsientosHeader::advertirRevision($headerAsiento, 'Falta configuracion contable EUS o cuentas del Debe/Haber para utilidades.');
+                } elseif (!AsientosHeader::estaCuadrado($headerAsiento->id)) {
+                    AsientosHeader::advertirDescuadre($headerAsiento);
+                }
 
                 CustomerHistorialController::guardarHistorialAutomatica(
                     $movimientos->code,
@@ -651,43 +646,53 @@ class UtilidadesComponent extends Component
                 'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
                 'fecha_creacion' => date('Y-m-d H:i:s'),
                 'user_created' => Auth::user()->id,
-                'concepto_id' => $configHeaderGeneral->concepto_id,
-                'config_plan_header_id' => $configHeaderGeneral->id,
+                'concepto_id' => optional($configHeaderGeneral)->concepto_id,
+                'config_plan_header_id' => optional($configHeaderGeneral)->id,
                 'descripcion' => $asientoDescription,
                 // 'customer_movimiento_id'
                 // 'gasto_id'
-                'descargo_bovedas_header_id' => $configHeaderGeneral->operaciones_descargo_bovedas_id,
+                'descargo_bovedas_header_id' => optional($configHeaderGeneral)->operaciones_descargo_bovedas_id,
                 'status' => 1,
             ]);
             // Crear detalles del asiento usando ConfigPlanDetalle
             // DETALLE DEBE
-            AsientosDetalle::create([
-                'company_id' => $companyId,
-                'asientos_header_id' => $headerAsiento->id,
-                'plan_cuentas_id' => $detalleDEBEGeneral->plan_cuentas_id,
-                'valor' => $solicitudes->first()->valor * $solicitudes->count(),
-                'sedes_centro_costos_id' => $detalleDEBEGeneral->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
-                'debe_haber' => true, // 1=DEBE, 0=HABER
-                'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
-                'fecha_creacion' => date('Y-m-d H:i:s'),
-                'user_created' => Auth::user()->id,
-                'observacion' => $asientoDescription,
-                'status' => 1,
-            ]);
+            if ($detalleDEBEGeneral) {
+                AsientosDetalle::create([
+                    'company_id' => $companyId,
+                    'asientos_header_id' => $headerAsiento->id,
+                    'plan_cuentas_id' => $detalleDEBEGeneral->plan_cuentas_id,
+                    'valor' => $solicitudes->sum('valor'),
+                    'sedes_centro_costos_id' => $detalleDEBEGeneral->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
+                    'debe_haber' => true, // 1=DEBE, 0=HABER
+                    'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
+                    'fecha_creacion' => date('Y-m-d H:i:s'),
+                    'user_created' => Auth::user()->id,
+                    'observacion' => $asientoDescription,
+                    'status' => 1,
+                ]);
+            }
             // DETALLE HABER (Pasivo/Abono: Cuenta seleccionada por el usuario)
-            AsientosDetalle::create([
-                'company_id' => $companyId,
-                'asientos_header_id' => $headerAsiento->id,
-                'plan_cuentas_id' => $detalleHABERGeneral->plan_cuentas_id, // Cuenta HABER seleccionada (Pasivo)
-                'valor' => $solicitudes->first()->valor * $solicitudes->count(),
-                'sedes_centro_costos_id' => $detalleHABERGeneral->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
-                'debe_haber' => false, // HABER (0)
-                'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
-                'fecha_creacion' => date('Y-m-d H:i:s'),
-                'user_created' => Auth::user()->id,
-                'observacion' => $asientoDescription,
-                'status' => 1,
-            ]);
+            if ($detalleHABERGeneral) {
+                AsientosDetalle::create([
+                    'company_id' => $companyId,
+                    'asientos_header_id' => $headerAsiento->id,
+                    'plan_cuentas_id' => $detalleHABERGeneral->plan_cuentas_id, // Cuenta HABER seleccionada (Pasivo)
+                    'valor' => $solicitudes->sum('valor'),
+                    'sedes_centro_costos_id' => $detalleHABERGeneral->sede_id ?? AsientosHeader::buscarSedesCentroCostos(Auth::user()->id),
+                    'debe_haber' => false, // HABER (0)
+                    'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
+                    'fecha_creacion' => date('Y-m-d H:i:s'),
+                    'user_created' => Auth::user()->id,
+                    'observacion' => $asientoDescription,
+                    'status' => 1,
+                ]);
+            }
+
+            if (!$configHeaderGeneral || !$detalleDEBEGeneral || !$detalleHABERGeneral) {
+                AsientosHeader::advertirRevision($headerAsiento, 'Falta configuracion del asiento general de utilidades.');
+            } elseif (!AsientosHeader::estaCuadrado($headerAsiento->id)) {
+                AsientosHeader::advertirDescuadre($headerAsiento);
+            }
 
             DB::commit();
             session()->flash('message', '¡Las ' . $aprobadasCount . ' solicitudes de Utilidades han sido **APROBADAS** exitosamente y los abonos realizados!');

@@ -31,3 +31,12 @@
 <script src="{{ asset('plugins/datatables-buttons/js/buttons.colVis.js') }}"></script>
 <script src="{{ asset('js/onix-bs5.js') }}"></script>
 <script src="{{ asset('js/global.js') }}"></script>
+@php
+    $advertenciasAsientos = array_values(array_unique(array_merge(
+        session('asientos_descuadrados', []),
+        request()->attributes->get('asientos_descuadrados', [])
+    )));
+@endphp
+<script>
+    window.advertenciasAsientos = @json($advertenciasAsientos);
+</script>

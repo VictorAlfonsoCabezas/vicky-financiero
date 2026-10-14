@@ -2731,19 +2731,10 @@ class CreditosComponet extends Component
                 }
             }
 
-            if (!$cuentaDebeId) {
-                $this->addError('cuenta_debe', 'El Tipo de Préstamo no tiene configurada una Cuenta Contable (Cartera).');
-                DB::rollBack();
-                return;
+            if ($cuentaDebeId && !PlanCuentas::where('company_id', Auth::user()->company_id)->where('id', $cuentaDebeId)->exists()) {
+                $cuentaDebeId = null;
             }
-
-
-            if (!$cuentaHaberId) {
-                $debugInfo = "FormaPago: " . ($formaPago->nombre ?? 'NULO') . " - BancoID: " . ($this->banco_id ?? 'NULO') . " - Empresa: " . Auth::user()->company_id;
-                $this->addError('cuenta_haber', 'No se encontró cuenta contable para el Banco/Caja/Ahorro seleccionado. ' . $debugInfo);
-                DB::rollBack();
-                return;
-            }
+            // Las cuentas faltantes se registran en el asiento pendiente.
 
             // 1. Generar Movimientos
             $movimiento = null;
@@ -2802,32 +2793,41 @@ class CreditosComponet extends Component
                 }
 
                 // Detalle DEBE (Cartera)
-                AsientosDetalle::create([
-                    'company_id' => Auth::user()->company_id,
-                    'asientos_header_id' => $asiento->id,
-                    'plan_cuentas_id' => $cuentaDebeId,
-                    'valor' => $valorDesembolsoContable,
-                    'debe_haber' => 1, // Debe (1=DEBE)
-                    'fecha_contable' => date('Y-m-d H:i:s'),
-                    'fecha_creacion' => date('Y-m-d H:i:s'),
-                    'user_created' => Auth::user()->id,
-                    'observacion' => 'CARTERA DE CRÉDITO',
-                    'status' => true
-                ]);
+                if ($cuentaDebeId) {
+                    AsientosDetalle::create([
+                        'company_id' => Auth::user()->company_id,
+                        'asientos_header_id' => $asiento->id,
+                        'plan_cuentas_id' => $cuentaDebeId,
+                        'valor' => $valorDesembolsoContable,
+                        'debe_haber' => 1, // Debe (1=DEBE)
+                        'fecha_contable' => date('Y-m-d H:i:s'),
+                        'fecha_creacion' => date('Y-m-d H:i:s'),
+                        'user_created' => Auth::user()->id,
+                        'observacion' => 'CARTERA DE CRÉDITO',
+                        'status' => true
+                    ]);
+                }
 
                 // Detalle HABER (Banco/Caja)
-                AsientosDetalle::create([
-                    'company_id' => Auth::user()->company_id,
-                    'asientos_header_id' => $asiento->id,
-                    'plan_cuentas_id' => $cuentaHaberId,
-                    'valor' => $valorDesembolsoContable,
-                    'debe_haber' => 0, // Haber (0=HABER)
-                    'fecha_contable' => date('Y-m-d H:i:s'),
-                    'fecha_creacion' => date('Y-m-d H:i:s'),
-                    'user_created' => Auth::user()->id,
-                    'observacion' => 'DESEMBOLSO DE CRÉDITO',
-                    'status' => true
-                ]);
+                if ($cuentaHaberId) {
+                    AsientosDetalle::create([
+                        'company_id' => Auth::user()->company_id,
+                        'asientos_header_id' => $asiento->id,
+                        'plan_cuentas_id' => $cuentaHaberId,
+                        'valor' => $valorDesembolsoContable,
+                        'debe_haber' => 0, // Haber (0=HABER)
+                        'fecha_contable' => date('Y-m-d H:i:s'),
+                        'fecha_creacion' => date('Y-m-d H:i:s'),
+                        'user_created' => Auth::user()->id,
+                        'observacion' => 'DESEMBOLSO DE CRÉDITO',
+                        'status' => true
+                    ]);
+                }
+                if (!$cuentaDebeId || !$cuentaHaberId) {
+                    AsientosHeader::advertirRevision($asiento, 'Falta la cuenta contable de Cartera o Banco/Caja para el desembolso.');
+                } elseif (!AsientosHeader::estaCuadrado($asiento->id)) {
+                    AsientosHeader::advertirDescuadre($asiento);
+                }
             }
 
             $this->contabilizarInteresesGeneradosCredito(
@@ -2861,9 +2861,28 @@ class CreditosComponet extends Component
             return;
         }
 
+        $descripcion = mb_substr('INTERESES GENERADOS CREDITO N ' . $creditoHeader->code . ' - SOCIO: ' . $creditoHeader->customer_name, 0, 180);
+        $asiento = AsientosHeader::where('company_id', Auth::user()->company_id)
+            ->where(function ($query) use ($descripcion) {
+                $query->where('descripcion', $descripcion)
+                    ->orWhere('descripcion', 'like', '[PENDIENTE CONTABLE] % | ' . $descripcion);
+            })
+            ->where('status', true)->first();
+        if (!$asiento) {
+            $asiento = new AsientosHeader();
+            $asiento->company_id = Auth::user()->company_id;
+        }
+        $asiento->manual = false;
+        $asiento->fecha_contable = date('Y-m-d H:i:s', strtotime($fechaContable ?: date('Y-m-d')));
+        $asiento->fecha_creacion = date('Y-m-d H:i:s');
+        $asiento->user_created = Auth::user()->id;
+        $asiento->descripcion = $descripcion;
+        $asiento->status = true;
+
         $configHeader = $this->buscarConfigInteresesGenerados();
         if (!$configHeader) {
-            throw new \Exception('No existe configuración contable DIARIO para INTERESES GENERADOS.');
+            AsientosHeader::advertirRevision($asiento, 'No existe configuracion contable DIARIO para INTERESES GENERADOS.');
+            return;
         }
 
         $configDetalle = ConfigPlanDetalle::with('planCuentas')
@@ -2878,20 +2897,8 @@ class CreditosComponet extends Component
             ->values();
 
         if ($configDetalle->isEmpty()) {
-            throw new \Exception('La configuración de INTERESES GENERADOS no tiene cuentas aplicables al tipo de crÃ©dito.');
-        }
-
-        $descripcion = 'INTERESES GENERADOS CREDITO N ' . $creditoHeader->code . ' - SOCIO: ' . $creditoHeader->customer_name;
-
-        $asiento = AsientosHeader::where('company_id', Auth::user()->company_id)
-            ->where('config_plan_header_id', $configHeader->id)
-            ->where('descripcion', $descripcion)
-            ->where('status', true)
-            ->first();
-
-        if (!$asiento) {
-            $asiento = new AsientosHeader();
-            $asiento->company_id = Auth::user()->company_id;
+            AsientosHeader::advertirRevision($asiento, 'La configuracion de INTERESES GENERADOS no tiene cuentas aplicables al tipo de credito.');
+            return;
         }
 
         $fechaHoraContable = date('Y-m-d H:i:s', strtotime($fechaContable ?: date('Y-m-d')));
@@ -2926,17 +2933,7 @@ class CreditosComponet extends Component
         }
 
         if (!AsientosHeader::estaCuadrado($asiento->id)) {
-            $totales = AsientosHeader::totales($asiento->id);
-            AsientosDetalle::where('company_id', Auth::user()->company_id)
-                ->where('asientos_header_id', $asiento->id)
-                ->delete();
-            $asiento->delete();
-
-            throw new \Exception('El asiento de intereses generados queda descuadrado. Debe: '
-                . number_format($totales['debe'], 2, '.', '')
-                . ' Haber: '
-                . number_format($totales['haber'], 2, '.', '')
-                . '. Revise la configuración INTERESES GENERADOS.');
+            AsientosHeader::advertirDescuadre($asiento);
         }
     }
 

@@ -168,42 +168,7 @@ class AsientosComponent extends Component
             return;
         }
 
-        //Validar descuadre de asiento
-        $descuadrado = false;
-        $totalDebe = array_reduce($this->asientos, function ($carry, $item) {
-            return $carry + (float) $item['debe'];
-        }, 0.00);
-
-        $totalHaber = array_reduce($this->asientos, function ($carry, $item) {
-            return $carry + (float) $item['haber'];
-        }, 0.00);
-        $totalDebe  = number_format($totalDebe, 2, '.', '');
-        $totalHaber  = number_format($totalHaber, 2, '.', '');
-        //dd($totalDebe, $totalHaber, ($totalDebe != $totalHaber));
-
-        if ($totalDebe != $totalHaber) {
-            $descuadrado = true;
-            /*
-            $color = 'danger';
-            $mensaje = 'El asiento manual no se encuentra correctamente cuadrado, existen diferencias entre el Debe y el Haber';
-            $data = [
-                'titulo' => '<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Advertencia',
-                'color' => $color,
-                'mensaje' => $mensaje
-            ];
-            $this->dispatchBrowserEvent('alerta', $data);
-            */
-
-
-            $titulo = '<i class="fa fa-exclamation-circle" aria-hidden="true"></i><b>No cuadra el asiento</b>';
-            $mensaje = 'El asiento manual no se encuentra correctamente cuadrado, existen diferencias entre el Debe y el Haber';
-            $this->dispatchBrowserEvent('alertaGrande', [
-                'titulo' => $titulo,
-                'color' => 'danger',
-                'mensaje' => $mensaje
-            ]);
-            return;
-        }
+        // El descuadre se informa despues de guardar el asiento.
 
         //Validar poner centro de costos
         $validarCentro = true;
@@ -213,7 +178,6 @@ class AsientosComponent extends Component
             }
         }
         if (!$validarCentro) {
-            $descuadrado = true;
             /*
             $color = 'danger';
             $mensaje = 'El centro de costos es obligatorio para todos los planes de cuentas';
@@ -239,7 +203,6 @@ class AsientosComponent extends Component
         if (Auth::user()->company->fecha_inicio_contable && Auth::user()->company->fecha_inicio_contable != null) {
             $fechaInicio = Auth::user()->company->fecha_inicio_contable;
             if ($this->fecha < $fechaInicio) {
-                $descuadrado = true;
                 /*
                 $color = 'danger';
                 $mensaje = 'La fecha en la que se intenta crear el asiento esta antes de la fecha de inicio contable';
@@ -263,7 +226,7 @@ class AsientosComponent extends Component
         }
 
 
-        if (!$descuadrado) {
+        DB::transaction(function () {
             if ($this->id_seleccionado == 0) {
                 $header = new AsientosHeader();
                 $header->company_id = Auth::user()->company_id;
@@ -303,26 +266,20 @@ class AsientosComponent extends Component
                 $detalle->sedes_centro_costos_id = ($value['sedes_centro_costos'] !== 0) ? $value['sedes_centro_costos'] : null;
                 $detalle->debe_haber = $value['debe_haber'];
                 $detalle->valor = ($value['debe_haber']) ? $value['debe'] : $value['haber'];
+                $detalle->fecha_contable = $header->fecha_contable;
                 $detalle->fecha_creacion = $this->fecha;
                 $detalle->user_created = Auth::user()->id;
+                $detalle->status = true;
                 $detalle->save();
             }
 
             if (!AsientosHeader::estaCuadrado($header->id)) {
-                AsientosDetalle::where('company_id', Auth::user()->company_id)->where('asientos_header_id', $header->id)->delete();
-                $header->delete();
-
-                $this->dispatchBrowserEvent('alertaGrande', [
-                    'titulo' => '<i class="fa fa-exclamation-circle" aria-hidden="true"></i><b>No cuadra el asiento</b>',
-                    'color' => 'danger',
-                    'mensaje' => 'El asiento no se guardo porque los totales finales de Debe y Haber no coinciden.'
-                ]);
-                return;
+                AsientosHeader::advertirDescuadre($header);
             }
 
             $this->dispatchBrowserEvent('alerta', $data);
             $this->dispatchBrowserEvent('closeModal');
-        }
+        });
     }
 
     public function abrirModal($id)

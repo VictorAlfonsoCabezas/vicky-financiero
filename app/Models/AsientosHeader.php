@@ -66,6 +66,38 @@ class AsientosHeader extends Model
 
     public static function recalcularAsientos($id, $table = 'customer_movimientos', $general = false, $typeTransaction = null)
     {
+        if (!in_array($table, ['customer_movimientos', 'gastos'], true)) {
+            return ['code' => '400', 'msg' => 'El origen contable no es valido.'];
+        }
+        $company = Company::find(Auth::user()->company_id);
+        $origen = $general
+            ? self::where('company_id', Auth::user()->company_id)->find($id)
+            : ($table === 'gastos' ? Gastos::where('company_id', Auth::user()->company_id)->find($id)
+                : CustomerMovimiento::where('company_id', Auth::user()->company_id)->find($id));
+        if (!$origen) {
+            return ['code' => '404', 'msg' => 'No existe el registro de origen para generar el asiento.'];
+        }
+        $fecha = $general ? $origen->fecha_contable
+            : ($table === 'gastos' ? ($origen->fecha_emision ?: $origen->fecha_aprobacion) : $origen->date_created);
+        if ($company && !$company->puedeContabilizar($fecha)) {
+            return ['code' => '200', 'skipped' => true, 'msg' => 'La contabilidad no aplica para la fecha de esta operacion.'];
+        }
+        if (in_array($origen->status, [false, 0, '0'], true)) {
+            return ['code' => '200', 'skipped' => true, 'msg' => 'No se genera asiento para una operacion anulada.'];
+        }
+        if (!$company) {
+            return ['code' => '404', 'msg' => 'No existe la empresa de la operacion.'];
+        }
+
+        $resultado = self::recalcularAsientosConfigurados($id, $table, $general, $typeTransaction);
+        if (in_array($resultado['code'] ?? null, ['201', '202', '204', '500'], true)) {
+            return self::crearAsientoPendiente($id, $table, $resultado['msg'], $general);
+        }
+        return $resultado;
+    }
+
+    private static function recalcularAsientosConfigurados($id, $table, $general, $typeTransaction)
+    {
         // Mensaje por defecto
         $data = [
             'code' => '202',
@@ -75,7 +107,7 @@ class AsientosHeader extends Model
         $company = Company::find(Auth::user()->company_id);
         switch ($table) {
             case 'customer_movimientos':
-                $movimientos = CustomerMovimiento::find($id);
+                $movimientos = $general ? self::where('company_id', Auth::user()->company_id)->find($id) : CustomerMovimiento::find($id);
                 if (!$movimientos && !$general) {
                     return [
                         'code' => '404',
@@ -83,7 +115,7 @@ class AsientosHeader extends Model
                     ];
                 }
 
-                $transaction = $typeTransaction ?? TypeTransaction::find($movimientos->type_transaction_id);
+                $transaction = $typeTransaction ?? ($movimientos ? TypeTransaction::where('company_id', Auth::user()->company_id)->find($movimientos->type_transaction_id) : null);
                 if (!$transaction) {
                     return [
                         'code' => '201',
@@ -92,9 +124,14 @@ class AsientosHeader extends Model
                 }
 
                 $fechaContable = $general ? date('Y-m-d') : $movimientos->date_created;
+                if ($general && ($transaction->name_corto !== 'EUS'
+                    || !AsientosDetalle::where('asientos_header_id', $id)->where('company_id', Auth::user()->company_id)->where('debe_haber', true)->exists()
+                    || !AsientosDetalle::where('asientos_header_id', $id)->where('company_id', Auth::user()->company_id)->where('debe_haber', false)->exists())) {
+                    return ['code' => '204', 'msg' => 'El asiento general no tiene datos suficientes para recalcularse automaticamente. Complete las cuentas y valores en la revision manual.'];
+                }
                 break;
             case 'gastos':
-                $transaction = TypeTransaction::where('name_corto', 'GAS')->first();
+                $transaction = TypeTransaction::where('company_id', Auth::user()->company_id)->where('name_corto', 'GAS')->first();
                 $movimientos = Gastos::find($id);
                 if (!$movimientos) {
                     return [
@@ -164,6 +201,9 @@ class AsientosHeader extends Model
                 ];
                 return $data;
             }
+            if (empty($transaction->name_corto)) {
+                return ['code' => '201', 'msg' => 'El tipo de transaccion no tiene codigo contable configurado.'];
+            }
             if (!is_null($transaction->name_corto)) {
                 switch ($table) {
                     case 'customer_movimientos':
@@ -212,7 +252,9 @@ class AsientosHeader extends Model
 
                         $existeAsientoHeader = $queryAsientoHeader->exists();
 
-                        if ($existeAsientoHeader) {
+                        if ($general) {
+                            $asientosHeader = self::where('company_id', Auth::user()->company_id)->findOrFail($id);
+                        } elseif ($existeAsientoHeader) {
                             $queryAsientoHeader = AsientosHeader::where('company_id', Auth::user()->company_id)
                                 ->where('status', true);
 
@@ -223,8 +265,6 @@ class AsientosHeader extends Model
                             }
 
                             $asientosHeader = $queryAsientoHeader->orderBy('id')->first();
-                        } elseif ($general) {
-                            $asientosHeader = AsientosHeader::where('id', $id)->first();
                         } else {
                             $asientosHeader = new AsientosHeader();
                             $asientosHeader->company_id = Auth::user()->company_id;
@@ -377,7 +417,6 @@ class AsientosHeader extends Model
                             ->where('asientos_header_id', $asientosHeader->id)
                             ->delete();
                         if (!$prestamo) {
-                            self::eliminarAsientoTemporal($asientosHeader);
 
                             return [
                                 'code' => '204',
@@ -395,12 +434,14 @@ class AsientosHeader extends Model
                                 } else {
                                     $idPago = (int) $movimientos->{$value->campo_foraneo};
                                     $cuota = CreditFolderDetail::find($idPago);
+                                    if (!$cuota) {
+                                        return ['code' => '204', 'msg' => 'La configuracion contable ENC referencia una cuota inexistente.'];
+                                    }
                                     $valorFinal = $cuota->{$value->campo};
                                 }
-                                //$planCuentas = PlanCuentas::find($value->plan_cuentas_id);
-                                $planCuentas = PlanCuentas::find($value->plan_cuentas_id);
+                                //$planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($value->plan_cuentas_id);
+                                $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($value->plan_cuentas_id);
                                 if (!$planCuentas) {
-                                    self::eliminarAsientoTemporal($asientosHeader);
 
                                     return [
                                         'code' => '204',
@@ -460,7 +501,6 @@ class AsientosHeader extends Model
                             }
                         }
                         if (!isset($prestamo->tipo_pago) || $prestamo->tipo_pago != "MENSUAL") {
-                            self::eliminarAsientoTemporal($asientosHeader);
 
                             return [
                                 'code' => '204',
@@ -474,7 +514,6 @@ class AsientosHeader extends Model
                         AsientosDetalle::where('company_id', Auth::user()->company_id)->where('asientos_header_id', $asientosHeader->id)->delete();
                         $cuotaPago = $movimientos->creditFolderDetails;
                         if (!$cuotaPago) {
-                            self::eliminarAsientoTemporal($asientosHeader);
 
                             return [
                                 'code' => '204',
@@ -484,7 +523,6 @@ class AsientosHeader extends Model
 
                         $prestamo = CreditFolderHeader::where('code', $cuotaPago->code_folder_header)->first();
                         if (!$prestamo) {
-                            self::eliminarAsientoTemporal($asientosHeader);
 
                             return [
                                 'code' => '204',
@@ -500,7 +538,7 @@ class AsientosHeader extends Model
                                     continue;
                                 }
 
-                                $planPago = PlanCuentas::find($detallePago->plan_cuentas_id);
+                                $planPago = PlanCuentas::where('company_id', Auth::user()->company_id)->find($detallePago->plan_cuentas_id);
                                 if (!$planPago) {
                                     continue;
                                 }
@@ -599,7 +637,7 @@ class AsientosHeader extends Model
                                         $valorFinal = round(((float) ($cuotaPago->{$value->campo} ?? 0)) * $proporcionMovimiento, 2);
                                     }
 
-                                    $planCuentas = PlanCuentas::find($value->plan_cuentas_id);
+                                    $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($value->plan_cuentas_id);
                                     if (!$planCuentas) {
                                         continue;
                                     }
@@ -672,7 +710,6 @@ class AsientosHeader extends Model
                             }
                         }
                         if (!isset($prestamo->tipo_pago) || $prestamo->tipo_pago != "MENSUAL") {
-                            self::eliminarAsientoTemporal($asientosHeader);
 
                             return [
                                 'code' => '204',
@@ -767,7 +804,7 @@ class AsientosHeader extends Model
                                     return false;
                                 }
 
-                                $planCuentas = PlanCuentas::find($detalle->plan_cuentas_id);
+                                $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($detalle->plan_cuentas_id);
 
                                 return $planCuentas
                                     && !self::esCuentaCaja($planCuentas)
@@ -775,7 +812,6 @@ class AsientosHeader extends Model
                             });
 
                             if ($detallesHaberNotaDebito->count() !== 1) {
-                                self::eliminarAsientoTemporal($asientosHeader);
 
                                 return [
                                     'code' => '204',
@@ -792,13 +828,16 @@ class AsientosHeader extends Model
                             } else {
                                 $idPago = (int) $movimientos->{$value->campo_foraneo};
                                 $cuota = CreditFolderDetail::find($idPago);
+                                if (!$cuota) {
+                                    return ['code' => '204', 'msg' => 'La configuracion contable referencia una cuota inexistente.'];
+                                }
                                 $valorFinal = $cuota->{$value->campo};
                             }
                             if (is_null($valorFinal)) {
-                                //dd('null');
+                                return ['code' => '204', 'msg' => 'La configuracion contable referencia un campo sin valor: ' . $value->campo_foraneo];
                             }
 
-                            $planCuentas = PlanCuentas::find($value->plan_cuentas_id);
+                            $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($value->plan_cuentas_id);
                             if (!$planCuentas) {
                                 continue;
                             }
@@ -834,17 +873,11 @@ class AsientosHeader extends Model
                 }
             }
 
+            if (isset($asientosHeader) && self::tieneCuentasInvalidas($configDetalle)) {
+                return self::advertirRevision($asientosHeader, 'La configuracion contable referencia cuentas inexistentes o de otra empresa.');
+            }
             if (isset($asientosHeader) && !self::estaCuadrado($asientosHeader->id)) {
-                $totales = self::totales($asientosHeader->id);
-                AsientosDetalle::where('company_id', Auth::user()->company_id)
-                    ->where('asientos_header_id', $asientosHeader->id)
-                    ->delete();
-                $asientosHeader->delete();
-
-                return [
-                    'code' => '203',
-                    'msg' => 'El asiento automatico quedo descuadrado. Debe: ' . number_format($totales['debe'], 2, '.', '') . ' Haber: ' . number_format($totales['haber'], 2, '.', '') . '. Revise la configuracion contable del modulo.'
-                ];
+                return self::advertirDescuadre($asientosHeader);
             }
 
             $data = [
@@ -856,6 +889,19 @@ class AsientosHeader extends Model
     }
 
     public static function recalcularAsientosBovedas($id)
+    {
+        $origen = DescargoBovedasHeader::where('company_id', Auth::user()->company_id)->find($id);
+        if (!$origen) {
+            return ['code' => '404', 'msg' => 'No existe el descargo de boveda para generar el asiento.'];
+        }
+        $resultado = self::recalcularAsientosBovedasConfigurados($id);
+        if (in_array($resultado['code'] ?? null, ['201', '202'], true)) {
+            return self::crearAsientoPendiente($id, 'descargo_bovedas_header', $resultado['msg']);
+        }
+        return $resultado;
+    }
+
+    private static function recalcularAsientosBovedasConfigurados($id)
     {
         $data = [];
         $descargo = DescargoBovedasHeader::find($id);
@@ -937,7 +983,7 @@ class AsientosHeader extends Model
         AsientosDetalle::where('company_id', Auth::user()->company_id)->where('asientos_header_id', $asientosHeader->id)->delete();
         foreach ($configDetalle as $key => $value) {
             $valor = $descargo->{$value->campo_foraneo};
-            $planCuentas = PlanCuentas::find($value->plan_cuentas_id);
+            $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->find($value->plan_cuentas_id);
             if (!$planCuentas) {
                 continue;
             }
@@ -961,16 +1007,11 @@ class AsientosHeader extends Model
             $asientosDetalle->save();
         }
 
+        if (self::tieneCuentasInvalidas($configDetalle)) {
+            return self::advertirRevision($asientosHeader, 'La configuracion de bovedas referencia cuentas inexistentes o de otra empresa.');
+        }
         if (!self::estaCuadrado($asientosHeader->id)) {
-            AsientosDetalle::where('company_id', Auth::user()->company_id)
-                ->where('asientos_header_id', $asientosHeader->id)
-                ->delete();
-            $asientosHeader->delete();
-
-            return [
-                'code' => '203',
-                'msg' => 'El asiento automatico de bovedas quedo descuadrado. Revise la configuracion contable.'
-            ];
+            return self::advertirDescuadre($asientosHeader);
         }
 
         $data = [
@@ -1015,17 +1056,77 @@ class AsientosHeader extends Model
         return $sedeCentroCostoId;
     }
 
-    private static function eliminarAsientoTemporal($asientosHeader)
+    public function getPendienteContableAttribute()
     {
-        if (!$asientosHeader || !$asientosHeader->id) {
-            return;
+        return strpos((string) $this->descripcion, '[PENDIENTE CONTABLE] ') === 0;
+    }
+
+    private static function tieneCuentasInvalidas($detalles)
+    {
+        $ids = $detalles->pluck('plan_cuentas_id')->unique();
+        return PlanCuentas::where('company_id', Auth::user()->company_id)
+            ->whereIn('id', $ids)->count() !== $ids->count();
+    }
+
+    public static function crearAsientoPendiente($id, $table, $motivo, $general = false)
+    {
+        $companyId = Auth::user()->company_id;
+        if ($general) {
+            $asiento = self::where('company_id', $companyId)->findOrFail($id);
+        } else {
+            $modelos = ['customer_movimientos' => CustomerMovimiento::class,
+                'gastos' => Gastos::class, 'descargo_bovedas_header' => DescargoBovedasHeader::class];
+            $campos = ['customer_movimientos' => 'customer_movimiento_id',
+                'gastos' => 'gasto_id', 'descargo_bovedas_header' => 'descargo_bovedas_header_id'];
+            $origen = $modelos[$table]::where('company_id', $companyId)->findOrFail($id);
+            $asiento = self::firstOrNew(['company_id' => $companyId, $campos[$table] => $id, 'status' => true]);
+            if (!$asiento->exists) {
+                $asiento->manual = false;
+                $asiento->fecha_contable = $table === 'customer_movimientos'
+                    ? $origen->date_created . ' ' . $origen->hour_created
+                    : ($table === 'gastos' ? ($origen->fecha_emision ?: $origen->fecha_aprobacion) : $origen->fecha_creacion);
+                $asiento->fecha_creacion = date('Y-m-d H:i:s');
+                $asiento->user_created = Auth::user()->id;
+                $asiento->descripcion = 'ASIENTO AUTOMATICO';
+            }
         }
+        return self::advertirRevision($asiento, $motivo);
+    }
 
-        AsientosDetalle::where('company_id', Auth::user()->company_id)
-            ->where('asientos_header_id', $asientosHeader->id)
-            ->delete();
+    public static function advertirRevision($asiento, $motivo)
+    {
+        $descripcion = $asiento->pendiente_contable
+            ? substr($asiento->descripcion, strrpos($asiento->descripcion, ' | ') + 3)
+            : $asiento->descripcion;
+        $descripcion = mb_substr((string) $descripcion, 0, 180);
+        $espacioMotivo = 255 - mb_strlen('[PENDIENTE CONTABLE]  | ') - mb_strlen($descripcion);
+        $asiento->descripcion = '[PENDIENTE CONTABLE] ' . mb_substr($motivo, 0, $espacioMotivo) . ' | ' . $descripcion;
+        $asiento->save();
+        $mensaje = 'El asiento #' . $asiento->id . ' quedo pendiente de revision. ' . $motivo
+            . ' La transaccion puede completarse. Revise la configuracion y recalcule el asiento.';
+        return self::registrarAdvertencia($asiento, $mensaje);
+    }
 
-        $asientosHeader->delete();
+    public static function advertirDescuadre($asiento)
+    {
+        $totales = self::totales($asiento->id);
+        $mensaje = 'El asiento #' . $asiento->id . ' se guardo descuadrado. Debe: '
+            . number_format($totales['debe'], 2, '.', '') . ' Haber: '
+            . number_format($totales['haber'], 2, '.', '') . ' Diferencia: '
+            . number_format(abs($totales['debe'] - $totales['haber']), 2, '.', '')
+            . '. La transaccion puede completarse. Revise el asiento y la configuracion contable.';
+
+        return self::registrarAdvertencia($asiento, $mensaje);
+    }
+
+    private static function registrarAdvertencia($asiento, $mensaje)
+    {
+        // Una sola advertencia por asiento, aunque se recalcule varias veces en la solicitud.
+        $advertencias = request()->attributes->get('asientos_descuadrados', []);
+        $advertencias[$asiento->id] = $mensaje;
+        request()->attributes->set('asientos_descuadrados', $advertencias);
+
+        return ['code' => '200', 'warning' => true, 'asiento_id' => $asiento->id, 'msg' => $mensaje];
     }
 
     public static function totales($asientosHeaderId)

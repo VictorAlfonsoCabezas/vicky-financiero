@@ -74,7 +74,7 @@
                     </thead>
                     <tbody>
                         @foreach ($asientosHeader as $a)
-                        <tr class="bg-{{ $a->id == $a->id ? 'primary' : 'danger' }} text-white">
+                        <tr class="bg-{{ !$a->pendiente_contable && number_format($a->suma_debe, 2, '.', '') === number_format($a->suma_haber, 2, '.', '') && $a->suma_debe > 0 ? 'primary' : 'danger' }} text-white">
                             <td colspan="3">
                                 <b>
                                     <!-- {{ $a->nombre_transaccion }}
@@ -89,6 +89,9 @@
                                 </b>
                                 <br>
                                 Observacion: {{ $a->descripcion }}
+                                @if ($a->pendiente_contable || number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', '') || $a->suma_debe <= 0)
+                                    <br><b>Asiento pendiente de revision contable</b>
+                                @endif
                             </td>
                             <td colspan="2"><b>Total:</b></td>
                             <td style="border: 1px solid #dee2e6;">{{ $a->suma_debe }}</td>

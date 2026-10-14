@@ -1,4 +1,15 @@
 $(document).ready(function () {
+    window.addEventListener('asiento-descuadrado', function (event) {
+        $(document).Toasts('create', {
+            class: 'bg-warning',
+            title: 'Asiento contable pendiente de revision',
+            body: event.detail.mensaje,
+            autohide: false
+        });
+    });
+    (window.advertenciasAsientos || []).forEach(function (mensaje) {
+        window.dispatchEvent(new CustomEvent('asiento-descuadrado', {detail: {mensaje: mensaje}}));
+    });
     $('.sidebar-mini').addClass('sidebar-collapse');
     var menu = $('ul.nav-sidebar').find('a.active').parents('li.has-treeview');
     menu.addClass('menu-open');

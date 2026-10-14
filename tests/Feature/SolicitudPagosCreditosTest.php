@@ -13,6 +13,35 @@ use Tests\TestCase;
 
 class SolicitudPagosCreditosTest extends TestCase
 {
+    use \Tests\Concerns\ContabilidadDePrueba;
+
+    public function testApprovalCommitsPaymentWithUnbalancedAccounting()
+    {
+        $this->habilitarContabilidadDePrueba();
+        $payment = $this->payment();
+        try {
+            (new SolicitudPagosCreditos)->aprobarSolicitud(1);
+        } catch (ValidationException $e) {
+            $this->fail(json_encode($e->errors()));
+        }
+        $this->assertEquals(1, $payment->fresh()->status);
+        $this->assertSame('PAGADA', CreditFolderDetail::find(1)->status);
+        $this->assertEquals(100, CustomerMovimiento::sum('valor_movimiento'));
+        $this->assertSame(1, AsientosHeader::count());
+        $this->assertFalse(AsientosHeader::estaCuadrado(AsientosHeader::first()->id));
+    }
+
+    public function testApprovalCommitsPaymentWithoutAccountingConfiguration()
+    {
+        $this->habilitarContabilidadDePrueba(false);
+        $payment = $this->payment();
+        (new SolicitudPagosCreditos)->aprobarSolicitud(1);
+        $this->assertEquals(1, $payment->fresh()->status);
+        $this->assertEquals(100, CustomerMovimiento::sum('valor_movimiento'));
+        $this->assertSame(1, AsientosHeader::count());
+        $this->assertTrue(AsientosHeader::first()->pendiente_contable);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -99,17 +128,15 @@ class SolicitudPagosCreditosTest extends TestCase
         }
     }
 
-    public function testAccountingErrorRollsBackApproval()
+    public function testMissingConceptsKeepApprovalAndPendingEntry()
     {
         Company::where('id', 10)->update(['contabilidad' => 1, 'fecha_inicio_contable' => '2020-01-01']);
-        auth()->user()->setRelation('company', Company::find(10));
         $payment = $this->payment();
-        try { (new SolicitudPagosCreditos)->aprobarSolicitud(1); $this->fail('Missing accounting configuration accepted'); }
-        catch (ValidationException $e) {
-            $this->assertEquals(3, $payment->fresh()->status);
-            $this->assertSame('PENDIENTE', CreditFolderDetail::find(1)->status);
-            $this->assertSame(0, CustomerMovimiento::count());
-        }
+        (new SolicitudPagosCreditos)->aprobarSolicitud(1);
+        $this->assertEquals(1, $payment->fresh()->status);
+        $this->assertSame('PAGADA', CreditFolderDetail::find(1)->status);
+        $this->assertSame(1, CustomerMovimiento::count());
+        $this->assertTrue(AsientosHeader::first()->pendiente_contable);
     }
 
     public function testMoraUsesFreshInstallmentAndResetsBetweenSelections()
