@@ -11,12 +11,10 @@ use App\Models\Sedes;
 use App\Models\SedesCentroCostos;
 use App\Models\TipoConcepto;
 use App\Models\TypeTransaction;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Request;
 
 class TodosModulosComponent extends Component
 {
@@ -35,6 +33,27 @@ class TodosModulosComponent extends Component
     public $descripcion;
     public $search = '';
     public $asientos = [];
+    public $buscarMovimiento = '';
+    public $estadoContable = '';
+    public $porPagina = 20;
+
+    public function updated($property)
+    {
+        if (in_array($property, ['fechaInicio', 'fechaFin', 'modulo_id', 'buscarMovimiento', 'estadoContable', 'porPagina'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->fechaInicio = date('Y-01-01');
+        $this->fechaFin = date('Y-m-d');
+        $this->modulo_id = 0;
+        $this->buscarMovimiento = '';
+        $this->estadoContable = '';
+        $this->porPagina = 20;
+        $this->resetPage();
+    }
 
     public function __construct()
     {
@@ -45,12 +64,14 @@ class TodosModulosComponent extends Component
 
     public function calcularTodosAsientos()
     {
+        $this->validate(['fechaInicio' => 'required|date', 'fechaFin' => 'required|date|after_or_equal:fechaInicio']);
         $companyId = Auth::user()->company_id;
         $fechaInicio = \Carbon\Carbon::parse($this->fechaInicio)->format('Y-m-d');
         $fechaFin = \Carbon\Carbon::parse($this->fechaFin)->format('Y-m-d');
         $totalRecalculo = 0;
         $customerMovimientoIds = CustomerMovimiento::select('id')
             ->where('company_id', $companyId)
+            ->where(function ($query) { $query->whereNull('status')->orWhere('status', 1); })
             ->when($this->modulo_id != 0, function ($query) {
                 return $query->where('type_transaction_id', $this->modulo_id);
             })
@@ -61,8 +82,9 @@ class TodosModulosComponent extends Component
             ->pluck('id');
         $generalesAsientosIdsQuery = AsientosHeader::select('asientos_header.id')
             ->where('asientos_header.company_id', $companyId)
+            ->where('asientos_header.status', 1)
             ->whereNull('asientos_header.customer_movimiento_id')
-            ->whereBetween(DB::raw('DATE(asientos_header.created_at)'), [$fechaInicio, $fechaFin]);
+            ->whereBetween(DB::raw('DATE(asientos_header.fecha_contable)'), [$fechaInicio, $fechaFin]);
         // Aplicar el filtro de módulo SÓLO si hay un módulo seleccionado (y es un asiento general)
         if ($this->modulo_id != 0) {
             $generalesAsientosIdsQuery
@@ -86,7 +108,8 @@ class TodosModulosComponent extends Component
             $this->dispatchBrowserEvent('alerta', $data);
         }
         foreach ($generalesAsientosHeaderIds as $asientoHeaderId) {
-            $respuesta = AsientosHeader::recalcularAsientos($asientoHeaderId, 'customer_movimientos', true, $typeTransaction);
+            $tipoGeneral = $typeTransaction ?? optional(AsientosHeader::where('company_id', $companyId)->find($asientoHeaderId)->configPlanHeader)->typeTransaction;
+            $respuesta = AsientosHeader::recalcularAsientos($asientoHeaderId, 'customer_movimientos', true, $tipoGeneral);
             $color = !empty($respuesta['warning']) ? 'warning' : (($respuesta['code'] == '200') ? 'success' : 'danger');
             $mensaje = $respuesta['msg'];
             $data = [
@@ -134,13 +157,13 @@ class TodosModulosComponent extends Component
     public function abrirModal($id)
     {
         $this->limpiarFormulario();
-        $this->id_seleccionado = $id;
+        $this->id_seleccionado = AsientosHeader::where('company_id', Auth::user()->company_id)->findOrFail($id)->id;
     }
 
     public function abrirModalManual($movimientoId)
     {
         $this->limpiarFormularioManual();
-        $movimiento = CustomerMovimiento::find($movimientoId);
+        $movimiento = CustomerMovimiento::where('company_id', Auth::user()->company_id)->find($movimientoId);
 
         if (!$movimiento) {
             $this->dispatchBrowserEvent('alerta', [
@@ -324,6 +347,54 @@ class TodosModulosComponent extends Component
             ->get();
     }
 
+    private function consultaModulos($companyId, $fechaInicio, $fechaFin)
+    {
+        $sumDebe = "(SELECT COALESCE(SUM(valor), 0) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.company_id = asientos_header.company_id AND asientos_detalle.status = 1 AND asientos_detalle.debe_haber = 1)";
+        $sumHaber = "(SELECT COALESCE(SUM(valor), 0) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.company_id = asientos_header.company_id AND asientos_detalle.status = 1 AND asientos_detalle.debe_haber = 0)";
+        $movimientos = CustomerMovimiento::select(
+            'customer_movimientos.id', 'customer_movimientos.date_created', 'customer_movimientos.hour_created',
+            'customer_movimientos.customer_ruc', 'customer_movimientos.customer_name',
+            'customer_movimientos.type_transaction_name', 'customer_movimientos.valor_movimiento',
+            'asientos_header.id as asiento_header_id', 'asientos_header.descripcion as asiento_descripcion',
+            DB::raw($sumDebe . ' as suma_debe'), DB::raw($sumHaber . ' as suma_haber'),
+            DB::raw("'MODULO' as origen"), 'customer_movimientos.type_transaction_id'
+        )->leftJoin('asientos_header', function ($join) use ($companyId) {
+            $join->on('customer_movimientos.id', '=', 'asientos_header.customer_movimiento_id')
+                ->where('asientos_header.company_id', $companyId)->where('asientos_header.status', 1);
+        })->where('customer_movimientos.company_id', $companyId)
+            ->where(function ($query) { $query->whereNull('customer_movimientos.status')->orWhere('customer_movimientos.status', 1); })
+            ->whereBetween(DB::raw('DATE(customer_movimientos.date_created)'), [$fechaInicio, $fechaFin])
+            ->when($this->modulo_id != 0, function ($query) { $query->where('customer_movimientos.type_transaction_id', $this->modulo_id); });
+
+        $generales = AsientosHeader::select(
+            DB::raw('NULL as id'), DB::raw('DATE(asientos_header.fecha_contable) as date_created'),
+            DB::raw('TIME(asientos_header.fecha_contable) as hour_created'), DB::raw("'' as customer_ruc"),
+            DB::raw("'Asiento contable general' as customer_name"), DB::raw("'Asiento general' as type_transaction_name"),
+            DB::raw($sumDebe . ' as valor_movimiento'), 'asientos_header.id as asiento_header_id',
+            'asientos_header.descripcion as asiento_descripcion', DB::raw($sumDebe . ' as suma_debe'),
+            DB::raw($sumHaber . ' as suma_haber'), DB::raw("'GENERAL' as origen"),
+            'config_plan_header.type_transaction_id'
+        )->leftJoin('config_plan_header', function ($join) use ($companyId) {
+            $join->on('asientos_header.config_plan_header_id', '=', 'config_plan_header.id')->where('config_plan_header.company_id', $companyId);
+        })->where('asientos_header.company_id', $companyId)->where('asientos_header.status', 1)
+            ->whereNull('asientos_header.customer_movimiento_id')
+            ->whereBetween(DB::raw('DATE(asientos_header.fecha_contable)'), [$fechaInicio, $fechaFin])
+            ->when($this->modulo_id != 0, function ($query) { $query->where('config_plan_header.type_transaction_id', $this->modulo_id); });
+
+        $estadoSql = "CASE WHEN asiento_header_id IS NULL THEN 'sin_asiento' WHEN asiento_descripcion LIKE '[PENDIENTE CONTABLE] %' OR ROUND(COALESCE(suma_debe, 0), 2) <> ROUND(COALESCE(suma_haber, 0), 2) OR COALESCE(suma_debe, 0) <= 0 THEN 'pendiente' ELSE 'cuadrado' END";
+        $consulta = DB::query()->fromSub($movimientos->unionAll($generales), 'registros')
+            ->select('registros.*')->selectRaw($estadoSql . ' as estado_contable');
+        if (trim($this->buscarMovimiento) !== '') {
+            $buscar = '%' . trim($this->buscarMovimiento) . '%';
+            $consulta->where(function ($query) use ($buscar) {
+                foreach (['customer_name', 'customer_ruc', 'type_transaction_name', 'id', 'asiento_header_id'] as $campo) {
+                    $query->orWhere($campo, 'like', $buscar);
+                }
+            });
+        }
+        return DB::query()->fromSub($consulta, 'resultados');
+    }
+
     public function render()
     {
         $companyId = Auth::user()->company_id;
@@ -344,56 +415,19 @@ class TodosModulosComponent extends Component
                 ->limit(10)
                 ->get()
             : collect();
-        $modulos = new LengthAwarePaginator([], 0, 20, 1, ['path' => Request::url()]);
-
-        if ($this->modulo_id != 0) {
-            $movimientosQuery = CustomerMovimiento::select(
-                'customer_movimientos.id',
-                'customer_movimientos.date_created',
-                'customer_movimientos.hour_created',
-                'customer_movimientos.customer_ruc',
-                'customer_movimientos.customer_name',
-                'customer_movimientos.type_transaction_name',
-                'customer_movimientos.valor_movimiento',
-                'asientos_header.id as asiento_header_id',
-                'asientos_header.descripcion as asiento_descripcion',
-                DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as suma_debe"),
-                DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = false) as suma_haber"),
-                DB::raw("'MODULO' as origen")
-            )
-                ->leftjoin('asientos_header', 'customer_movimientos.id', '=', 'asientos_header.customer_movimiento_id')
-                ->where('customer_movimientos.company_id', $companyId)
-                ->whereBetween(DB::raw('DATE(customer_movimientos.date_created)'), [$fechaInicio, $fechaFin])
-                ->where('customer_movimientos.type_transaction_id', $this->modulo_id);
-            $asientosGeneralesQuery = AsientosHeader::select(
-                DB::raw('NULL as id'),
-                DB::raw('DATE(asientos_header.created_at) as date_created'),
-                DB::raw('TIME(asientos_header.created_at) as hour_created'),
-                DB::raw("'' as customer_ruc"),
-                DB::raw("'Asiento Contable General' as customer_name"),
-                DB::raw("'Asiento General' as type_transaction_name"),
-                DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as valor_movimiento"),
-                'asientos_header.id as asiento_header_id',
-                'asientos_header.descripcion as asiento_descripcion',
-                DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = true) as suma_debe"),
-                DB::raw("(SELECT SUM(valor) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = false) as suma_haber"),
-                DB::raw("'GENERAL' as origen")
-            )
-                ->join('config_plan_header', 'asientos_header.config_plan_header_id', '=', 'config_plan_header.id')
-                ->where('config_plan_header.type_transaction_id', $this->modulo_id)
-                ->where('asientos_header.company_id', $companyId)
-                ->whereNull('asientos_header.customer_movimiento_id')
-                ->whereBetween(DB::raw('DATE(asientos_header.created_at)'), [$fechaInicio, $fechaFin]);
-            $modulos = $movimientosQuery
-                ->union($asientosGeneralesQuery)
-                ->orderBy('date_created', 'desc')
-                ->paginate(20);
+        $consulta = $this->consultaModulos($companyId, $fechaInicio, $fechaFin);
+        $resumen = (clone $consulta)->selectRaw("COUNT(*) as total, SUM(CASE WHEN estado_contable = 'cuadrado' THEN 1 ELSE 0 END) as cuadrados, SUM(CASE WHEN estado_contable = 'pendiente' THEN 1 ELSE 0 END) as pendientes, SUM(CASE WHEN estado_contable = 'sin_asiento' THEN 1 ELSE 0 END) as sin_asiento")->first();
+        if (in_array($this->estadoContable, ['cuadrado', 'pendiente', 'sin_asiento'], true)) {
+            $consulta->where('estado_contable', $this->estadoContable);
         }
+        $limite = in_array((int) $this->porPagina, [20, 50, 100], true) ? (int) $this->porPagina : 20;
+        $modulos = $consulta->orderBy('date_created', 'desc')->orderBy('hour_created', 'desc')
+            ->orderBy('asiento_header_id', 'desc')->orderBy('id', 'desc')->paginate($limite);
         $asientosHeader = null;
         $detalle = collect();
 
         if ($this->id_seleccionado) {
-            $asientosHeader = AsientosHeader::find($this->id_seleccionado);
+            $asientosHeader = AsientosHeader::where('company_id', $companyId)->find($this->id_seleccionado);
             $detalle = AsientosDetalle::select(
                 'asientos_detalle.*',
                 'plan_cuentas.nombre as plan_nombre',
@@ -402,11 +436,12 @@ class TodosModulosComponent extends Component
                 'centro_costos.name as centro_costos_nombre',
                 'asientos_detalle.asientos_header_id as header_id'
             )
-                ->join('plan_cuentas', 'asientos_detalle.plan_cuentas_id', '=', 'plan_cuentas.id')
+                ->leftjoin('plan_cuentas', 'asientos_detalle.plan_cuentas_id', '=', 'plan_cuentas.id')
                 ->leftjoin('sedes_centro_costos', 'asientos_detalle.sedes_centro_costos_id', '=', 'sedes_centro_costos.id')
                 ->leftjoin('centro_costos', 'sedes_centro_costos.centro_costos_id', '=', 'centro_costos.id')
                 ->leftjoin('sedes', 'sedes_centro_costos.sede_id', '=', 'sedes.id')
                 ->where('asientos_detalle.company_id', $companyId)
+                ->where('asientos_detalle.status', 1)
                 ->where('asientos_detalle.asientos_header_id', $this->id_seleccionado)
                 ->orderBy('asientos_detalle.debe_haber', 'DESC')
                 ->orderBy('asientos_detalle.id')
@@ -415,6 +450,7 @@ class TodosModulosComponent extends Component
 
         return view('livewire.todos-modulos.todos-modulos-component', compact(
             'modulos',
+            'resumen',
             'tipoTransacciones',
             'asientosHeader',
             'detalle',
