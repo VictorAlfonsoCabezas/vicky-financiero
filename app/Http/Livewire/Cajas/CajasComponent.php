@@ -39,6 +39,26 @@ class CajasComponent extends Component
     public $fechaInicio;
     public $fechaFin;
     public $status = 'ALL';
+    public $soloDescuadres = false;
+    public $porPagina = 10;
+
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'fechaInicio', 'fechaFin', 'status', 'soloDescuadres', 'porPagina'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->fechaInicio = date('Y-m-d', strtotime('-1 week'));
+        $this->fechaFin = date('Y-m-d');
+        $this->search = '';
+        $this->status = 'ALL';
+        $this->soloDescuadres = false;
+        $this->porPagina = 10;
+        $this->resetPage();
+    }
     public $fechaCaja;
     public $valorInicial = 0;
     public $observacion = '';
@@ -731,16 +751,28 @@ class CajasComponent extends Component
     public function render()
     {
         $company = Company::find(Auth::user()->company_id);
-        $cajaAbierta = Cajas::where('status', 'ABIERTA')->where('date_inicial', date('Y-m-d'))->count();
-        $bovedas = Bovedas::where('status', 1)->where('boveda', 1)->get();
-        $cajas = Cajas::where('company_id', Auth::user()->company_id)
-            //                ->where('user_inicial_id', Auth::user()->id)
-            ->when($this->status !== 'ALL', function ($query) {
-                return $query->where('status', $this->status);
-            })
-            ->whereBetween('date_inicial', [$this->fechaInicio, $this->fechaFin])
-            ->orderByDesc('id')
-            ->paginate(10);
+        $cajaAbierta = Cajas::where('company_id', Auth::user()->company_id)
+            ->where('user_inicial_id', Auth::id())->where('status', 'ABIERTA')
+            ->where('date_inicial', date('Y-m-d'))->count();
+        $bovedas = Bovedas::where('company_id', Auth::user()->company_id)->where('status', 1)->where('boveda', 1)->get();
+        $consulta = Cajas::where('company_id', Auth::user()->company_id)
+            ->whereBetween('date_inicial', [$this->fechaInicio, $this->fechaFin]);
+        if (trim($this->search) !== '') {
+            $buscar = '%' . trim($this->search) . '%';
+            $consulta->where(function ($query) use ($buscar) {
+                $query->where('code', 'like', $buscar)->orWhere('user_name_inicial', 'like', $buscar)
+                    ->orWhere('user_finish_name', 'like', $buscar)->orWhere('id', 'like', $buscar);
+            });
+        }
+        $resumen = (clone $consulta)->selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'ABIERTA' THEN 1 ELSE 0 END) as abiertas, SUM(CASE WHEN status = 'CERRADA' THEN 1 ELSE 0 END) as cerradas, SUM(CASE WHEN ROUND(COALESCE(descuadre, 0), 2) <> 0 THEN 1 ELSE 0 END) as diferencias")->first();
+        if (in_array($this->status, ['ABIERTA', 'CERRADA'], true)) {
+            $consulta->where('status', $this->status);
+        }
+        if ($this->soloDescuadres) {
+            $consulta->whereRaw('ROUND(COALESCE(descuadre, 0), 2) <> 0');
+        }
+        $limite = in_array((int) $this->porPagina, [10, 25, 50], true) ? (int) $this->porPagina : 10;
+        $cajas = $consulta->orderByDesc('id')->paginate($limite);
         $detalles = [];
         $detalleTransaccion = [];
         if ($this->caja_id > 0) {
@@ -785,6 +817,6 @@ class CajasComponent extends Component
             $this->total = BaseController::saldoGeneral($caja->date_inicial);
         }
         $bancos = Bancos::where('company_id', Auth::user()->company_id)->where('numero_cuenta', '!=', '')->where('status', true)->get();
-        return view('livewire.cajas.cajas-component', compact('cajas', 'detalles', 'cajaAbierta', 'bovedas', 'company', 'bancos'));
+        return view('livewire.cajas.cajas-component', compact('cajas', 'resumen', 'detalles', 'cajaAbierta', 'bovedas', 'company', 'bancos'));
     }
 }

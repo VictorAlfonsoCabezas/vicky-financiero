@@ -1,148 +1,21 @@
-<div>
-    <div class="col-md-12 mt-2">
-        <div class="card card-primary">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col col-8">
-                        <div class="input-group">
-                            <input type="date" class="form-control" wire:model="fechaInicio">
-                            <div class="input-group-append">
-                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                            </div>
-                            <input type="date" class="form-control" wire:model="fechaFin">
-                        </div>
-                    </div>
-                    
-                    <div class="col col-3">
-                        <select class="form-control" wire:model="status">
-                            <option value="ALL">TODAS</option>
-                            <option value="ABIERTA">ABIERTA</option>
-                            <option value="CERRADA">CERRADA</option>
-                        </select>
-                    </div>
-                    <div class="col col-1">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalGeneral" wire:click="abrirModal(0)"><i class="fas fa-plus"></i> Crear</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @if($cajaAbierta == 0)
-    <div class="row">
-        <div class="col-md-4">
-            <div class="info-box mb-3 bg-danger">
-                <span class="info-box-icon"><i class="nav-icon fa fa-box-open"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">No tiene abierta una caja para trabajar</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-    <table class="table table-head-fixed text-nowrap table-hover" style="font-size: 15px;">
-        <thead>
-            <tr>
-                <th style="width: 1%;">#</th>
-                <th>Codigo</th>
-                <th>Valor Inicial</th>
-                <th>Fecha/Hora Apertura</th>
-                <th>Fecha/Hora Cierre</th>
-                <th>Total</th>
-                <th>Descuadre</th>
-                <th>Usuario Apertura</th>
-                <th>Usuario Cierre</th>
-                <th>Acciones</th>
-                <th>Estado</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($cajas as $caj)
-            @if ($caj->descuadre > 0)
-            <tr style="background:#c99c9c;">
-                @else
-            <tr>
-                @endif
-
-                <td>{{ $caj->id }}</td>
-                <td>{{ $caj->code }}</td>
-                <td>{{ $caj->valor_inicial }}</td>
-                <td><b>{{ $caj->date_inicial }} <br>{{$caj->hour_inicial}}</b></td>
-                <td><b>{{ $caj->date_finish }} <br>{{$caj->hour_finish}}</b></td>
-                <td>$ {{ $caj->total }}</td>
-                <td>
-                    <b>$ {{ $caj->descuadre }}</b>
-                    @if ($caj->descuadre > 0)
-                    <!--                    <a class="btn btn-danger btn-xs" href="{{URL::to('gastos/tcket/' . $caj->customer_movimiento_id)}}" title="Comprobante de Faltante">
-                                            <i class="far fa-file-pdf"></i>
-                                        </a>-->
-                    @endif
-
-                </td>
-                <td>{{ $caj->user_name_inicial }}</td>
-                <td>{{ $caj->user_finish_name }}</td>
-                <td>
-                    @if(Auth::user()->id == $caj->user_inicial_id || Auth::user()->admin == 1 )
-                    @if ($caj->status == 'ABIERTA')
-                    @if($company->caja_boveda)
-                    <button wire:click="enviarBoveda({{ $caj->id }})" data-bs-toggle="modal" data-bs-target="#modalGeneral5" class="btn btn-success btn-xs custom-btn">
-                        <i class="fa fa-paper-plane" aria-hidden="true" style="color: white;"></i> Boveda
-                    </button>
-                    @endif
-                    <!--<button wire:click="abrirModal({{ $caj->id }})" type="button" data-bs-toggle="modal" data-bs-target="#modalGeneral" class="btn bg-light btn-xs"><i class="fa fa-pen"></i></button>-->
-                    <!--<button wire:click="borrarCaja({{ $caj->id }})" class="btn bg-light btn-xs"><i class="fa fa-trash"></i></button>-->
-                    <button wire:click="cerrarCaja({{ $caj->id }})" data-bs-toggle="modal" data-bs-target="#modalGeneral2" class="btn bg-red btn-xs">Cerrar
-                        Caja</button>
-                    <!--                    <button wire:click="aprobarValor({{ $caj->id }})" class="btn bg-green btn-xs">
-                                            <i class="nav-icon fa fas fa-money-bill-wave"></i>
-                                        </button>-->
-                    <button wire:click="solicitarValoresBoveda({{ $caj->id }})" data-bs-toggle="modal" data-bs-target="#modalGeneral3" class="btn bg-yellow btn-xs">
-                        Solicitar</button>
-                    <!--                    <button wire:click="verValoresPendienteAprovacion({{ $caj->id }})" data-bs-toggle="modal" data-bs-target="#modalGeneral4" class="btn bg-blue btn-xs">
-                                            Pendientes</button>-->
-                    @else
-                    @if ($caj->status == 'CERRADA')
-                    <a class="btn btn-primary btn-xs" style="color: white;" wire:click="exportarMovimeintos({{ $caj->id }})">
-                        <i class="fas fa-plus"></i> Exportar Movimientos
-                    </a>
-                    @if(Auth::user()->reversar_cajas)
-                    <button wire:click="reversarCaja({{ $caj->id }})" class="btn bg-primary btn-xs">Reversar</button>
-                    @endif
-                    @endif
-                    <a href="{{ URL::to('cajas/caja-comprobante/' . $caj->id) }}" class="btn bg-success btn-xs"><i class="fa fa-file-pdf"></i></a>
-                    @endif
-                    @endif
-                </td>
-                <td>
-                    @if ($caj->status == 'ABIERTA')
-                    <small class="badge bg-primary"></i>Abierta</small>
-                    @else
-                    <small class="badge bg-danger"></i>Cerrada</small>
-                    @endif
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-    {{ $cajas->links() }}
-
+<div class="cajas-modulo">
+    @include('livewire.cajas._listado')
     {{-- MODAL --}}
     <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xs">
+        <div class="modal-dialog modal-sm modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Cajas</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h5 class="modal-title"><i class="fa fa-cash-register me-2 text-primary"></i>Apertura de caja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCaja">
                     <div class="modal-body">
                         @if ($errors->any())
-                        <div class="callout callout-warning">
+                        <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
+<ul class="mb-0">                            @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
-                            @endforeach
+                            @endforeach</ul>
                         </div>
                         @endif
                         @if($this->cajasAbiertas)
@@ -164,7 +37,7 @@
                             </div>
                             <div class="col-12">
                                 <label class="small">Solicitar a Boveda </label>
-                                <select id="boveda" wire:model="boveda" class="form-control form-control-sm">
+                                <select id="boveda" wire:model="boveda" class="form-select form-control-sm">
                                     <option value=""> --SELECCIONE--</option>
                                     @foreach ($bovedas as $bov)
                                     <option value="{{ $bov->id }}">{{ $bov->nombre }}</option>
@@ -185,8 +58,8 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
                     </div>
                 </form>
             </div>
@@ -195,22 +68,20 @@
 
     {{-- MODAL CIERRE CAJA --}}
     <div wire:ignore.self class="modal fade" id="modalGeneral2" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Cierre de Caja</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h5 class="modal-title"><i class="fa fa-lock me-2 text-primary"></i>Cierre y arqueo de caja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCierreCaja">
                     <div class="modal-body">
                         @if ($errors->any())
-                        <div class="callout callout-warning">
+                        <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
+<ul class="mb-0">                            @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
-                            @endforeach
+                            @endforeach</ul>
                         </div>
                         @endif
                         <div class="d-flex">
@@ -680,7 +551,7 @@
                                                         <b>Efectivo en caja</b>
                                                     </td>
                                                     <td style="width: 40%;">
-                                                        <input class="form-control form-control-sm" type="text" wire:model="totalManual" placeholder="Valor Físico" wire:keyup="cambioValorManual()" style="text-align: center;">
+                                                        <input class="form-control form-control-sm" type="text" wire:model="totalManual" inputmode="decimal" placeholder="Valor Físico" wire:keyup="cambioValorManual()" style="text-align: center;">
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -693,31 +564,7 @@
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-body">
-                                        <table class="table table-bordered table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <td>CONCEPTO</td>
-                                                    <td>Valor</td>
-
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Arqueo</td>
-                                                    <td><b>$ {{ $this->totalManual }} </b></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Valores Genereados</td>
-                                                    <td><b>$ {{ $this->saldoSistema }}</b></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Diferencia</td>
-                                                    <td>
-                                                        <b @if( $this->descuadre < 0) style="color: red;" @else @if($this->descuadre > 0) style="color: green;" @endif @endif>$ {{ $this->descuadre }}</b>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        @include('livewire.cajas._arqueo-resumen')
 
                                     </div>
                                 </div>
@@ -729,8 +576,8 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
                     </div>
                 </form>
             </div>
@@ -739,22 +586,20 @@
 
     {{-- MODAL SOLICITAR VALOR BOVEDA--}}
     <div wire:ignore.self class="modal fade" id="modalGeneral3" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> SOLICITAR VALORES</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title"> Solicitar valores a bóveda</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
                     <div class="modal-body">
                         @if ($errors->any())
-                        <div class="callout callout-warning">
+                        <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
+<ul class="mb-0">                            @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
-                            @endforeach
+                            @endforeach</ul>
                         </div>
                         @endif
                         @if($this->cajasAbiertas)
@@ -765,7 +610,7 @@
                         @endif
                         <div class="col-12">
                             <label class="small">Solicitar a Boveda </label>
-                            <select id="bovedaSolicitar" wire:model="bovedaSolicitar" class="form-control form-control-sm">
+                            <select id="bovedaSolicitar" wire:model="bovedaSolicitar" class="form-select form-control-sm">
                                 <option value=""> --SELECCIONE--</option>
                                 @foreach ($bovedas as $bov)
                                 <option value="{{ $bov->id }}">{{ $bov->nombre }}</option>
@@ -779,7 +624,7 @@
                         </div>
                          <div class="form-group">
                             <label>Seleccione el Banco</label>
-                            <select class="form-control" wire:model="bancoSolicita">
+                            <select class="form-select" wire:model="bancoSolicita">
                                 <option> -Selecciones uno- </option>
                                 @foreach ($bancos as $banco)
                                 <option value="{{ $banco['id'] }}">{{ $banco['nombre'] }}</option>
@@ -792,8 +637,8 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
                     </div>
                 </form>
             </div>
@@ -801,22 +646,20 @@
     </div>
     {{-- MODAL LISTA DE VALORES POR APROBAR--}}
     <div wire:ignore.self class="modal fade" id="modalGeneral4" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> VALORES PENDIENTES </h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title"> Valores pendientes </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
                     <div class="modal-body">
                         @if ($errors->any())
-                        <div class="callout callout-warning">
+                        <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
+<ul class="mb-0">                            @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
-                            @endforeach
+                            @endforeach</ul>
                         </div>
                         @endif
                         <div class="row  mt-3">
@@ -860,7 +703,7 @@
 
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
 
                     </div>
                 </form>
@@ -870,27 +713,25 @@
 
     {{-- MODAL ENVIAR MATRIZ--}}
     <div wire:ignore.self class="modal fade" id="modalGeneral5" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> ENVIAR VALORES A LA BOVEDA MATRIZ</h4>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h4 class="modal-title"> Enviar valores a la bóveda matriz</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeEnvioBoveda">
                     <div class="modal-body">
                         @if ($errors->any())
-                        <div class="callout callout-warning">
+                        <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-                            @foreach ($errors->all() as $error)
+<ul class="mb-0">                            @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
-                            @endforeach
+                            @endforeach</ul>
                         </div>
                         @endif
                         <div class="col-12">
                             <label class="small">Seleccionar Banco </label>
-                            <select id="bancoEnvioMatriz" wire:model="bancoEnvioMatriz" class="form-control form-control-sm">
+                            <select id="bancoEnvioMatriz" wire:model="bancoEnvioMatriz" class="form-select form-control-sm">
                                 <option value=""> --SELECCIONE--</option>
                                 @foreach ($bancos as $ban)
                                 <option value="{{ $ban->id }}">{{ $ban->nombre }} #{{(empty($ban->numero_cuenta) ? '' : $ban->numero_cuenta)}}</option>
@@ -908,8 +749,8 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
                     </div>
                 </form>
             </div>
