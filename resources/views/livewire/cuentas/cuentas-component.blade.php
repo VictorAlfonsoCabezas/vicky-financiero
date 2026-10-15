@@ -1,5 +1,11 @@
 <div class="savings-module">
-    <div class="savings-heading"><div><div class="text-muted small mb-1">SOCIOS / AHORROS</div><h1>Cuentas de ahorro</h1><p>Consulta saldos y administra las operaciones de cada socio.</p></div><a href="/tipo-ahorros" class="btn btn-outline-primary"><i class="fa fa-sliders-h me-2"></i>Tipos de ahorro</a></div>
+    <div class="savings-heading">
+        <div>
+            <div class="text-muted small mb-1">SOCIOS / AHORROS</div>
+            <h1>Cuentas de ahorro</h1>
+            <p>Consulta saldos y administra las operaciones de cada socio.</p>
+        </div><a href="/tipo-ahorros" class="btn btn-outline-primary"><i class="fa fa-sliders-h me-2"></i>Tipos de ahorro</a>
+    </div>
     <div wire:loading.delay class="savings-loading" role="status">Actualizando datos...</div>
     <div class="row">
         @if(session('message'))
@@ -164,106 +170,108 @@
                     @endif
 
                     @if ($this->cuenta_selec > 0)
-                    <div class="table-responsive savings-movements"><table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th colspan="7" style="text-align: center;font-size: 21px;">
-                                    @if ($this->numeroCartolaActiva != '') CARTOLA # {{$this->numeroCartolaActiva}}@else
-                                    Sin cartola activa @endif
-                                </th>
-                            </tr>
-                            <tr>
-                                <th style="text-align: center;">Fecha</th>
-                                <th style="text-align: center;">Comprobante</th>
-                                <th style="text-align: center;">Detalle</th>
-                                <th style="text-align: center;">Ahorros</th>
-                                <th style="text-align: center;">Retiros</th>
-                                <th style="text-align: center;">Saldo</th>
-                                <th style="text-align: center;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($detalle->reverse() as $key => $det)
-                            @if($det->carga_masiva)
-                            <tr style="background-color: #abebc6;">
-                                @else
-                            <tr>
-                                @endif
-                                <td style="width: 280px;">
-                                    {{ $this->convertirFecha($det->date_created) }}
-                                    <small>{{ $det->hour_created }}</small><br>
-                                </td>
-                                <td>
-                                    <small>{{ $det->comprobante }}</small>
-                                </td>
-                                <td style="width: 280px;">
-                                    <small>{{ $det->observation }}</small>
-                                </td>
-                                @if($det->type_transaction_action == 'S')
-                                <td>
-                                    <b style="color: green;">{{ $det->valor_movimiento }} $</b>
-                                </td>
-                                <td>
-                                    <b></b>
-                                </td>
-                                @else
-                                <td>
-                                    <b></b>
-                                </td>
-                                <td style="color: red;">
-                                    <b>{{ $det->valor_movimiento }} $</b>
-                                </td>
-                                @endif
-                                <td>
-                                    <b>{{ number_format($det->saldoValor, 2) }} $</b>
-                                </td>
-                                <td>
-                                    <a wire:click="envioWhatsapp({{ $det->id }})"
-                                        class="btn btn-default btn-sm custom-btn" title="Enviar Whatsapp"
-                                        style="color: white;">
-                                        <i class="fa fa-paper-plane" aria-hidden="true" style="color: black;"></i>
-                                    </a>
+                    <div class="table-responsive savings-movements">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th colspan="7" style="text-align: center;font-size: 21px;">
+                                        @if ($this->numeroCartolaActiva != '') CARTOLA # {{$this->numeroCartolaActiva}}@else
+                                        Sin cartola activa @endif
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th style="text-align: center;">Fecha</th>
+                                    <th style="text-align: center;">Comprobante</th>
+                                    <th style="text-align: center;">Detalle</th>
+                                    <th style="text-align: center;">Ahorros</th>
+                                    <th style="text-align: center;">Retiros</th>
+                                    <th style="text-align: center;">Saldo</th>
+                                    <th style="text-align: center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($detalle->reverse() as $key => $det)
+                                @if($det->carga_masiva)
+                                <tr style="background-color: #abebc6;">
+                                    @else
+                                <tr>
+                                    @endif
+                                    <td style="width: 280px;">
+                                        {{ $this->convertirFecha($det->date_created) }}
+                                        <small>{{ $det->hour_created }}</small><br>
+                                    </td>
+                                    <td>
+                                        <small>{{ $det->comprobante }}</small>
+                                    </td>
+                                    <td style="width: 280px;">
+                                        <small>{{ $det->observation }}</small>
+                                    </td>
+                                    @if($det->type_transaction_action == 'S')
+                                    <td>
+                                        <b style="color: green;">{{ $det->valor_movimiento }} $</b>
+                                    </td>
+                                    <td>
+                                        <b></b>
+                                    </td>
+                                    @else
+                                    <td>
+                                        <b></b>
+                                    </td>
+                                    <td style="color: red;">
+                                        <b>{{ $det->valor_movimiento }} $</b>
+                                    </td>
+                                    @endif
+                                    <td>
+                                        <b>{{ number_format($det->saldoValor, 2) }} $</b>
+                                    </td>
+                                    <td>
+                                        <a wire:click="envioWhatsapp({{ $det->id }})"
+                                            class="btn btn-default btn-sm custom-btn" title="Enviar Whatsapp"
+                                            style="color: white;">
+                                            <i class="fa fa-paper-plane" aria-hidden="true" style="color: black;"></i>
+                                        </a>
 
-                                    @if ($this->programado)
-                                    <a class="btn btn-default btn-sm"
-                                        href="/customer/certificadoAhorroProgramado/{{ $det->id }}" title="Transacción"
-                                        style="color: white;">
-                                        <i class="fas fa-file" style="color: black;"></i></a>
+                                        @if ($this->programado)
+                                        <a class="btn btn-default btn-sm"
+                                            href="/customer/certificadoAhorroProgramado/{{ $det->id }}" title="Transacción"
+                                            style="color: white;">
+                                            <i class="fas fa-file" style="color: black;"></i></a>
 
                                         <a wire:click="pagosProgramados({{ $det->id }})" class="btn btn-success btn-sm"
                                             style="color: white;" data-bs-toggle="modal" data-bs-target="#modalGeneral6">
                                             <i class="fa fa-dollar-sign"></i>
                                             <span class="badge bg-white">{{ $det->total }}</span>
                                         </a>
-                                    @endif
-                                    <a wire:click="llenarChat({{ $det->id }})" class="btn btn-success btn-sm"
-                                        style="color: white;" data-bs-toggle="modal" data-bs-target="#modalGeneral3">
-                                        <i class="fa fa-comment" aria-hidden="true"></i>
-                                        <span class="badge bg-white">{{ $det->total }}</span>
-                                    </a>
-                                    <a class="btn btn-default btn-sm"
-                                        href="{{ URL::to('historial/transacciones/movimientos/' . $det->id) }}"
-                                        title="Transacción" style="color: white;">
-                                        <i class="fas fa-print" style="color: black;"></i>
-                                    </a>
-                                    <a class="btn btn-danger btn-sm" onclick="imprimirCartilla({{ $det->id }})"
-                                        title="Transacción" style="color: white;">
-                                        <i class="fas fa-print" style="color: white;"></i>
-                                    </a>
-                                    <a class="btn btn-primary btn-sm" title="Entregar Valores" wire:click="imprimirTicket({{ $det->id }})"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalGeneral11">
-                                        <i class="fas fa-print" style="color: white;"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td class="text-center" colspan="7">No hay movimientos</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table></div>
+                                        @endif
+                                        <a wire:click="llenarChat({{ $det->id }})" class="btn btn-success btn-sm"
+                                            style="color: white;" data-bs-toggle="modal" data-bs-target="#modalGeneral3">
+                                            <i class="fa fa-comment" aria-hidden="true"></i>
+                                            <span class="badge bg-white">{{ $det->total }}</span>
+                                        </a>
+                                        <a class="btn btn-default btn-sm"
+                                            href="{{ URL::to('historial/transacciones/movimientos/' . $det->id) }}"
+                                            title="Transacción" style="color: white;">
+                                            <i class="fas fa-print" style="color: black;"></i>
+                                        </a>
+                                        <a class="btn btn-danger btn-sm" onclick="imprimirCartilla({{ $det->id }})"
+                                            title="Transacción" style="color: white;">
+                                            <i class="fas fa-print" style="color: white;"></i>
+                                        </a>
+                                        <a class="btn btn-primary btn-sm" title="Entregar Valores" wire:click="imprimirTicket({{ $det->id }})"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalGeneral11">
+                                            <i class="fas fa-print" style="color: white;"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td class="text-center" colspan="7">No hay movimientos</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                     @endif
                     @else
                     <h5 class="text-center"><i class="fa fa-sack-dollar"></i> Cuentas</h5>
@@ -1150,7 +1158,7 @@
                                         disabled>
                                 </div>
                                 <div class="col-12 col-md-4">
-                                    <label>Valor Acreditar/Retirar</label>
+                                    <label>Valor aumentar AP</label>
                                     <input type="number" class="form-control" placeholder="0.00"
                                         wire:model="valor_acreditar_retirar" id="valor_acreditar_retirar"
                                         wire:blur="actualizarValorNovacion">
@@ -1163,7 +1171,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="card card-success card-outline direct-chat direct-chat-success shadow-sm">
                             <h6><b>Detalles del nuevo Producto</b></h6>
                             <div class="col-12">
