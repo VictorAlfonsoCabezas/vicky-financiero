@@ -1158,7 +1158,7 @@
                                         disabled>
                                 </div>
                                 <div class="col-12 col-md-4">
-                                    <label>Valor Acreditar/Retirar</label>
+                                    <label>Valor Acreditar (+) /Retirar (-)</label>
                                     <input type="number" class="form-control" placeholder="0.00"
                                         wire:model="valor_acreditar_retirar" id="valor_acreditar_retirar"
                                         wire:blur="actualizarValorNovacion">
