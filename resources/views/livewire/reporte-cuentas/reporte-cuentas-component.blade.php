@@ -1,223 +1,93 @@
-<div>
-    <div class="row col col-sm-12">
-        <div class="col-4">
-            <label>Busqueda</label>
-            <div class="input-group input-group-sm">
-                <input type="text" wire:model="search" id="search" class="form-control"
-                    placeholder="Buscar Socio">
-                <div class="input-group-append">
-                    <div class="btn btn-primary">
-                        <i class="fas fa-search"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <section class="col col-sm-4">
-            <div class="col-6">
-                <label class="small">Nivel </label>
-                <select id="tipo_cuenta" wire:model="tipo_cuenta" class="form-control text-uppercase" wire:change="obtenerDatos">
-                    <option value="0"> --SELECCIONE--</option>
-                    @foreach ($tipoAhorros as $ahorros)
-                    <option value="{{$ahorros->id}}"> {{$ahorros->name}} </option>
-                    @endforeach
-                </select>
-            </div>
-        </section>
+<div class="reporte-cuentas">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <p class="text-muted mb-0">Consulta las cuentas de ahorro, revisa sus saldos y gestiona las aprobaciones pendientes.</p>
+        <button type="button" class="btn btn-success" wire:click="export" wire:loading.attr="disabled" wire:target="export">
+            <span wire:loading.remove wire:target="export"><i class="fa fa-file-excel me-2" aria-hidden="true"></i>Exportar Excel</span>
+            <span wire:loading wire:target="export"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Preparando archivo…</span>
+        </button>
     </div>
-    <div>
-        <br>
-        <div class="row">
-            <a class="btn btn-primary btn-xs" style="color: white;" wire:click="export">
-                <i class="fas fa-plus"></i> Exportar
-            </a>
+
+    <div class="panel panel-inverse mb-3">
+        <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i>Filtros de consulta</h4></div>
+        <div class="panel-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6 col-xl-7">
+                    <label for="reporte-cuentas-buscar" class="form-label">Buscar socio</label>
+                    <div class="input-group"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span><input type="search" id="reporte-cuentas-buscar" wire:model.debounce.350ms="search" class="form-control" placeholder="Nombres, apellidos o documento"></div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="reporte-cuentas-tipo" class="form-label">Tipo de cuenta</label>
+                    <select id="reporte-cuentas-tipo" wire:model="tipo_cuenta" class="form-select">
+                        <option value="0">Todos los tipos</option>
+                        @foreach ($tipoAhorros as $ahorros)<option value="{{ $ahorros->id }}">{{ $ahorros->name }}</option>@endforeach
+                    </select>
+                </div>
+                <div class="col-xl-2"><button type="button" class="btn btn-outline-secondary w-100" wire:click="limpiarFiltros"><i class="fa fa-undo me-1" aria-hidden="true"></i>Restablecer</button></div>
+            </div>
+            <small class="text-muted d-block mt-3">La exportación incluye las cuentas que coinciden con los filtros seleccionados.</small>
         </div>
-        <br>
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title"><b>Lista de cuentas</b></h3>
-                        <div class="card-tools">
-                            <div class="input-group input-group-sm" style="width: 250px;">
-                            </div>
-                        </div>
+    </div>
+
+    <div class="panel panel-inverse">
+        <div class="panel-heading"><h4 class="panel-title">Listado de cuentas</h4><span class="badge bg-white text-dark">{{ number_format($cuentas->total()) }} resultados</span></div>
+        <div class="panel-body p-0">
+            <div class="px-3 py-3 border-bottom text-muted small" role="status" aria-live="polite">
+                <span wire:loading.remove wire:target="search,tipo_cuenta,page,limpiarFiltros">Mostrando {{ $cuentas->firstItem() ?? 0 }}–{{ $cuentas->lastItem() ?? 0 }} de {{ $cuentas->total() }} cuentas</span>
+                <span wire:loading wire:target="search,tipo_cuenta,page,limpiarFiltros"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Actualizando resultados…</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 reporte-cuentas-tabla">
+                    <thead class="table-light"><tr><th scope="col">Cuenta</th><th scope="col">Tipo de cuenta</th><th scope="col">Creación</th><th scope="col">Propietario</th><th scope="col" class="text-end">Saldo</th><th scope="col">Estado</th><th scope="col" class="text-end">Acciones</th></tr></thead>
+                    <tbody>
+                        @forelse ($cuentas as $cuenta)
+                            <tr wire:key="reporte-cuenta-{{ $cuenta->id }}">
+                                <td class="fw-semibold text-nowrap">{{ $cuenta->codigo }}</td>
+                                <td>{{ $cuenta->tipoAhorro }}</td>
+                                <td class="text-nowrap">{{ $cuenta->created_at ? $cuenta->created_at->format('d/m/Y') : '—' }}</td>
+                                <td><strong class="d-block">{{ $cuenta->cliente }}</strong><small class="text-muted">{{ $cuenta->numero_documento ?: 'Sin documento' }}</small></td>
+                                <td class="text-end text-nowrap fw-semibold {{ (float) $cuenta->saldo < 0 ? 'text-danger' : '' }}">$ {{ number_format((float) $cuenta->saldo, 2) }}</td>
+                                <td><span class="badge {{ $cuenta->status == 1 ? 'bg-success' : 'bg-warning text-dark' }}">{{ $cuenta->status == 1 ? 'Aprobada' : 'Pendiente' }}</span></td>
+                                <td><div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#modalCuenta" wire:click="verCuenta({{ $cuenta->id }})" wire:loading.attr="disabled"><i class="fa fa-eye me-1" aria-hidden="true"></i>Ver detalle</button>
+                                    @if ($cuenta->status == 0)<button type="button" class="btn btn-outline-success btn-sm" wire:click="aprobarCuenta({{ $cuenta->id }})" wire:loading.attr="disabled">Aprobar</button>@endif
+                                </div></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="text-center py-5"><i class="fa fa-search fs-2 text-muted mb-3 d-block" aria-hidden="true"></i><h5>No se encontraron cuentas</h5><p class="text-muted">Prueba otro nombre, documento o tipo de cuenta.</p><button type="button" class="btn btn-outline-primary btn-sm" wire:click="limpiarFiltros">Restablecer filtros</button></td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if ($cuentas->hasPages())<div class="border-top px-3 py-3">{{ $cuentas->links() }}</div>@endif
+        </div>
+    </div>
+
+    <div wire:ignore.self class="modal fade" id="modalCuenta" tabindex="-1" aria-labelledby="modalCuentaTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><div><h5 class="modal-title" id="modalCuentaTitulo"><i class="fa fa-wallet text-primary me-2" aria-hidden="true"></i>Detalle de cuenta</h5><p class="text-muted small mb-0 mt-1">Información del propietario y datos de la cuenta de ahorro.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body">
+                <div class="text-center text-muted py-4" wire:loading wire:target="verCuenta" role="status"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando detalle de la cuenta…</div>
+                <div wire:loading.remove wire:target="verCuenta">
+                @if ($cuentaSeleccionada)
+                    <div class="border rounded p-3 mb-4 d-flex flex-wrap justify-content-between gap-3 bg-light">
+                        <div><small class="text-muted d-block">Cuenta {{ $cuentaSeleccionada->codigo }}</small><strong class="fs-5 d-block">{{ $cuentaSeleccionada->tipoAhorro }}</strong><span class="badge {{ $cuentaSeleccionada->status == 1 ? 'bg-success' : 'bg-warning text-dark' }} mt-2">{{ $cuentaSeleccionada->status == 1 ? 'Aprobada' : 'Pendiente de aprobación' }}</span></div>
+                        <div><small class="text-muted d-block">Saldo</small><strong class="fs-3">$ {{ number_format((float) $cuentaSeleccionada->saldo, 2) }}</strong></div>
                     </div>
-                    <div class="card-body table-responsive p-0">
-                        <table class="table table-head-fixed text-nowrap table-hover" style="font-size: 15px;">
-                            <thead>
-                                <tr class="text-center">
-                                    <th style="width: 1%;">Número Cuenta</th>
-                                    <th>Nombre Cuenta</th>
-                                    <th>Fecha Creación</th>
-                                    <th>Documento</th>
-                                    <th>Propietario</th>
-                                    <th>Valor</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($cuentas as $cuenta)
-                                <tr class="text-center">
-                                    <td>{{ $cuenta->codigo }}</td>
-                                    <td>{{ $cuenta->tipoAhorro }}</td>
-                                    <td>{{ $cuenta->created_at }}</td>
-                                    <td>{{ $cuenta->numero_documento }}</td>
-                                    <td>{{ $cuenta->cliente }}</td>
-                                    <td>{{ $cuenta->saldo }}</td>
-                                    <td>
-                                        @if($cuenta -> status == 1)
-                                        <span class="badge bg-success">Aprobado</span>
-                                        @else
-                                        <span class="badge bg-warning">Stand By</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-info btn-sm" wire:click="verCuenta({{ $cuenta->id }})">Ver</button>
-                                        @if($cuenta->status == 0)
-                                        <button class="btn btn-success btn-sm" wire:click="aprobarCuenta({{ $cuenta->id }})">
-                                            Aprobar
-                                        </button>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div wire:ignore.self class="modal fade" id="modalCuenta" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-
-                                    <div class="modal-header" style="background-color: cornflowerblue;">
-                                        <h4 class="modal-title"> Detalle de Cuenta </h4>
-                                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">×</span>
-                                        </button>
-                                    </div>
-                                    <form>
-                                        <div class="modal-body">
-
-                                            @if ($cuentaSeleccionada)
-                                            <div class="callout callout-info">
-                                                @if ($cuentaSeleccionada->tipo_ahorros_id == 1)
-                                                <h5><i class="fa fa-lock"></i> Ahorros a la Vista:</h5>
-                                                @elseif($cuentaSeleccionada->tipo_ahorros_id == 2)
-                                                <h5><i class="fa fa-calculator"></i> Ahorro Programado:</h5>
-                                                @else
-                                                <h5><i class="fa fa-sim-card"></i> Cuenta Encaje:</h5>
-                                                @endif
-                                            </div>
-                                            @endif
-
-                                            <div class="modal-body">
-
-                                                @if($cuentaSeleccionada)
-
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <p><b>Cliente:</b> {{ $cuentaSeleccionada->cliente }}</p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <p><b>Código:</b> {{ $cuentaSeleccionada->codigo }}</p>
-                                                    </div>
-                                                </div>
-                                                <hr>
-
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <p><b>Documento:</b> {{ $cuentaSeleccionada->numero_documento }}</p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <p><b>Tipo:</b> {{ $cuentaSeleccionada->tipoAhorro }}</p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <p><b>Saldo:</b> {{ $cuentaSeleccionada->saldo }}</p>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <p>
-                                                            <b>Estado:</b>
-                                                            @if($cuentaSeleccionada->status == 1)
-                                                            <span class="badge bg-success">Aprobado</span>
-                                                            @else
-                                                            <span class="badge bg-warning">Stand By</span>
-                                                            @endif
-                                                        </p>
-                                                    </div>
-
-                                                    <div class="col-6">
-                                                        <p><b>Forma de Pago:</b> {{ $cuentaSeleccionada->forma_pago_nombre }}</p>
-                                                    </div>
-
-
-                                                </div>
-
-                                                @if(
-                                                $cuentaSeleccionada->forma_pago_id == 2 || $cuentaSeleccionada->forma_pago_id == 3
-                                                )
-                                                <hr>
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <p>
-                                                            <b># Comprobante:</b>
-                                                            {{ $cuentaSeleccionada->comprobante }}
-                                                        </p>
-                                                    </div>
-
-                                                    <div class="col-6">
-                                                        <p>
-                                                            <b>Banco:</b>
-                                                            {{ $cuentaSeleccionada->banco_nombre }}
-                                                        </p>
-                                                    </div>
-
-                                                    <div class="col-6">
-                                                        <p>
-                                                            <b># Depósito:</b>
-                                                            {{ $cuentaSeleccionada->numero_deposito }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-
-
-                                                @endif
-
-                                                @endif
-
-                                            </div>
-
-                                            <div class="modal-footer">
-
-                                                @if($cuentaSeleccionada)
-
-                                                @if($cuentaSeleccionada->status == 0)
-                                                <button class="btn btn-success" wire:click="aprobarCuenta({{ $cuentaSeleccionada->id }})">Aprobar</button>
-                                                @endif
-                                                <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                @endif
-
-                                            </div>
-
-                                        </div>
-                                        
-                                    </form>
-                                </div>
-                            </div>
-                            {{ $cuentas->links() }}
-                        </div>
-                    </div>
+                    <h6 class="mb-3">Propietario y forma de pago</h6>
+                    <dl class="row g-3 mb-0">
+                        <div class="col-sm-6"><dt class="small text-muted fw-normal">Propietario</dt><dd class="mb-0 fw-semibold">{{ $cuentaSeleccionada->cliente }}</dd></div>
+                        <div class="col-sm-6"><dt class="small text-muted fw-normal">Documento</dt><dd class="mb-0">{{ $cuentaSeleccionada->numero_documento ?: 'Sin documento' }}</dd></div>
+                        <div class="col-sm-6"><dt class="small text-muted fw-normal">Forma de pago</dt><dd class="mb-0">{{ $cuentaSeleccionada->forma_pago_nombre }}</dd></div>
+                        @if (in_array($cuentaSeleccionada->forma_pago_id, [2, 3]))
+                            <div class="col-sm-6"><dt class="small text-muted fw-normal">Banco</dt><dd class="mb-0">{{ $cuentaSeleccionada->banco_nombre ?: 'Sin registrar' }}</dd></div>
+                            <div class="col-sm-6"><dt class="small text-muted fw-normal">Comprobante</dt><dd class="mb-0">{{ $cuentaSeleccionada->comprobante ?: 'Sin registrar' }}</dd></div>
+                            <div class="col-sm-6"><dt class="small text-muted fw-normal">Número de depósito</dt><dd class="mb-0">{{ $cuentaSeleccionada->numero_deposito ?: 'Sin registrar' }}</dd></div>
+                        @endif
+                    </dl>
+                @endif
                 </div>
             </div>
-
-        </div>
-        <script>
-            window.addEventListener('show-modal-cuenta', event => {
-                $('#modalCuenta').modal('show');
-            });
-
-            window.addEventListener('close-modal', event => {
-                $('#modalCuenta').modal('hide');
-            });
-        </script>
-    </div
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>@if ($cuentaSeleccionada && $cuentaSeleccionada->status == 0)<button type="button" class="btn btn-success" wire:click="aprobarCuenta({{ $cuentaSeleccionada->id }})" wire:loading.attr="disabled" wire:loading.class="d-none" wire:target="verCuenta"><i class="fa fa-check me-1" aria-hidden="true"></i>Aprobar cuenta</button>@endif</div>
+        </div></div>
+    </div>
+</div>

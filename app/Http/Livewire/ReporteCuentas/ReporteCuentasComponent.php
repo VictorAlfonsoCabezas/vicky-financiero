@@ -34,6 +34,24 @@ class ReporteCuentasComponent extends Component
     public function obtenerDatos()
     {
         $this->tipo_cuenta = $this->tipo_cuenta ?? '';
+        $this->resetPage();
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTipoCuenta()
+    {
+        $this->resetPage();
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->search = '';
+        $this->tipo_cuenta = 0;
+        $this->resetPage();
     }
 
     public function render()
@@ -165,7 +183,6 @@ class ReporteCuentasComponent extends Component
 
         $this->cuentaSeleccionada = $cuenta;
 
-        $this->dispatchBrowserEvent('show-modal-cuenta');
     }
 
     public function aprobarCuenta($id)
