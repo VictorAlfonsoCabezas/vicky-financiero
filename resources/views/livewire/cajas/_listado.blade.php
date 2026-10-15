@@ -42,13 +42,14 @@
             <div class="d-flex align-items-center gap-2"><label for="cajas-pagina" class="text-muted small">Por página</label><select id="cajas-pagina" class="form-select form-select-sm w-auto" wire:model="porPagina"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select></div>
         </div>
         <div class="table-responsive"><table class="table table-hover align-middle mb-0 cajas-tabla">
-            <thead class="table-light"><tr><th>Caja</th><th>Apertura</th><th>Cierre</th><th class="text-end">Valor inicial</th><th class="text-end">Total registrado</th><th class="text-end">Diferencia</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <thead class="table-light"><tr><th>Caja</th><th>Usuario de la caja</th><th>Apertura</th><th>Cierre</th><th class="text-end">Valor inicial</th><th class="text-end">Total registrado</th><th class="text-end">Diferencia</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
                 @forelse ($cajas as $caj)
                     @php $tieneDiferencia = abs(round((float) $caj->descuadre, 2)) > 0; @endphp
                     <tr wire:key="caja-{{ $caj->id }}" class="{{ $tieneDiferencia ? 'cajas-diferencia' : '' }}">
                         <td><strong>{{ $caj->code ?: 'Caja #' . $caj->id }}</strong><small class="d-block text-muted">#{{ $caj->id }}</small></td>
-                        <td><span class="text-nowrap">{{ $caj->date_inicial }} <small>{{ $caj->hour_inicial }}</small></span><small class="d-block text-muted">{{ $caj->user_name_inicial ?: 'Sin usuario' }}</small></td>
+                        <td>{{ $caj->user_name_inicial ?: 'Sin usuario' }}</td>
+                        <td><span class="text-nowrap">{{ $caj->date_inicial }} <small>{{ $caj->hour_inicial }}</small></span></td>
                         <td>@if ($caj->date_finish)<span class="text-nowrap">{{ $caj->date_finish }} <small>{{ $caj->hour_finish }}</small></span><small class="d-block text-muted">{{ $caj->user_finish_name ?: 'Sin usuario' }}</small>@else<span class="text-muted">Sin cierre</span>@endif</td>
                         <td class="text-end text-nowrap">$ {{ number_format($caj->valor_inicial ?? 0, 2) }}</td>
                         <td class="text-end text-nowrap fw-semibold">$ {{ number_format($caj->total ?? 0, 2) }}</td>
@@ -73,7 +74,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="text-center py-5"><i class="fa fa-cash-register fs-2 text-muted d-block mb-3" aria-hidden="true"></i><h5>No hay cajas para esta consulta</h5><p class="text-muted">Prueba otras fechas, un estado diferente o restablece los filtros.</p><button type="button" class="btn btn-outline-primary btn-sm" wire:click="limpiarFiltros">Restablecer filtros</button></td></tr>
+                    <tr><td colspan="9" class="text-center py-5"><i class="fa fa-cash-register fs-2 text-muted d-block mb-3" aria-hidden="true"></i><h5>No hay cajas para esta consulta</h5><p class="text-muted">Prueba otras fechas, un estado diferente o restablece los filtros.</p><button type="button" class="btn btn-outline-primary btn-sm" wire:click="limpiarFiltros">Restablecer filtros</button></td></tr>
                 @endforelse
             </tbody>
         </table></div>

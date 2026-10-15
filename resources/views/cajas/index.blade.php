@@ -14,6 +14,26 @@
     .cajas-modulo .modal-body .card { border: 1px solid var(--bs-border-color, #dee2e6); box-shadow: none; }
     .cajas-modulo .modal-body table { font-size: .85rem; }
     .cajas-modulo #modalGeneral2 .card-body { overflow-x: auto; }
+    .cajas-modulo .modal-header, .cajas-modulo .modal-footer { padding: 1.25rem 1.5rem; }
+    .cajas-modulo .modal-title { font-size: 1.1rem; font-weight: 600; }
+    .cajas-modulo .modal-body { padding: 1.5rem; }
+    .cajas-modulo .modal-footer { gap: .5rem; }
+    .cajas-modulo .modal-footer .btn { min-width: 110px; }
+    .cajas-modulo .cajas-formulario > .col-12,
+    .cajas-modulo .cajas-formulario > .form-group,
+    .cajas-modulo .cajas-formulario .row > .col-12 { margin-top: 0 !important; margin-bottom: 1.25rem; }
+    .cajas-modulo .cajas-formulario .row { margin-bottom: 0 !important; }
+    .cajas-modulo .form-label { font-weight: 600; margin-bottom: .5rem; }
+    .cajas-modulo .cajas-formulario small { display: block; margin-top: .4rem; color: var(--bs-secondary-color, #6c757d); }
+    .cajas-modulo .accordion-header { margin-bottom: 0; }
+    .cajas-modulo .accordion-button { font-size: .875rem; font-weight: 600; }
+    .cajas-modulo .accordion-item { overflow: hidden; }
+    .cajas-modulo .modal-body .table th { white-space: nowrap; font-size: .75rem; }
+    .cajas-modulo .modal-body .table td, .cajas-modulo .modal-body .table th { padding: .65rem .75rem; vertical-align: middle; }
+    @media (max-width: 575px) {
+        .cajas-modulo .modal-header, .cajas-modulo .modal-body, .cajas-modulo .modal-footer { padding: 1rem; }
+        .cajas-modulo .modal-footer .btn { flex: 1; }
+    }
     @media (max-width: 575px) { .cajas-indicador .stats-icon { font-size: 26px; right: 12px; } }
 </style>
 @stop

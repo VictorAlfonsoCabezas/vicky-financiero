@@ -1,21 +1,22 @@
 <div class="cajas-modulo">
     @include('livewire.cajas._listado')
     {{-- MODAL --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-sm modal-dialog-scrollable">
+    <div wire:ignore.self class="modal fade" id="modalGeneral" style="display: none;" tabindex="-1" aria-labelledby="modalGeneral-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa fa-cash-register me-2 text-primary"></i>Apertura de caja</h5>
+                    <div><h5 class="modal-title" id="modalGeneral-title"><i class="fa fa-cash-register me-2 text-primary" aria-hidden="true"></i>Apertura de caja</h5><p class="text-muted small mb-0 mt-1">Define el saldo inicial para comenzar la jornada.</p></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCaja">
-                    <div class="modal-body">
+                    <div class="modal-body cajas-formulario">
                         @if ($errors->any())
                         <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-<ul class="mb-0">                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach</ul>
+                            <ul class="mb-0"> @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                         @if($this->cajasAbiertas)
@@ -32,12 +33,12 @@
                         @endif
                         <div class="row mb-4">
                             <div class="col-12">
-                                <label>Fecha</label>
+                                <label class="form-label">Fecha</label>
                                 <input readonly="" wire:change="cambioFecha();" type="date" class="form-control" placeholder="Fecha Caja" wire:model="fechaCaja" id="fechaCaja">
                             </div>
                             <div class="col-12">
-                                <label class="small">Solicitar a Boveda </label>
-                                <select id="boveda" wire:model="boveda" class="form-select form-control-sm">
+                                <label class="form-label">Bóveda de origen </label>
+                                <select id="boveda" wire:model="boveda" class="form-select">
                                     <option value=""> --SELECCIONE--</option>
                                     @foreach ($bovedas as $bov)
                                     <option value="{{ $bov->id }}">{{ $bov->nombre }}</option>
@@ -46,20 +47,20 @@
                             </div>
 
                             <div class="col-12 mt-3">
-                                <label>Valor Inicial</label>
+                                <label class="form-label">Valor Inicial</label>
                                 <input step="0.01" {{(Auth::user()->permiso_caja_valor  == false) ? 'readonly' :''}} type="number" class="form-control" placeholder="Ingrese el valor con el que inicia el caja" wire:model="valorInicial" id="valorInicial">
-                                <small><i class="fa fa-key" aria-hidden="true"></i> Para editar necesita permisos.</small>
+                                <small><i class="fa fa-key" tabindex="-1" aria-labelledby="modalGeneral-title" aria-hidden="true"></i> Para editar necesita permisos.</small>
                             </div>
 
                             <div class="col-12 mt-3">
-                                <label>Observación</label>
+                                <label class="form-label">Observación</label>
                                 <textarea class="form-control" wire:model="observacion" rows="3" placeholder="Observación de la caja de : {{ $this->fechaCaja }}"></textarea>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Abrir caja</button>
                     </div>
                 </form>
             </div>
@@ -67,11 +68,11 @@
     </div>
 
     {{-- MODAL CIERRE CAJA --}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral2" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div wire:ignore.self class="modal fade" id="modalGeneral2" style="display: none;" tabindex="-1" aria-labelledby="modalGeneral2-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa fa-lock me-2 text-primary"></i>Cierre y arqueo de caja</h5>
+                    <div><h5 class="modal-title" id="modalGeneral2-title"><i class="fa fa-lock me-2 text-primary" aria-hidden="true"></i>Cierre y arqueo de caja</h5><p class="text-muted small mb-0 mt-1">Revisa los movimientos y cuenta el efectivo antes de confirmar.</p></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCierreCaja">
@@ -79,9 +80,10 @@
                         @if ($errors->any())
                         <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-<ul class="mb-0">                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach</ul>
+                            <ul class="mb-0"> @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                         <div class="d-flex">
@@ -139,24 +141,13 @@
                                 <label>Detalle de transacciones</label>
                             </div>
                         </div>
-                        <div id="accordion">
-                            <div class="card card-primary">
-                                <div class="card-header">
-                                    <h4 class="card-title w-100">
-                                        <a class="d-block w-100 collapsed" data-bs-toggle="collapse" href="#collapse-depositos" aria-expanded="false">
-                                            DEPOSITOS
-                                            <span class="font-weight-bold">
-                                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                                            </span>
-                                            <br>
-                                            <small style="font-size: 10px;">Depositos a las cuentas</small>
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="collapse-depositos" class="collapse" data-bs-parent="#accordion" style="">
+                        <div id="accordion" class="accordion mb-4">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-depositos" aria-expanded="false" aria-controls="collapse-depositos">Depósitos a las cuentas</button></h2>
+                                <div id="collapse-depositos" class="accordion-collapse collapse" data-bs-parent="#accordion" style="">
                                     <div class="card-body">
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -184,8 +175,8 @@
                                                             <b>{{$det->customer_ruc}}</b>
                                                         </td>
                                                         <td>{{$det->observation}}</td>
-                                                        <td>${{$det->valor_movimiento}}</td> 
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>${{$det->valor_movimiento}}</td>
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -203,24 +194,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="accordion">
-                            <div class="card card-primary">
-                                <div class="card-header">
-                                    <h4 class="card-title w-100">
-                                        <a class="d-block w-100 collapsed" data-bs-toggle="collapse" href="#collapse-recaudaciones" aria-expanded="false">
-                                            RECAUDACIONES
-                                            <span class="font-weight-bold">
-                                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                                            </span>
-                                            <br>
-                                            <small style="font-size: 10px;">Recaudaciones</small>
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="collapse-recaudaciones" class="collapse" data-bs-parent="#accordion" style="">
+                        <div id="accordion" class="accordion mb-4">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-recaudaciones" aria-expanded="false" aria-controls="collapse-recaudaciones">Recaudaciones</button></h2>
+                                <div id="collapse-recaudaciones" class="accordion-collapse collapse" data-bs-parent="#accordion" style="">
                                     <div class="card-body">
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -249,7 +229,7 @@
                                                         </td>
                                                         <td>{{$det->observation}}</td>
                                                         <td>{{$det->valor_movimiento}}</td>
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -267,24 +247,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="accordion">
-                            <div class="card card-primary">
-                                <div class="card-header">
-                                    <h4 class="card-title w-100">
-                                        <a class="d-block w-100 collapsed" data-bs-toggle="collapse" href="#collapse-otrosValores" aria-expanded="false">
-                                            OTROS VALORES
-                                            <span class="font-weight-bold">
-                                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                                            </span>
-                                            <br>
-                                            <small style="font-size: 10px;">Otros Valores</small>
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="collapse-otrosValores" class="collapse" data-bs-parent="#accordion" style="">
+                        <div id="accordion" class="accordion mb-4">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-otrosValores" aria-expanded="false" aria-controls="collapse-otrosValores">Otros valores</button></h2>
+                                <div id="collapse-otrosValores" class="accordion-collapse collapse" data-bs-parent="#accordion" style="">
                                     <div class="card-body">
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -308,7 +277,7 @@
                                                         <td>{{$det->code}}</td>
                                                         <td>{{$det->razon}}</td>
                                                         <td>{{$det->valor_movimiento}}</td>
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -326,24 +295,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="accordion">
+                        <div id="accordion" class="accordion mb-4">
                             <div class="card card-danger">
-                                <div class="card-header">
-                                    <h4 class="card-title w-100">
-                                        <a class="d-block w-100 collapsed" data-bs-toggle="collapse" href="#collapse-retiros" aria-expanded="false">
-                                            RETIROS
-                                            <span class="font-weight-bold">
-                                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                                            </span>
-                                            <br>
-                                            <small style="font-size: 10px;">Retiros</small>
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="collapse-retiros" class="collapse" data-bs-parent="#accordion" style="">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-retiros" aria-expanded="false" aria-controls="collapse-retiros">Retiros</button></h2>
+                                <div id="collapse-retiros" class="accordion-collapse collapse" data-bs-parent="#accordion" style="">
                                     <div class="card-body">
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -372,7 +330,7 @@
                                                         </td>
                                                         <td>{{$det->observation}}</td>
                                                         <td>{{$det->valor_movimiento}}</td>
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -390,25 +348,14 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="accordion">
+                        <div id="accordion" class="accordion mb-4">
                             <div class="card card-danger">
-                                <div class="card-header">
-                                    <h4 class="card-title w-100">
-                                        <a class="d-block w-100 collapsed" data-bs-toggle="collapse" href="#collapse-gastos" aria-expanded="false">
-                                            GASTOS
-                                            <span class="font-weight-bold">
-                                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                                            </span>
-                                            <br>
-                                            <small style="font-size: 10px;">Gastos</small>
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="collapse-gastos" class="collapse" data-bs-parent="#accordion" style="">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-gastos" aria-expanded="false" aria-controls="collapse-gastos">Gastos</button></h2>
+                                <div id="collapse-gastos" class="accordion-collapse collapse" data-bs-parent="#accordion" style="">
                                     <div class="card-body">
                                         <h4><b>Caja chica</b></h4>
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -439,7 +386,7 @@
                                                         <td>{{$det->observation}}</td>
                                                         <td>{{$det->date_created}} - {{ $det->hour_created}}</td>
                                                         <td>{{$det->valor_movimiento}}</td>
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -457,7 +404,7 @@
                                         <h4><b>Pago Proveedores</b></h4>
                                         <hr>
                                         <div class="card-body table-responsive p-0">
-                                            <table class="table table-striped table-valign-middle">
+                                            <table class="table table-striped align-middle mb-0">
                                                 <thead>
                                                     <tr>
                                                         <th>TRANSACCION </th>
@@ -488,7 +435,7 @@
                                                         <td>{{$det->observation}}</td>
                                                         <td>{{$det->date_created}} - {{ $det->hour_created}}</td>
                                                         <td>{{$det->valor_movimiento}}</td>
-                                                        <td>{{$det->forma_pago}}</td> 
+                                                        <td>{{$det->forma_pago}}</td>
                                                         <td>PROCESADO </td>
                                                     </tr>
                                                     @endforeach
@@ -531,15 +478,15 @@
                                                 <tr>
                                                     <td style="font-size: 14px;"><b>{{ $deno['nombre'] }}</b></td>
                                                     <td class="text-center">{{ $deno['valor'] }}</td>
-                                                    <td style="width: 4%;"><input wire:model="denominaciones.{{ $loop->index }}.cantidad" wire:change="cambiarValor({{ $deno['id'] }}, $event.target.value)" type="number" class="form-control form-control-sm" placeholder="cantidad" value="{{ $deno['cantidad'] }}" style="width: 77px; height: 23px; text-align: center;"></td>
-                                                    <td style="width: 4%;"><input wire:model="denominaciones.{{ $loop->index }}.total" type="number" class="form-control form-control-sm" placeholder="total" value="{{ $deno['total'] }}" style="width: 77px; height: 23px; text-align: center;" readonly></td>
+                                                    <td style="width: 4%;"><input wire:model="denominaciones.{{ $loop->index }}.cantidad" wire:change="cambiarValor({{ $deno['id'] }}, $event.target.value)" type="number" class="form-control form-control-sm" placeholder="cantidad" value="{{ $deno['cantidad'] }}" style="min-width: 90px; text-align: right;"></td>
+                                                    <td style="width: 4%;"><input wire:model="denominaciones.{{ $loop->index }}.total" type="number" class="form-control form-control-sm" placeholder="total" value="{{ $deno['total'] }}" style="min-width: 90px; text-align: right;" readonly></td>
                                                 </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                         <table class="table table-bordered table-sm mt-3">
                                             <tbody>
-                                                <tr style="font-size: 14px; background: #36a2ca; color: white;">
+                                                <tr class="table-active">
                                                     <td style="font-size: 14px;">
                                                         <span class="text-success">
                                                             @if ($this->signo == 'mayor')
@@ -571,13 +518,13 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <label>Observacion de cierre de Caja</label>
+                            <label class="form-label mt-3">Observación del cierre</label>
                             <textarea class="form-control" rows="3" placeholder="Observación de la caja de : {{ $this->fechaCaja }}" wire:model="observacionCierre"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Confirmar cierre</button>
                     </div>
                 </form>
             </div>
@@ -585,21 +532,22 @@
     </div>
 
     {{-- MODAL SOLICITAR VALOR BOVEDA--}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral3" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div wire:ignore.self class="modal fade" id="modalGeneral3" style="display: none;" tabindex="-1" aria-labelledby="modalGeneral3-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Solicitar valores a bóveda</h4>
+                    <div><h5 class="modal-title" id="modalGeneral3-title"><i class="fa fa-hand-holding-usd me-2 text-primary" aria-hidden="true"></i>Solicitar valores a bóveda</h5><p class="text-muted small mb-0 mt-1">Selecciona el origen e indica el importe que necesitas recibir.</p></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
-                    <div class="modal-body">
+                    <div class="modal-body cajas-formulario">
                         @if ($errors->any())
                         <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-<ul class="mb-0">                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach</ul>
+                            <ul class="mb-0"> @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                         @if($this->cajasAbiertas)
@@ -609,8 +557,8 @@
                         </div>
                         @endif
                         <div class="col-12">
-                            <label class="small">Solicitar a Boveda </label>
-                            <select id="bovedaSolicitar" wire:model="bovedaSolicitar" class="form-select form-control-sm">
+                            <label class="form-label">Bóveda de origen </label>
+                            <select id="bovedaSolicitar" wire:model="bovedaSolicitar" class="form-select">
                                 <option value=""> --SELECCIONE--</option>
                                 @foreach ($bovedas as $bov)
                                 <option value="{{ $bov->id }}">{{ $bov->nombre }}</option>
@@ -618,12 +566,12 @@
                             </select>
                         </div>
                         <div class="col-12 mt-3">
-                            <label>Valor Solicitar</label>
+                            <label class="form-label">Importe a solicitar</label>
                             <input step="0.01" type="number" class="form-control" placeholder="Ingrese el valor a solicitar" wire:model="valorInicialSolicitar" id="valorInicialSolicitar">
-                            <small><i class="fa fa-key" aria-hidden="true"></i> .</small>
+                            <small><i class="fa fa-key" tabindex="-1" aria-labelledby="modalGeneral3-title" aria-hidden="true"></i> .</small>
                         </div>
-                         <div class="form-group">
-                            <label>Seleccione el Banco</label>
+                        <div class="form-group">
+                            <label class="form-label">Seleccione el Banco</label>
                             <select class="form-select" wire:model="bancoSolicita">
                                 <option> -Selecciones uno- </option>
                                 @foreach ($bancos as $banco)
@@ -632,24 +580,24 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label>Observacion </label>
+                            <label class="form-label">Observación </label>
                             <textarea class="form-control" rows="3" placeholder="Observación " wire:model="observacionSolicitar"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Enviar solicitud</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     {{-- MODAL LISTA DE VALORES POR APROBAR--}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral4" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div wire:ignore.self class="modal fade" id="modalGeneral4" style="display: none;" tabindex="-1" aria-labelledby="modalGeneral4-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Valores pendientes </h4>
+                    <div><h5 class="modal-title" id="modalGeneral4-title"><i class="fa fa-clock me-2 text-primary" aria-hidden="true"></i>Valores pendientes</h5><p class="text-muted small mb-0 mt-1">Revisa las solicitudes antes de aprobar o rechazar los valores.</p></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
@@ -657,13 +605,14 @@
                         @if ($errors->any())
                         <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-<ul class="mb-0">                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach</ul>
+                            <ul class="mb-0"> @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @empty <tr><td colspan="3" class="text-center text-muted py-4">No hay valores pendientes por revisar.</td></tr> @endforelse
+                            </ul>
                         </div>
                         @endif
-                        <div class="row  mt-3">
-                            <table class="table table-striped table-valign-middle">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>Observación</th>
@@ -673,8 +622,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                <tbody>
-                                    @foreach ($this->bovedadPendientesApro as $solicitudes)
+                                    @forelse ($this->bovedadPendientesApro as $solicitudes)
                                     <tr>
                                         <td class="small">
                                             {{ $solicitudes->observacion}}
@@ -683,26 +631,23 @@
                                             {{ $solicitudes->valor }}
                                         </td>
                                         <td class="small">
-                                            <a class="btn bg-blue btn-xs" title="Aprobar" wire:click="aprobarSoliVal({{ $solicitudes->id }})" style="color: white;">
+                                            <button type="button" class="btn btn-success btn-sm" wire:loading.attr="disabled" title="Aprobar" wire:click="aprobarSoliVal({{ $solicitudes->id }})">
                                                 <i class="far fa-money-bill-alt"></i> aprobar
-                                            </a>
-                                            <a class="btn bg-red btn-xs" title="Aprobar" wire:click="rechazarSoliVal({{ $solicitudes->id }})" style="color: white;">
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" wire:loading.attr="disabled" title="Rechazar" wire:click="rechazarSoliVal({{ $solicitudes->id }})">
                                                 <i class="far fa-money-bill-alt"></i> rechazar
-                                            </a>
+                                            </button>
                                         </td>
 
                                     </tr>
-                                    @endforeach
-
-                                </tbody>
-
+                                    @empty <tr><td colspan="3" class="text-center text-muted py-4">No hay valores pendientes por revisar.</td></tr> @endforelse
 
                                 </tbody>
                             </table>
                         </div>
 
                     </div>
-                    <div class="modal-footer justify-content-between">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
 
                     </div>
@@ -712,26 +657,27 @@
     </div>
 
     {{-- MODAL ENVIAR MATRIZ--}}
-    <div wire:ignore.self class="modal fade" id="modalGeneral5" style="display: none;" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div wire:ignore.self class="modal fade" id="modalGeneral5" style="display: none;" tabindex="-1" aria-labelledby="modalGeneral5-title" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title"> Enviar valores a la bóveda matriz</h4>
+                    <div><h5 class="modal-title" id="modalGeneral5-title"><i class="fa fa-paper-plane me-2 text-primary" aria-hidden="true"></i>Enviar valores a la bóveda matriz</h5><p class="text-muted small mb-0 mt-1">Registra la cuenta y el importe que vas a enviar a la matriz.</p></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeEnvioBoveda">
-                    <div class="modal-body">
+                    <div class="modal-body cajas-formulario">
                         @if ($errors->any())
                         <div class="alert alert-warning">
                             <h5>Verifica estas observaciones.</h5>
-<ul class="mb-0">                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach</ul>
+                            <ul class="mb-0"> @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                         <div class="col-12">
-                            <label class="small">Seleccionar Banco </label>
-                            <select id="bancoEnvioMatriz" wire:model="bancoEnvioMatriz" class="form-select form-control-sm">
+                            <label class="form-label">Seleccionar Banco </label>
+                            <select id="bancoEnvioMatriz" wire:model="bancoEnvioMatriz" class="form-select">
                                 <option value=""> --SELECCIONE--</option>
                                 @foreach ($bancos as $ban)
                                 <option value="{{ $ban->id }}">{{ $ban->nombre }} #{{(empty($ban->numero_cuenta) ? '' : $ban->numero_cuenta)}}</option>
@@ -739,18 +685,18 @@
                             </select>
                         </div>
                         <div class="col-12 mt-3">
-                            <label>Valor</label>
+                            <label class="form-label">Valor</label>
                             <input step="0.01" type="number" class="form-control" placeholder="Ingrese el valor a transferir" wire:model="valorEnvioMatriz" id="valorEnvioMatriz">
-                            <small><i class="fa fa-key" aria-hidden="true"></i> .</small>
+                            <small><i class="fa fa-key" tabindex="-1" aria-labelledby="modalGeneral5-title" aria-hidden="true"></i> .</small>
                         </div>
                         <div class="col-12">
-                            <label>Observacion </label>
+                            <label class="form-label">Observación </label>
                             <textarea class="form-control" rows="3" placeholder="Observación " wire:model="observacionEnvioMatriz"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Guardar </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">Enviar valores</button>
                     </div>
                 </form>
             </div>
