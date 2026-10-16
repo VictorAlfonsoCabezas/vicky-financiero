@@ -35,8 +35,11 @@ class MiEmpresaEditor extends Component
 
     protected function company()
     {
-        try { $id = Crypt::decryptString($this->record); }
-        catch (\Throwable $error) { abort(403); }
+        try {
+            $id = Crypt::decryptString($this->record);
+        } catch (\Throwable $error) {
+            abort(403);
+        }
         abort_unless($id !== 'new' && (int) $id === (int) auth()->user()->company_id, 403);
         return Company::findOrFail(auth()->user()->company_id);
     }
