@@ -59,7 +59,7 @@ class ReporteIngresosExport implements FromView
 
         foreach ($letrasVencidasPagadas->get() as $value) {
             $credito  =  CreditFolderHeader::where('code', $value->code_folder_header)->first();
-            $componentesSuma += number_format(($credito->gato_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / $credito->cuotas_pagar, 2, '.', '');
+            $componentesSuma += number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
             $gastosCobranzaSumado += number_format($value->notificado *  $company->valor_notificado, 2, '.', '');
         }
 
@@ -82,7 +82,7 @@ class ReporteIngresosExport implements FromView
             $val->idCliente = '';
             $val->formaPago = $val->tipo_pago . '';
             $formaPago =  FormasPago::find($val->tipo_pago);
-            $val->gastosComponentes = number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / $credito->cuotas_pagar, 2, '.', '');
+            $val->gastosComponentes = number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
             $val->gastosCobranza = number_format($val->notificado *  $company->valor_notificado, 2, '.', '');
             if ($formaPago) {
                 $val->formaPago = $formaPago->nombre;
@@ -90,7 +90,7 @@ class ReporteIngresosExport implements FromView
 
             if ($credito) {
                 $customerGarante =  Customer::find($credito->customer_id);
-                $val->idCliente = $customerGarante->id;
+                $val->idCliente = optional($customerGarante)->id;
                 $val->identificacionCliente = $credito->customer_ruc;
                 $val->nombreSocio = $credito->customer_name;
             }

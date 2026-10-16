@@ -33,8 +33,41 @@ class ReporteIngresosComponent extends Component
         $this->fecha_fin = date('Y-m-d');
     }
 
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'fecha_inicio', 'fecha_fin'])) {
+            $this->resetPage();
+            $this->resetValidation();
+            $this->validarFechas();
+        }
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->search = '';
+        $this->fecha_inicio = date('Y-m-d');
+        $this->fecha_fin = date('Y-m-d');
+        $this->resetPage();
+        $this->resetValidation();
+    }
+
+    protected function validarFechas()
+    {
+        $this->validate([
+            'fecha_inicio' => 'required|date_format:Y-m-d',
+            'fecha_fin' => 'required|date_format:Y-m-d|after_or_equal:fecha_inicio',
+        ], [
+            'fecha_inicio.required' => 'Selecciona la fecha inicial.',
+            'fecha_fin.required' => 'Selecciona la fecha final.',
+            'fecha_inicio.date_format' => 'Ingresa una fecha válida.',
+            'fecha_fin.date_format' => 'Ingresa una fecha válida.',
+            'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la inicial.',
+        ]);
+    }
+
     public function export()
     {
+        $this->validarFechas();
         if ($this->fecha_inicio  != '' and $this->fecha_fin != '') {
 
             return Excel::download(new ReporteIngresosExport($this->fecha_inicio, $this->fecha_fin, $this->search), 'Reporte de Ingresos del  ' . $this->fecha_inicio . ' al ' . $this->fecha_fin . '.xlsx');
@@ -81,13 +114,15 @@ class ReporteIngresosComponent extends Component
         $componentesSuma = 0;
         $gastosCobranzaSumado = 0;
 
-        foreach ($letrasVencidasPagadas->get() as $value) {
+        $pagos = $letrasVencidasPagadas->get();
+        foreach ($pagos as $value) {
             $credito  =  CreditFolderHeader::where('code', $value->code_folder_header)->first();
-            $componentesSuma += number_format(($credito->gato_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / $credito->cuotas_pagar, 2, '.', '');
+            $componentesSuma += number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
             $gastosCobranzaSumado += number_format($value->notificado *  $company->valor_notificado, 2, '.', '');
          
         }
-        $letrasVencidas = $letrasVencidasPagadas->paginate(50);
+        $letrasVencidas = $letrasVencidasPagadas->orderByDesc('credit_folder_details.date_pay')->orderByDesc('credit_folder_details.id')->paginate(50);
+        $letrasVencidasPagadas = $pagos;
         foreach ($letrasVencidas as $val) {
             $credito  =  CreditFolderHeader::where('code', $val->code_folder_header)->first();
             $val->identificacionCliente = '';
@@ -96,7 +131,7 @@ class ReporteIngresosComponent extends Component
             
             $val->formaPago = $val->tipo_pago . '';
             $formaPago =  FormasPago::find($val->tipo_pago);
-            $val->gastosComponentes = number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / $credito->cuotas_pagar, 2, '.', '');
+            $val->gastosComponentes = number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
             $val->gastosCobranza = number_format($val->notificado *  $company->valor_notificado, 2, '.', '');
             if ($formaPago) {
                 $val->formaPago = $formaPago->nombre;
@@ -104,7 +139,7 @@ class ReporteIngresosComponent extends Component
             
             if ($credito) {
                 $customerGarante =  Customer::find($credito->customer_id);
-                $val->idCliente = $customerGarante->id;
+                $val->idCliente = optional($customerGarante)->id;
                 $val->identificacionCliente = $credito->customer_ruc;
                 $val->nombreSocio = $credito->customer_name;
             }

@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr role="row">
-            <th colspan="11" style="text-align: center;"><b>{{$company->comercial_name}}</b></th>
+            <th colspan="13" style="text-align: center;"><b>{{$company->comercial_name}}</b></th>
         </tr>
         <tr role="row">
             <th scope="col" style="background-color: #7eb8da;"><b>N° Socio</b></th>
