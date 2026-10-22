@@ -34,13 +34,66 @@ class PlanCuentasComponent extends Component
     public $search = '';
     public $banco_id = '';
     public $accion_cuenta = '';
+    public $filtroUso = '';
+    public $filtroOrigen = '';
+    public $porPagina = 25;
+    public $id_eliminar;
+
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'filtroUso', 'filtroOrigen', 'porPagina'], true)) $this->resetPage();
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['search', 'filtroUso', 'filtroOrigen', 'porPagina']);
+        $this->resetPage();
+    }
+
+    public function confirmarEliminar($id)
+    {
+        $this->id_eliminar = PlanCuentas::where('company_id', Auth::user()->company_id)
+            ->where('creado_usuario', true)->findOrFail($id)->id;
+        $this->dispatchBrowserEvent('pc-confirmar-eliminar');
+    }
+
+    public function cancelarEliminar()
+    {
+        $this->id_eliminar = null;
+        $this->dispatchBrowserEvent('pc-cerrar-eliminar');
+    }
+
+    private function validarCuenta()
+    {
+        $this->nombre = trim($this->nombre);
+        $this->codigo = trim($this->codigo);
+        $cuentaActual = $this->id_seleccionado ? PlanCuentas::where('company_id', Auth::user()->company_id)->find($this->id_seleccionado) : null;
+        $reglasCodigo = ['required', 'string', 'max:60'];
+        if (!$cuentaActual || $cuentaActual->codigo !== $this->codigo) {
+            $reglasCodigo[] = 'regex:/^[0-9]{1,2}(\.[0-9]{1,2}){0,6}$/';
+        }
+        $this->validate([
+            'nombre' => 'required|string|max:60',
+            'codigo' => $reglasCodigo,
+            'tiempo_inicio' => 'nullable|integer|min:0',
+            'tiempo_fin' => 'nullable|integer|min:0' . ($this->tiempo_inicio !== '' && $this->tiempo_inicio !== null ? '|gte:tiempo_inicio' : ''),
+            'banco_id' => ['nullable', \Illuminate\Validation\Rule::exists('bancos', 'id')->where('company_id', Auth::user()->company_id)],
+            'accion_cuenta' => 'nullable|in:SUMA,RESTA',
+        ], [
+            'codigo.regex' => 'Usa hasta 7 niveles de uno o dos dígitos separados por puntos (ejemplo: 1.01.02).',
+            'tiempo_fin.gte' => 'El plazo final debe ser mayor o igual al inicial.'
+        ]);
+        foreach (['tiempo_inicio', 'tiempo_fin', 'banco_id', 'accion_cuenta'] as $campo) {
+            if ($this->$campo === '') $this->$campo = null;
+        }
+    }
 
     public function verPlan($id)
     {
         $this->limpiarFormulario();
         $this->id_seleccionado = $id;
         if ($this->id_seleccionado !== 0) {
-            $planCuentas = PlanCuentas::find($this->id_seleccionado);
+            $planCuentas = PlanCuentas::where('company_id', Auth::user()->company_id)->findOrFail($this->id_seleccionado);
             $this->nombre = $planCuentas->nombre;
             $this->codigo = $planCuentas->codigo;
             $this->saldo = $planCuentas->saldo;
@@ -64,10 +117,7 @@ class PlanCuentasComponent extends Component
 
     public function actualizarPlan()
     {
-        $this->validate([
-            "nombre" => "required",
-            "codigo" => "required"
-        ]);
+        $this->validarCuenta();
 
         $codigoDuplicado = PlanCuentas::where('company_id', Auth::user()->company_id)
             ->where('codigo', $this->codigo)
@@ -90,19 +140,14 @@ class PlanCuentasComponent extends Component
         }
 
         $planCuentas->company_id = Auth::user()->company_id;
-        $planCuentas->nombre = strtoupper($this->nombre);
-        //vacir subniveles
-        $planCuentas->nivel1 = null;
-        $planCuentas->nivel2 = null;
-        $planCuentas->nivel3 = null;
-        $planCuentas->nivel4 = null;
-        $planCuentas->nivel5 = null;
-        $planCuentas->nivel6 = null;
-        $planCuentas->nivel7 = null;
-        $array = explode('.', $this->codigo);
-        foreach ($array as $key => $element) {
-            $nivelKey = 'nivel' . ($key + 1);
-            $planCuentas->$nivelKey = $element;
+        $planCuentas->nombre = mb_strtoupper($this->nombre, 'UTF-8');
+        if ($planCuentas->codigo !== $this->codigo) {
+            // Reconstruir la jerarquía únicamente cuando cambia el código.
+            foreach (range(1, 7) as $nivel) $planCuentas->{'nivel' . $nivel} = null;
+            foreach (explode('.', $this->codigo) as $key => $element) {
+                $nivelKey = 'nivel' . ($key + 1);
+                $planCuentas->$nivelKey = $element;
+            }
         }
         $planCuentas->company_id = Auth::user()->company_id;
         $planCuentas->codigo = $this->codigo;
@@ -118,7 +163,7 @@ class PlanCuentasComponent extends Component
 
         //Alerta
         $color = 'success';
-        $mensaje = 'Se modifica el Plan de Cuentas correctamente...';
+        $mensaje = 'Cuenta contable actualizada correctamente.';
         $data = [
             'titulo' => '<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Advertencia',
             'color' => $color,
@@ -129,10 +174,7 @@ class PlanCuentasComponent extends Component
 
     public function nuevoPlan()
     {
-        $this->validate([
-            "nombre" => "required",
-            "codigo" => "required"
-        ]);
+        $this->validarCuenta();
 
         $codigoDuplicado = PlanCuentas::where('company_id', Auth::user()->company_id)
             ->where('codigo', $this->codigo)
@@ -145,7 +187,7 @@ class PlanCuentasComponent extends Component
 
         $planCuentas = new PlanCuentas();
         $planCuentas->company_id = Auth::user()->company_id;
-        $planCuentas->nombre = strtoupper($this->nombre);
+        $planCuentas->nombre = mb_strtoupper($this->nombre, 'UTF-8');
         $array = explode('.', $this->codigo);
         foreach ($array as $key => $element) {
             $nivelKey = 'nivel' . ($key + 1);
@@ -164,7 +206,7 @@ class PlanCuentasComponent extends Component
         $planCuentas->save();
 
         $color = 'success';
-        $mensaje = 'Se Creado el Plan de Cuentas correctamente...';
+        $mensaje = 'Cuenta contable creada correctamente.';
         $data = [
             'titulo' => '<i class="fa fa-plus" aria-hidden="true"></i> Advertencia',
             'color' => $color,
@@ -187,24 +229,26 @@ class PlanCuentasComponent extends Component
             return;
         }
 
-        if ($this->cuentaTieneMovimientos($id)) {
+        if (!$planCuentas->creado_usuario || $this->cuentaTieneMovimientos($id)) {
             $this->dispatchBrowserEvent('alertaGrande', [
                 'titulo' => '<i class="fa fa-exclamation-circle" aria-hidden="true"></i><b>Cuenta en uso</b>',
                 'color' => 'danger',
-                'mensaje' => 'No se puede eliminar una cuenta contable que ya tiene asientos, configuraciones o gastos asociados.'
+                'mensaje' => 'Solo se pueden eliminar cuentas personalizadas sin asientos, configuraciones ni operaciones asociadas.'
             ]);
             return;
         }
 
         $planCuentas->delete();
-        $color = 'danger';
-        $mensaje = 'Se Creado eliminado Plan de Cuentas correctamente...';
+        $color = 'success';
+        $mensaje = 'Cuenta contable eliminada correctamente.';
         $data = [
             'titulo' => '<i class="fa fa-plus" aria-hidden="true"></i> Advertencia',
             'color' => $color,
             'mensaje' => $mensaje
         ];
         $this->id_seleccionado = 0;
+        $this->id_eliminar = null;
+        $this->dispatchBrowserEvent('pc-cerrar-eliminar');
         $this->limpiarFormulario();
         $this->dispatchBrowserEvent('alerta', $data);
     }
@@ -223,8 +267,7 @@ class PlanCuentasComponent extends Component
             || DB::table('prestamos')->where('company_id', Auth::user()->company_id)->where('plan_cuenta_id', $id)->exists()
             || DB::table('proveedores')->where('company_id', Auth::user()->company_id)->where('plan_cuenta_id', $id)->exists()
             || DB::table('credit_folder_headers')->where('company_id', Auth::user()->company_id)->where('cuenta_contable_id', $id)->exists()
-            || DB::table('utilidads')->where('company_id', Auth::user()->company_id)->where('cuenta_pasivo_id', $id)->exists()
-            ;
+            || DB::table('utilidads')->where('company_id', Auth::user()->company_id)->where('cuenta_pasivo_id', $id)->exists();
     }
 
     public function reiniciarNuevo()
@@ -296,15 +339,29 @@ class PlanCuentasComponent extends Component
     public function render()
     {
         $cuenta = PlanCuentas::where('company_id', Auth::user()->company_id)->find($this->id_seleccionado);
-        $cuentas = PlanCuentas::select('id', 'nombre', 'codigo', 'creado_usuario', 'prestamo', 'gasto', 'utilidad', 'estado_resultados', DB::raw('REPLACE(codigo, ".", "") as codigoSolo'))
+        $resumen = PlanCuentas::where('company_id', Auth::user()->company_id)
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN prestamo = 1 THEN 1 ELSE 0 END) as prestamos, SUM(CASE WHEN gasto = 1 THEN 1 ELSE 0 END) as gastos, SUM(CASE WHEN utilidad = 1 THEN 1 ELSE 0 END) as utilidades')->first();
+        $cuentas = PlanCuentas::select('id', 'nombre', 'codigo', 'creado_usuario', 'prestamo', 'gasto', 'utilidad', 'estado_resultados')
             ->where('company_id', Auth::user()->company_id)
             ->where(function ($query) {
                 $query->where('nombre', 'like', '%' . $this->search . '%')
                     ->orWhere('codigo', 'like', '%' . $this->search . '%');
             })
-            ->orderBy('codigoSolo', 'ASC')
-            ->paginate(50);
-        $bancos = Bancos::where('company_id', Auth::user()->company_id)->where('tipo_cuenta_id', '>', 0)->where('numero_cuenta', '!=', '')->where('status', true)->get();
-        return view('livewire.plan-cuentas.plan-cuentas-component', compact('cuentas', 'cuenta','bancos'));
+            ->when(in_array($this->filtroUso, ['prestamo', 'gasto', 'utilidad', 'estado_resultados'], true), function ($query) {
+                $query->where($this->filtroUso, true);
+            })
+            ->when(in_array($this->filtroOrigen, ['sistema', 'personalizada'], true), function ($query) {
+                $query->where('creado_usuario', $this->filtroOrigen === 'personalizada');
+            });
+        foreach (range(1, 7) as $nivel) $cuentas->orderByRaw('CAST(nivel' . $nivel . ' AS DECIMAL(10,0)) ASC');
+        $cuentas = $cuentas->orderBy('codigo')->paginate(in_array((int) $this->porPagina, [25, 50, 100], true) ? (int) $this->porPagina : 25);
+        $cuentaEliminar = $this->id_eliminar ? PlanCuentas::where('company_id', Auth::user()->company_id)->find($this->id_eliminar) : null;
+        $bancos = Bancos::where('company_id', Auth::user()->company_id)->where(function ($query) {
+            $query->where(function ($activos) {
+                $activos->where('tipo_cuenta_id', '>', 0)->where('numero_cuenta', '!=', '')->where('status', true);
+            });
+            if ($this->banco_id) $query->orWhere('id', $this->banco_id);
+        })->orderBy('nombre')->get();
+        return view('livewire.plan-cuentas.plan-cuentas-component', compact('cuentas', 'cuenta', 'bancos', 'resumen', 'cuentaEliminar'));
     }
 }
