@@ -21,6 +21,11 @@ class ConfigPlanHeader extends Model
         return $this->belongsTo('App\Models\Company', 'company_id');
     }
 
+    public function detalles()
+    {
+        return $this->hasMany(ConfigPlanDetalle::class, 'config_plan_header_id');
+    }
+
     public function typeTransaction()
     {
         return $this->belongsTo('App\Models\TypeTransaction', 'type_transaction_id');

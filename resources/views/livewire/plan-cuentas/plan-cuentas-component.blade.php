@@ -72,7 +72,15 @@
                                     <td>
                                         <div class="d-flex flex-wrap gap-1">@if ($cuen->prestamo)<span class="badge bg-info text-dark">Préstamo</span>@endif @if ($cuen->gasto)<span class="badge bg-warning text-dark">Gasto</span>@endif @if ($cuen->utilidad)<span class="badge bg-success">Utilidad</span>@endif @if ($cuen->estado_resultados)<span class="badge bg-secondary">Resultados</span>@endif @if (!$cuen->prestamo && !$cuen->gasto && !$cuen->utilidad && !$cuen->estado_resultados)<span class="text-muted small">General</span>@endif</div>
                                     </td>
-                                    <td class="text-end pe-3 text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary" wire:click="verPlan({{ $cuen->id }})" aria-label="Editar cuenta {{ $cuen->codigo }}" title="Editar cuenta"><i class="fa fa-pen" aria-hidden="true"></i></button>@if ($cuen->creado_usuario)<button type="button" class="btn btn-sm btn-outline-danger ms-1" wire:click="confirmarEliminar({{ $cuen->id }})" aria-label="Eliminar cuenta {{ $cuen->codigo }}" title="Eliminar cuenta"><i class="fa fa-trash" aria-hidden="true"></i></button>@endif</td>
+                                    <td class="text-end pe-3 text-nowrap">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" wire:click="verPlan({{ $cuen->id }})" aria-label="Editar cuenta {{ $cuen->codigo }}" title="Editar cuenta">
+                                            <i class="fa fa-pen" aria-hidden="true"></i>
+                                        </button>
+                                        @if ($cuen->creado_usuario)
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-1" wire:click="confirmarEliminar({{ $cuen->id }})" aria-label="Eliminar cuenta {{ $cuen->codigo }}" title="Eliminar cuenta">
+                                            <i class="fa fa-trash" aria-hidden="true"></i></button>
+                                        @endif
+                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
