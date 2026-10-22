@@ -42,7 +42,7 @@
             </tr>
             <tr>
                 <td style="text-align: left; padding: 8px;"><b>OBSERVACIONES:</b></td>
-                <td style="text-align: left; padding: 8px;">{{$data['header']->descripcion}}</td>
+                <td style="text-align: left; padding: 8px;">{{$data['header']->descripcion}}<br>Observación: {{ $data['header']->observacion ?: 'Sin observación registrada' }}</td>
             </tr>
         </tbody>
     </table>

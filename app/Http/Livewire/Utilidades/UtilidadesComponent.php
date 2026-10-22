@@ -476,6 +476,7 @@ class UtilidadesComponent extends Component
             $aprobadasCount = 0;
             $transactionEUS = $this->transactionEUS;
             $asientoDescription = 'Pago automático de Utilidades (Reparto Total) Año ' . $this->anio_calculo;
+            $referenciasObservacion = [];
             $configHeader = ConfigPlanHeader::where('company_id', $companyId)
                 ->where('type_transaction_id', $transactionEUS->id)
                 ->where('status', 1)
@@ -548,6 +549,7 @@ class UtilidadesComponent extends Component
                     "hour_created" => date("H:i:s"),
                 ];
                 $movimientos = CustomerMovimiento::create($dataMovimiento);
+                $referenciasObservacion[] = ($movimientos->code ?: 'Sin código') . ' (ID ' . $movimientos->id . ', cliente: ' . $customer->nombres . ' ' . $customer->apellidos . ')';
                 $headerAsiento = AsientosHeader::firstOrNew(['company_id' => $companyId,
                     'customer_movimiento_id' => $movimientos->id, 'status' => 1]);
                 $headerAsiento->fill([
@@ -640,7 +642,7 @@ class UtilidadesComponent extends Component
             }
 
             // CREACIÓN DEL ASIENTO CONTABLE (Uno general por la suma total)
-            $headerAsiento = AsientosHeader::create([
+            $headerAsiento = new AsientosHeader([
                 'company_id' => $companyId,
                 'manual' => 0,
                 'fecha_contable' => $movimientos->date_created . ' ' . $movimientos->hour_created,
@@ -654,6 +656,12 @@ class UtilidadesComponent extends Component
                 'descargo_bovedas_header_id' => optional($configHeaderGeneral)->operaciones_descargo_bovedas_id,
                 'status' => 1,
             ]);
+            $headerAsiento->contextoObservacion = [
+                'modulo' => 'Utilidades',
+                'operacion' => 'Se contabilizó el reparto total de utilidades del año ' . $this->anio_calculo . ' por ' . number_format((float) $solicitudes->sum('valor'), 2, '.', ','),
+                'movimiento' => implode('; ', $referenciasObservacion),
+            ];
+            $headerAsiento->save();
             // Crear detalles del asiento usando ConfigPlanDetalle
             // DETALLE DEBE
             if ($detalleDEBEGeneral) {

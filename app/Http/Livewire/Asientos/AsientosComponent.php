@@ -399,7 +399,10 @@ class AsientosComponent extends Component
 
                     if ($this->searchAsientoDescripcion !== '') {
                         $method = $this->searchAsiento !== '' ? 'orWhere' : 'where';
-                        $q->{$method}('descripcion', 'like', '%' . $this->searchAsientoDescripcion . '%');
+                        $q->{$method}(function ($descripcion) {
+                            $descripcion->where('descripcion', 'like', '%' . $this->searchAsientoDescripcion . '%')
+                                ->orWhere('observacion', 'like', '%' . $this->searchAsientoDescripcion . '%');
+                        });
                     }
                 });
             })

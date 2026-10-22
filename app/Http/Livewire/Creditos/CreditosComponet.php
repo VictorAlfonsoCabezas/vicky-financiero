@@ -2877,6 +2877,12 @@ class CreditosComponet extends Component
         $asiento->fecha_creacion = date('Y-m-d H:i:s');
         $asiento->user_created = Auth::user()->id;
         $asiento->descripcion = $descripcion;
+        $asiento->contextoObservacion = [
+            'modulo' => 'Créditos',
+            'customer_id' => $creditoHeader->customer_id,
+            'customer_name' => $creditoHeader->customer_name,
+            'operacion' => 'Se contabilizaron intereses generados por ' . number_format($valorInteres, 2, '.', ',') . ' del crédito ' . $creditoHeader->code . ', cliente: ' . $creditoHeader->customer_name,
+        ];
         $asiento->status = true;
 
         $configHeader = $this->buscarConfigInteresesGenerados();

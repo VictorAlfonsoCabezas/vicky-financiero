@@ -11,6 +11,7 @@
                         $pendienteDetalle = $asientosHeader->pendiente_contable || round($debeDetalle, 2) != round($haberDetalle, 2) || $debeDetalle <= 0;
                     @endphp
                     <div class="alert {{ $pendienteDetalle ? 'alert-danger' : 'alert-success' }} d-flex gap-2"><i class="fa {{ $pendienteDetalle ? 'fa-exclamation-circle' : 'fa-check-circle' }} mt-1"></i><div><strong>{{ $pendienteDetalle ? 'Pendiente de revisión contable' : 'Asiento cuadrado' }}</strong><div>{{ $asientosHeader->descripcion }}</div></div></div>
+                    <p><strong>Observación:</strong> {{ $asientosHeader->observacion ?: 'Sin observación registrada' }}</p>
                     <div class="row g-3 mb-3">
                         <div class="col-md-6"><small class="text-muted d-block">Concepto / fecha contable</small><strong>{{ optional($asientosHeader->concepto)->nombre ?? 'Sin concepto configurado' }}</strong><div class="text-muted">{{ $asientosHeader->fecha_contable }}</div></div>
                         <div class="col-4 col-md-2"><small class="text-muted d-block">Debe</small><strong>$ {{ number_format($debeDetalle, 2) }}</strong></div>

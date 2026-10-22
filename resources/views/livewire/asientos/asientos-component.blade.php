@@ -88,7 +88,8 @@
                                     @endif
                                 </b>
                                 <br>
-                                Observacion: {{ $a->descripcion }}
+                                Descripción: {{ $a->descripcion }}
+                                <br>Observación: {{ $a->observacion ?: 'Sin observación registrada' }}
                                 @if ($a->pendiente_contable || number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', '') || $a->suma_debe <= 0)
                                     <br><b>Asiento pendiente de revision contable</b>
                                 @endif

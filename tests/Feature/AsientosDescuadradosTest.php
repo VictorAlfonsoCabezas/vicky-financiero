@@ -13,12 +13,137 @@ use Tests\TestCase;
 
 class AsientosDescuadradosTest extends TestCase
 {
+    /** @dataProvider recalculosDesdeTodosModulos */
+    public function testTodosModulosPersisteObservacionAlRecalcular($masivo, $observacionAnterior)
+    {
+        $datos = $this->configurarMovimiento();
+        $datos['code'] = 'MOV-RECALCULO-01';
+        $datos['customer_name'] = 'Cliente de recálculo';
+        $datos['observation'] = 'Abono en efectivo';
+        TypeTransaction::where('id', 1)->update(['name' => 'Abono de ahorro']);
+        $movimiento = CustomerMovimiento::create($datos);
+        $id = AsientosHeader::first()->id;
+        DB::table('asientos_header')->where('id', $id)->update(['observacion' => $observacionAnterior]);
+        DB::table('customer_movimientos')->where('id', $movimiento->id)->update(['valor_movimiento' => 250]);
+
+        $componente = new \App\Http\Livewire\TodosModulos\TodosModulosComponent;
+        if ($masivo) {
+            $componente->fechaInicio = '2026-10-01';
+            $componente->fechaFin = '2026-10-31';
+            $componente->calcularTodosAsientos();
+        } else {
+            $componente->recalcularAsiento($movimiento->id);
+        }
+
+        $asiento = AsientosHeader::findOrFail($id);
+        $this->assertSame(1, AsientosHeader::count());
+        $this->assertStringContainsString('Cliente: Cliente de recálculo', $asiento->observacion);
+        $this->assertStringContainsString('Abono de ahorro por 250.00', $asiento->observacion);
+        $this->assertStringContainsString('MOV-RECALCULO-01', $asiento->observacion);
+    }
+
+    public function recalculosDesdeTodosModulos()
+    {
+        return [[false, null], [false, 'Observación anterior'], [true, null], [true, 'Observación anterior']];
+    }
+
+    public function testTodosModulosCompletaObservacionDeAsientoGeneralExistente()
+    {
+        $this->configurarMovimiento();
+        $asiento = AsientosHeader::create(['company_id' => 10, 'manual' => 0,
+            'descripcion' => 'Ajuste general de prueba', 'fecha_contable' => '2026-10-13',
+            'fecha_creacion' => '2026-10-13', 'user_created' => 1, 'status' => 1]);
+        DB::table('asientos_header')->where('id', $asiento->id)->update(['observacion' => null]);
+        $componente = new \App\Http\Livewire\TodosModulos\TodosModulosComponent;
+        $componente->recalcularAsientoGeneral($asiento->id, 1);
+        $texto = $asiento->fresh()->observacion;
+        $this->assertStringContainsString('Usuario:', $texto);
+        $this->assertStringContainsString('Ajuste general de prueba', $texto);
+        $this->assertStringContainsString('Sin movimiento asociado', $texto);
+    }
+
+    public function testObservacionIdentificaClienteOperacionYMovimiento()
+    {
+        DB::table('customer_movimientos')->insert(['id' => 50, 'company_id' => 10,
+            'code' => 'MOV-050', 'customer_id' => 8, 'customer_name' => 'María López',
+            'type_transaction_name' => 'Abono de ahorro', 'customer_tipo_ahorro_id' => 1,
+            'valor_movimiento' => 150, 'observation' => 'Depósito en efectivo']);
+        $asiento = AsientosHeader::create(['company_id' => 10, 'customer_movimiento_id' => 50,
+            'descripcion' => 'ASIENTO AUTOMATICO']);
+        $texto = $asiento->fresh()->observacion;
+        foreach (['Ahorros - Cliente: María López', 'Abono de ahorro por 150.00', 'Depósito en efectivo', 'MOV-050 (ID 50)'] as $parte) {
+            $this->assertStringContainsString($parte, $texto);
+        }
+        $this->assertSame('ASIENTO AUTOMATICO', $asiento->descripcion);
+        DB::table('customer_movimientos')->where('id', 50)->update(['valor_movimiento' => 200]);
+        $asiento->save();
+        $this->assertStringContainsString('200.00', $asiento->fresh()->observacion);
+    }
+
+    public function testObservacionManualIdentificaUsuarioYSinMovimiento()
+    {
+        User::insert(['id' => 1, 'company_id' => 10, 'firstname' => 'Carlos', 'lastname' => 'Pérez']);
+        $asiento = AsientosHeader::create(['company_id' => 10, 'manual' => 1,
+            'user_created' => 1, 'descripcion' => 'Ajuste del saldo de caja']);
+        $texto = $asiento->fresh()->observacion;
+        $this->assertStringContainsString('Asientos manuales - Usuario: Carlos Pérez', $texto);
+        $this->assertStringContainsString('Ajuste del saldo de caja', $texto);
+        $this->assertStringContainsString('Movimiento: Sin movimiento asociado', $texto);
+    }
+
+    public function testObservacionGeneralConservaContextoDeOrigen()
+    {
+        $asiento = new AsientosHeader(['company_id' => 10, 'user_created' => 1]);
+        $asiento->contextoObservacion = ['modulo' => 'Créditos', 'customer_name' => 'Ana Ruiz',
+            'operacion' => 'Se contabilizaron intereses por 45.00 del crédito CR-25'];
+        $asiento->save();
+        $texto = $asiento->fresh()->observacion;
+        $this->assertStringContainsString('Créditos - Cliente: Ana Ruiz', $texto);
+        $this->assertStringContainsString('crédito CR-25', $texto);
+        $recargado = $asiento->fresh();
+        $recargado->status = 1;
+        $recargado->save();
+        $this->assertSame($texto, $recargado->fresh()->observacion);
+    }
+
+    public function testObservacionNoConsultaMovimientoDeOtraEmpresa()
+    {
+        DB::table('customer_movimientos')->insert(['id' => 50, 'company_id' => 99,
+            'code' => 'PRIVADO', 'customer_name' => 'Cliente privado']);
+        $asiento = AsientosHeader::create(['company_id' => 10, 'customer_movimiento_id' => 50]);
+        $this->assertStringNotContainsString('PRIVADO', $asiento->observacion);
+        $this->assertStringNotContainsString('Cliente privado', $asiento->observacion);
+    }
+
+    public function testObservacionPagoAgrupadoIncluyeTodosLosCodigos()
+    {
+        TypeTransaction::create(['id' => 9, 'company_id' => 10, 'name_corto' => 'PC', 'name' => 'Pago de crédito']);
+        foreach ([51 => 100, 52 => 25] as $id => $valor) {
+            DB::table('customer_movimientos')->insert(['id' => $id, 'company_id' => 10,
+                'code' => 'MOV-' . $id, 'customer_name' => 'Ana Ruiz', 'type_transaction_id' => 9,
+                'credit_folder_details_id' => 7, 'valor_movimiento' => $valor, 'status' => 1]);
+        }
+        $asiento = AsientosHeader::create(['company_id' => 10, 'customer_movimiento_id' => 51]);
+        $this->assertStringContainsString('MOV-51 (ID 51), MOV-52 (ID 52)', $asiento->observacion);
+        $this->assertStringContainsString('Total de movimientos de la cuota: 125.00', $asiento->observacion);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
         config(['database.default' => 'asientos_test', 'database.connections.asientos_test' => [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
         ]]);
+        foreach ([\App\Models\OperacionesDescargoBovedas::class, \App\Models\RegistroFormasPago::class] as $clase) {
+            $modelo = new $clase;
+            Schema::create($modelo->getTable(), function (Blueprint $table) use ($modelo) {
+                $table->increments('id');
+                foreach ($modelo->getFillable() as $campo) {
+                    if ($campo !== 'id') $table->string($campo)->nullable();
+                }
+                $table->timestamps();
+            });
+        }
         foreach ([AsientosDetalle::class, AsientosHeader::class, Company::class, Conceptos::class, ConfigPlanDetalle::class, ConfigPlanHeader::class, CreditFolderDetail::class, CreditFolderHeader::class, Customer::class, CustomerHistorial::class, CustomerMovimiento::class, CustomerMovimientoSolicitud::class, DescargoBovedasHeader::class, Gastos::class, GastosFormaPagos::class, GastosPlanCuentas::class, PlanCuentas::class, Prestamos::class, TypeTransaction::class, Utilidad::class, WhaEnvios::class, User::class] as $class) {
             $model = new $class;
             Schema::create($model->getTable(), function (Blueprint $table) use ($model) {
@@ -188,6 +313,8 @@ class AsientosDescuadradosTest extends TestCase
         $this->assertSame('200', $resultado['code']);
         $this->assertTrue(AsientosHeader::first()->pendiente_contable);
         $this->assertSame('FINALIZADO', DescargoBovedasHeader::find(1)->estado);
+        $this->assertStringContainsString('Bóvedas - Usuario:', AsientosHeader::first()->observacion);
+        $this->assertStringContainsString('registro ID 1', AsientosHeader::first()->observacion);
     }
 
     public function testApprovedExpenseKeepsPendingAccounting()
@@ -197,6 +324,8 @@ class AsientosDescuadradosTest extends TestCase
         $gasto->forceFill(['company_id' => 10, 'estado' => 'APROBADO',
             'fecha_emision' => '2026-10-13', 'user_aprueba_id' => 1, 'valor' => 100])->save();
         $this->assertSame('APROBADO', $gasto->fresh()->estado);
+        $this->assertStringContainsString('Gastos - Usuario:', AsientosHeader::first()->observacion);
+        $this->assertStringContainsString('Gasto ID ' . $gasto->id, AsientosHeader::first()->observacion);
         $this->assertTrue(AsientosHeader::first()->pendiente_contable);
         $this->assertEquals($gasto->id, AsientosHeader::first()->gasto_id);
     }

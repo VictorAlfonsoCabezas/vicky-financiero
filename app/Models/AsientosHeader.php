@@ -20,11 +20,27 @@ class AsientosHeader extends Model
         'concepto_id',
         'config_plan_header_id',
         'descripcion',
+        'observacion',
         'customer_movimiento_id',
         'gasto_id',
         'descargo_bovedas_header_id',
         'status',
     ];
+
+    // Contexto para operaciones generales que no tienen movimiento propio.
+    public $contextoObservacion = [];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::saving(function ($asiento) {
+            if (!$asiento->exists || !$asiento->observacion || $asiento->contextoObservacion
+                || $asiento->customer_movimiento_id || $asiento->gasto_id || $asiento->descargo_bovedas_header_id
+                || $asiento->isDirty(['descripcion', 'customer_movimiento_id', 'gasto_id', 'descargo_bovedas_header_id', 'config_plan_header_id'])) {
+                $asiento->observacion = \App\Services\ObservacionAsiento::generar($asiento);
+            }
+        });
+    }
 
     public function company()
     {
