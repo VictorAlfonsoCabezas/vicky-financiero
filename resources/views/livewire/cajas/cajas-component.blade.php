@@ -607,7 +607,7 @@
                             <h5>Verifica estas observaciones.</h5>
                             <ul class="mb-0"> @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
-                                @empty <tr><td colspan="3" class="text-center text-muted py-4">No hay valores pendientes por revisar.</td></tr> @endforelse
+                                @endforeach
                             </ul>
                         </div>
                         @endif

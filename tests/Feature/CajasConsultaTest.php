@@ -94,4 +94,20 @@ class CajasConsultaTest extends TestCase
         DB::table('cajas')->where('id', 1)->update(['user_inicial_id' => 1]);
         \Livewire\Livewire::test(CajasComponent::class)->assertSee('Tu caja de hoy está abierta');
     }
+
+    public function testInvalidCajaOpeningRendersValidationErrorsWithoutCreatingCaja()
+    {
+        $before = DB::table('cajas')->count();
+
+        \Livewire\Livewire::test(CajasComponent::class)
+            ->set('fechaCaja', '')
+            ->set('valorInicial', -1)
+            ->set('boveda', '')
+            ->call('storeCaja')
+            ->assertHasErrors(['fechaCaja' => 'required', 'valorInicial' => 'min', 'boveda' => 'required'])
+            ->assertSee('Verifica estas observaciones.')
+            ->assertSee('No hay valores pendientes por revisar.');
+
+        $this->assertSame($before, DB::table('cajas')->count());
+    }
 }
