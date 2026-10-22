@@ -294,7 +294,7 @@ class AsientosComponent extends Component
                 ->orderBy('id')
                 ->get();
             $this->concepto_id = $header->concepto_id;
-            $this->fecha = date('Y-m-d H:i', strtotime($header->fecha_creacion));
+            $this->fecha = date('Y-m-d H:i', strtotime($header->fecha_contable));
             $this->descripcion = $header->descripcion;
             foreach ($detalle as $key => $value) {
                 $planCuentas = PlanCuentas::find($value->plan_cuentas_id);
