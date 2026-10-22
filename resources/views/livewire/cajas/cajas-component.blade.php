@@ -5,7 +5,10 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div><h5 class="modal-title" id="modalGeneral-title"><i class="fa fa-cash-register me-2 text-primary" aria-hidden="true"></i>Apertura de caja</h5><p class="text-muted small mb-0 mt-1">Define el saldo inicial para comenzar la jornada.</p></div>
+                    <div>
+                        <h5 class="modal-title" id="modalGeneral-title"><i class="fa fa-cash-register me-2 text-primary" aria-hidden="true"></i>Apertura de caja</h5>
+                        <p class="text-muted small mb-0 mt-1">Define el saldo inicial para comenzar la jornada.</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCaja">
@@ -72,7 +75,10 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div><h5 class="modal-title" id="modalGeneral2-title"><i class="fa fa-lock me-2 text-primary" aria-hidden="true"></i>Cierre y arqueo de caja</h5><p class="text-muted small mb-0 mt-1">Revisa los movimientos y cuenta el efectivo antes de confirmar.</p></div>
+                    <div>
+                        <h5 class="modal-title" id="modalGeneral2-title"><i class="fa fa-lock me-2 text-primary" aria-hidden="true"></i>Cierre y arqueo de caja</h5>
+                        <p class="text-muted small mb-0 mt-1">Revisa los movimientos y cuenta el efectivo antes de confirmar.</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeCierreCaja">
@@ -536,7 +542,10 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div><h5 class="modal-title" id="modalGeneral3-title"><i class="fa fa-hand-holding-usd me-2 text-primary" aria-hidden="true"></i>Solicitar valores a bóveda</h5><p class="text-muted small mb-0 mt-1">Selecciona el origen e indica el importe que necesitas recibir.</p></div>
+                    <div>
+                        <h5 class="modal-title" id="modalGeneral3-title"><i class="fa fa-hand-holding-usd me-2 text-primary" aria-hidden="true"></i>Solicitar valores a bóveda</h5>
+                        <p class="text-muted small mb-0 mt-1">Selecciona el origen e indica el importe que necesitas recibir.</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
@@ -597,7 +606,10 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div><h5 class="modal-title" id="modalGeneral4-title"><i class="fa fa-clock me-2 text-primary" aria-hidden="true"></i>Valores pendientes</h5><p class="text-muted small mb-0 mt-1">Revisa las solicitudes antes de aprobar o rechazar los valores.</p></div>
+                    <div>
+                        <h5 class="modal-title" id="modalGeneral4-title"><i class="fa fa-clock me-2 text-primary" aria-hidden="true"></i>Valores pendientes</h5>
+                        <p class="text-muted small mb-0 mt-1">Revisa las solicitudes antes de aprobar o rechazar los valores.</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storesolicitudValores">
@@ -640,7 +652,9 @@
                                         </td>
 
                                     </tr>
-                                    @empty <tr><td colspan="3" class="text-center text-muted py-4">No hay valores pendientes por revisar.</td></tr> @endforelse
+                                    @empty <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">No hay valores pendientes por revisar.</td>
+                                    </tr> @endforelse
 
                                 </tbody>
                             </table>
@@ -661,7 +675,10 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div><h5 class="modal-title" id="modalGeneral5-title"><i class="fa fa-paper-plane me-2 text-primary" aria-hidden="true"></i>Enviar valores a la bóveda matriz</h5><p class="text-muted small mb-0 mt-1">Registra la cuenta y el importe que vas a enviar a la matriz.</p></div>
+                    <div>
+                        <h5 class="modal-title" id="modalGeneral5-title"><i class="fa fa-paper-plane me-2 text-primary" aria-hidden="true"></i>Enviar valores a la bóveda matriz</h5>
+                        <p class="text-muted small mb-0 mt-1">Registra la cuenta y el importe que vas a enviar a la matriz.</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form wire:submit.prevent="storeEnvioBoveda">
