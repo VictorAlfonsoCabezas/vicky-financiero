@@ -13,6 +13,30 @@ use Tests\TestCase;
 
 class AsientosDescuadradosTest extends TestCase
 {
+    public function testGuardarAsientoCorrigeLaPalabraReestructuracion()
+    {
+        $asiento = AsientosHeader::create(['company_id' => 10, 'manual' => 1,
+            'descripcion' => 'REESTRUCCTURACION de crédito']);
+        $this->assertSame('REESTRUCTURACION de crédito', $asiento->fresh()->descripcion);
+        $this->assertStringContainsString('REESTRUCTURACION de crédito', $asiento->fresh()->observacion);
+        $detalle = AsientosDetalle::create(['company_id' => 10, 'asientos_header_id' => $asiento->id,
+            'observacion' => 'REESTRUCCTURACION de crédito']);
+        $this->assertSame('REESTRUCTURACION de crédito', $detalle->fresh()->observacion);
+    }
+
+    public function testRecalculoDesdeTodosModulosCorrigeNombreDeOperacion()
+    {
+        $datos = $this->configurarMovimiento();
+        TypeTransaction::where('id', 1)->update(['name' => 'REESTRUCCTURACION']);
+        $movimiento = CustomerMovimiento::create($datos);
+        DB::table('asientos_header')->update(['observacion' => null]);
+        $componente = new \App\Http\Livewire\TodosModulos\TodosModulosComponent;
+        $componente->recalcularAsiento($movimiento->id);
+        $texto = AsientosHeader::first()->observacion;
+        $this->assertStringContainsString('REESTRUCTURACION', $texto);
+        $this->assertStringNotContainsString('REESTRUCCTURACION', $texto);
+    }
+
     /** @dataProvider recalculosDesdeTodosModulos */
     public function testTodosModulosPersisteObservacionAlRecalcular($masivo, $observacionAnterior)
     {

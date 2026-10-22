@@ -39,6 +39,8 @@ class AsientosHeader extends Model
                 || $asiento->isDirty(['descripcion', 'customer_movimiento_id', 'gasto_id', 'descargo_bovedas_header_id', 'config_plan_header_id'])) {
                 $asiento->observacion = \App\Services\ObservacionAsiento::generar($asiento);
             }
+            $asiento->descripcion = \App\Services\ObservacionAsiento::corregirTexto($asiento->descripcion);
+            $asiento->observacion = \App\Services\ObservacionAsiento::corregirTexto($asiento->observacion);
         });
     }
 

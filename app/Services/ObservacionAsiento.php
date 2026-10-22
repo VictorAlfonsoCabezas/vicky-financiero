@@ -8,6 +8,15 @@ use Illuminate\Support\Facades\Auth;
 
 class ObservacionAsiento
 {
+    public static function corregirTexto($texto)
+    {
+        return $texto === null ? null : str_replace(
+            ['REESTRUCCTURACION', 'Reestruccturacion', 'reestruccturacion'],
+            ['REESTRUCTURACION', 'Reestructuracion', 'reestructuracion'],
+            $texto
+        );
+    }
+
     public static function generar(AsientosHeader $asiento)
     {
         $contexto = $asiento->contextoObservacion;

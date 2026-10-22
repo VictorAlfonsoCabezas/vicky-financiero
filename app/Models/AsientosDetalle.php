@@ -21,6 +21,14 @@ class AsientosDetalle extends Model
         'status',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+        static::saving(function ($detalle) {
+            $detalle->observacion = \App\Services\ObservacionAsiento::corregirTexto($detalle->observacion);
+        });
+    }
+
     public function company()
     {
         return $this->belongsTo('App\Models\Company', 'company_id');
