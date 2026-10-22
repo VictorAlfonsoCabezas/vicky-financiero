@@ -74,7 +74,7 @@
                     </thead>
                     <tbody>
                         @foreach ($asientosHeader as $a)
-                        <tr class="bg-{{ !$a->pendiente_contable && number_format($a->suma_debe, 2, '.', '') === number_format($a->suma_haber, 2, '.', '') && $a->suma_debe > 0 ? 'primary' : 'danger' }} text-white">
+                        <tr class="bg-{{ number_format($a->suma_debe, 2, '.', '') === number_format($a->suma_haber, 2, '.', '') ? 'primary' : 'danger' }} text-white">
                             <td colspan="3">
                                 <b>
                                     <!-- {{ $a->nombre_transaccion }}
@@ -90,21 +90,21 @@
                                 <br>
                                 Descripción: {{ $a->descripcion }}
                                 <br>Observación: {{ $a->observacion ?: 'Sin observación registrada' }}
-                                @if ($a->pendiente_contable || number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', '') || $a->suma_debe <= 0)
+                                @if (number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', ''))
                                     <br><b>Asiento pendiente de revision contable</b>
-                                @endif
+                                    @endif
                             </td>
                             <td colspan="2"><b>Total:</b></td>
                             <td style="border: 1px solid #dee2e6;">{{ $a->suma_debe }}</td>
                             <td style="border: 1px solid #dee2e6;">{{ $a->suma_haber }}</td>
                             <td style="border: 1px solid #dee2e6; text-align: center;">
-                                 <a class="text-white" wire:click="abrirModal({{ $a->id }})" type="button"
+                                <a class="text-white" wire:click="abrirModal({{ $a->id }})" type="button"
                                     data-bs-toggle="modal" data-bs-target="#modalGeneral" title="Agregar una forma de Pago"><b>FP</b></a>
-                                    
+
                                 <a class="text-white" wire:click="abrirModal({{ $a->id }})" type="button"
                                     data-bs-toggle="modal" data-bs-target="#modalGeneral"> <i class="fa fa-edit"></i></a>
                                 @if ($a->manual)
-                                
+
                                 @endif
                                 <a class="text-white" href="/asientos/comprobante/{{ $a->id }}"> <i
                                         class="fas fa-print"></i></a>
