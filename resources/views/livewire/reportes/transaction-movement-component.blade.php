@@ -17,7 +17,7 @@
                     <div class="col-md-3"><label for="buscar" class="form-label">Socio o comprobante</label><input id="buscar" wire:model.debounce.400ms="filters.buscar" class="form-control" maxlength="120" placeholder="Nombre, identificación o código"></div>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <span class="text-muted align-self-center">Los filtros se aplican automáticamente.</span>
+                    <!-- <span class="text-muted align-self-center">Los filtros se aplican automáticamente.</span> -->
                     <button class="btn btn-default" type="button" wire:click="clearFilters" wire:loading.attr="disabled">Limpiar</button>
                     <button class="btn btn-danger" wire:click="exportPdf" wire:loading.attr="disabled" type="button"><i class="fa fa-file-pdf me-1"></i>Descargar PDF</button>
                     <button class="btn btn-success" wire:click="exportExcel" wire:loading.attr="disabled" type="button"><i class="fa fa-file-excel me-1"></i>Descargar Excel</button>
