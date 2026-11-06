@@ -827,6 +827,9 @@ Route::group(['middleware' => [Authenticate::class, CheckInactivity::class]], fu
     Route::resource('resultados', 'Resultados\ResultadosController')->only(['index']);
 });
 // REPORTE INGRESOS
+Route::get('reporte-movimientos-transacciones', 'Reportes\TransactionMovementController@index')
+    ->middleware([Authenticate::class, CheckInactivity::class])->name('reporte-movimientos-transacciones.index');
+
 Route::group(['middleware' => [Authenticate::class, CheckInactivity::class]], function () {
     Route::resource('reporte-ingresos', 'ReporteIngresos\ReporteIngresosController')->only(['index']);
 });
