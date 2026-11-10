@@ -9,12 +9,11 @@
                     <p class="text-muted mt-2">Cargando asiento…</p>
                 </div>
                 <div wire:loading.remove wire:target="abrirModal">
-                    .:. {{ $asientosHeader->pendiente_contable ? 'Pendiente de revisión contable' : 'Asiento cuadrado' }} .:.
-                    .:. {{ $asientosHeader->pendiente_contable ? 'Pendiente de revisión contable' : $asientosHeader->pendiente_contable  }} .:.
                     @if ($asientosHeader)
                     @php
                     $debeDetalle = $detalle->where('debe_haber', 1)->sum('valor');
                     $haberDetalle = $detalle->where('debe_haber', 0)->sum('valor');
+                    $pendienteDetalle =  round($debeDetalle, 2) != round($haberDetalle, 2) || $debeDetalle <= 0;
                     $pendienteDetalle = $asientosHeader->pendiente_contable || round($debeDetalle, 2) != round($haberDetalle, 2) || $debeDetalle <= 0;
                         @endphp
                         <div class="alert {{ $pendienteDetalle ? 'alert-danger' : 'alert-success' }} d-flex gap-2"><i class="fa {{ $pendienteDetalle ? 'fa-exclamation-circle' : 'fa-check-circle' }} mt-1"></i>
