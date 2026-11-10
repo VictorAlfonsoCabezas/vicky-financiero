@@ -9,7 +9,8 @@
                     <p class="text-muted mt-2">Cargando asiento…</p>
                 </div>
                 <div wire:loading.remove wire:target="abrirModal">
-                    .:. {{$asientosHeader->pendiente_contable}} .:.
+                    .:. {{ $asientosHeader->pendiente_contable ? 'Pendiente de revisión contable' : 'Asiento cuadrado' }} .:.
+                    .:. {{ $asientosHeader->pendiente_contable ? 'Pendiente de revisión contable' : $asientosHeader->pendiente_contable  }} .:.
                     @if ($asientosHeader)
                     @php
                     $debeDetalle = $detalle->where('debe_haber', 1)->sum('valor');
