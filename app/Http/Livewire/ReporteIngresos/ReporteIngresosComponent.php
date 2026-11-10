@@ -119,7 +119,6 @@ class ReporteIngresosComponent extends Component
             $credito  =  CreditFolderHeader::where('code', $value->code_folder_header)->first();
             $componentesSuma += number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
             $gastosCobranzaSumado += number_format($value->notificado *  $company->valor_notificado, 2, '.', '');
-         
         }
         $letrasVencidas = $letrasVencidasPagadas->orderByDesc('credit_folder_details.date_pay')->orderByDesc('credit_folder_details.id')->paginate(50);
         $letrasVencidasPagadas = $pagos;
@@ -128,7 +127,7 @@ class ReporteIngresosComponent extends Component
             $val->identificacionCliente = '';
             $val->nombreSocio = '';
             $val->idCliente = '';
-            
+
             $val->formaPago = $val->tipo_pago . '';
             $formaPago =  FormasPago::find($val->tipo_pago);
             $val->gastosComponentes = number_format(($credito->gasto_administrativo + $credito->tercer_gasto + $credito->segundo_gasto + $credito->primer_gasto) / max(1, $credito->cuotas_pagar), 2, '.', '');
@@ -136,7 +135,7 @@ class ReporteIngresosComponent extends Component
             if ($formaPago) {
                 $val->formaPago = $formaPago->nombre;
             }
-            
+
             if ($credito) {
                 $customerGarante =  Customer::find($credito->customer_id);
                 $val->idCliente = optional($customerGarante)->id;
