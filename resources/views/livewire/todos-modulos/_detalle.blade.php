@@ -14,7 +14,6 @@
                     $debeDetalle = $detalle->where('debe_haber', 1)->sum('valor');
                     $haberDetalle = $detalle->where('debe_haber', 0)->sum('valor');
                     $pendienteDetalle = $asientosHeader->pendiente_contable || round($debeDetalle, 2) != round($haberDetalle, 2) || $debeDetalle <= 0;
-                    $pendienteDetalle = round($debeDetalle, 2) != round($haberDetalle, 2) || $debeDetalle <= 0;
                         @endphp
                         <div class="alert {{ $pendienteDetalle ? 'alert-danger' : 'alert-success' }} d-flex gap-2"><i class="fa {{ $pendienteDetalle ? 'fa-exclamation-circle' : 'fa-check-circle' }} mt-1"></i>
                         <div><strong>{{ $pendienteDetalle ? 'Pendiente de revisión contable' : 'Asiento cuadrado' }}</strong>
