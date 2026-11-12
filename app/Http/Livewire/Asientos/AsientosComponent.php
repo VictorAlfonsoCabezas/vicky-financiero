@@ -38,6 +38,7 @@ class AsientosComponent extends Component
     public $asientos = [];
     public $searchAsiento = '';
     public $searchAsientoDescripcion = '';
+    public $searchCuenta = '';
     public $manual = '';
     public $search = '';
 
@@ -352,6 +353,7 @@ class AsientosComponent extends Component
                 'fechaFin',
                 'searchAsiento',
                 'searchAsientoDescripcion',
+                'searchCuenta',
             ])
         ) {
             $this->resetPage();
@@ -378,10 +380,10 @@ class AsientosComponent extends Component
             DB::raw("(SELECT COALESCE(SUM(valor), 0) FROM asientos_detalle WHERE asientos_detalle.asientos_header_id = asientos_header.id AND asientos_detalle.debe_haber = false AND asientos_detalle.status = true) as suma_haber")
         )
             ->with([
-            'concepto.tipoConcepto',
-            'detalles.planCuentas',
-            'detalles.userCreated',
-        ])
+                'concepto.tipoConcepto',
+                'detalles.planCuentas',
+                'detalles.userCreated',
+            ])
             ->where('company_id', Auth::user()->company_id)
             ->where('status', true)
             ->whereBetween(
@@ -406,6 +408,20 @@ class AsientosComponent extends Component
                     }
                 });
             })
+            ->when(trim($this->searchCuenta) !== '', function ($query) {
+                $query->whereHas('detalles', function ($detalle) {
+                    $detalle->where('company_id', Auth::user()->company_id)
+                        ->where('status', true)
+                        ->whereHas('planCuentas', function ($cuenta) {
+                            $cuenta->where('company_id', Auth::user()->company_id)
+                                ->where(function ($busqueda) {
+                                    $termino = '%' . trim($this->searchCuenta) . '%';
+                                    $busqueda->where('codigo', 'like', $termino)
+                                        ->orWhere('nombre', 'like', $termino);
+                                });
+                        });
+                });
+            })
             ->when($this->manual !== '', function ($query) {
                 $query->where('manual', (bool) $this->manual);
             })
@@ -425,14 +441,14 @@ class AsientosComponent extends Component
 
         $planCuentasBuscador = $this->search !== ''
             ? PlanCuentas::where('company_id', Auth::user()->company_id)
-                ->where('status', true)
-                ->where(
-                    function ($q) {
-                        return $q->where('nombre', 'like', "%{$this->search}%")
-                            ->orWhere('codigo', 'like', "%{$this->search}%");
-                    }
-                )
-                ->paginate(10)
+            ->where('status', true)
+            ->where(
+                function ($q) {
+                    return $q->where('nombre', 'like', "%{$this->search}%")
+                        ->orWhere('codigo', 'like', "%{$this->search}%");
+                }
+            )
+            ->paginate(10)
             : collect();
 
         return view(

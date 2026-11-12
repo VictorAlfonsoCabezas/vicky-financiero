@@ -1,6 +1,4 @@
 <div>
-
-
     <div class="row">
         <!-- Filtros -->
         <div class="col-md-12 mt-1">
@@ -39,6 +37,11 @@
                                 <label>Asiento Descripción</label>
                                 <input type="text" class="form-control form-control-sm" placeholder="Descripción"
                                     wire:model="searchAsientoDescripcion">
+                            </div>
+                            <div class="col-3">
+                                <label for="searchCuenta">Cuenta</label>
+                                <input id="searchCuenta" type="text" class="form-control form-control-sm"
+                                    placeholder="Codigo o nombre de cuenta" wire:model.debounce.300ms="searchCuenta">
                             </div>
                             <div class="col-3">
                                 <label>Manual</label>
@@ -91,8 +94,8 @@
                                 Descripción: {{ $a->descripcion }}
                                 <br>Observación: {{ $a->observacion ?: 'Sin observación registrada' }}
                                 @if (number_format($a->suma_debe, 2, '.', '') !== number_format($a->suma_haber, 2, '.', ''))
-                                    <br><b>Asiento pendiente de revision contable</b>
-                                    @endif
+                                <br><b>Asiento pendiente de revision contable</b>
+                                @endif
                             </td>
                             <td colspan="2"><b>Total:</b></td>
                             <td style="border: 1px solid #dee2e6;">{{ $a->suma_debe }}</td>

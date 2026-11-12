@@ -17,7 +17,9 @@
     </div>
 
     <div class="panel panel-inverse mb-4">
-        <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtros del reporte</h4></div>
+        <div class="panel-heading">
+            <h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtros del reporte</h4>
+        </div>
         <div class="panel-body">
             <div class="row g-3">
                 <div class="col-6 col-md-4">
@@ -43,7 +45,9 @@
         <div class="col-12 col-md-4">
             <div class="card resultados-summary border-0 h-100">
                 <div class="card-body d-flex justify-content-between align-items-center gap-3">
-                    <div><span class="text-muted d-block mb-2">Ingresos</span><h3 class="mb-0 resultados-money">$ {{ number_format($totalIngresos, 2, '.', ',') }}</h3></div>
+                    <div><span class="text-muted d-block mb-2">Ingresos</span>
+                        <h3 class="mb-0 resultados-money">$ {{ number_format($totalIngresos, 2, '.', ',') }}</h3>
+                    </div>
                     <span class="resultados-icon bg-success text-white"><i class="fa fa-arrow-down" aria-hidden="true"></i></span>
                 </div>
             </div>
@@ -51,7 +55,9 @@
         <div class="col-12 col-md-4">
             <div class="card resultados-summary border-0 h-100">
                 <div class="card-body d-flex justify-content-between align-items-center gap-3">
-                    <div><span class="text-muted d-block mb-2">Gastos</span><h3 class="mb-0 resultados-money">$ {{ number_format($totalGastos, 2, '.', ',') }}</h3></div>
+                    <div><span class="text-muted d-block mb-2">Gastos</span>
+                        <h3 class="mb-0 resultados-money">$ {{ number_format($totalGastos, 2, '.', ',') }}</h3>
+                    </div>
                     <span class="resultados-icon bg-danger text-white"><i class="fa fa-arrow-up" aria-hidden="true"></i></span>
                 </div>
             </div>
@@ -59,7 +65,9 @@
         <div class="col-12 col-md-4">
             <div class="card resultados-summary border-0 h-100">
                 <div class="card-body d-flex justify-content-between align-items-center gap-3">
-                    <div><span class="text-muted d-block mb-2">Resultado del período</span><h3 class="mb-1 resultados-money {{ $resultadoPeriodo < 0 ? 'text-danger' : 'text-success' }}">$ {{ number_format($resultadoPeriodo, 2, '.', ',') }}</h3><small class="text-muted">{{ $resultadoPeriodo > 0 ? 'Utilidad' : ($resultadoPeriodo < 0 ? 'Pérdida' : 'Sin utilidad ni pérdida') }}</small></div>
+                    <div><span class="text-muted d-block mb-2">Resultado del período</span>
+                        <h3 class="mb-1 resultados-money {{ $resultadoPeriodo < 0 ? 'text-danger' : 'text-success' }}">$ {{ number_format($resultadoPeriodo, 2, '.', ',') }}</h3><small class="text-muted">{{ $resultadoPeriodo > 0 ? 'Utilidad' : ($resultadoPeriodo < 0 ? 'Pérdida' : 'Sin utilidad ni pérdida') }}</small>
+                    </div>
                     <span class="resultados-icon {{ $resultadoPeriodo < 0 ? 'bg-danger' : 'bg-primary' }} text-white"><i class="fa fa-balance-scale" aria-hidden="true"></i></span>
                 </div>
             </div>
@@ -75,16 +83,36 @@
             <div class="px-3 py-2 border-bottom text-muted resultados-legend"><i class="fa fa-layer-group me-1" aria-hidden="true"></i> Las filas destacadas agrupan cuentas. Sus saldos incluyen las cuentas de niveles inferiores.</div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 resultados-table">
-                    <thead><tr><th scope="col">Código</th><th scope="col">Cuenta</th><th scope="col" class="text-end">Saldo acumulado</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Cuenta</th>
+                            <th scope="col" class="text-end">Saldo acumulado</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($planCuentas as $plan)
                         <tr wire:key="resultado-cuenta-{{ $plan->id }}" class="{{ $plan->nivel <= 3 ? 'resultados-nivel-' . $plan->nivel : '' }}">
                             <td class="text-nowrap"><span class="fw-bold">{{ $plan->codigo }}</span></td>
-                            <td><div class="resultados-cuenta" style="--cuenta-nivel: {{ max(0, min(6, $plan->nivel - 1)) }};">@if ($plan->nivel <= 3)<i class="fa fa-folder me-2" aria-hidden="true"></i>@endif{{ $plan->nombre }}</div></td>
-                            <td class="text-end resultados-money {{ (float) $plan->saldo < 0 ? 'text-danger' : '' }}">$ {{ number_format((float) $plan->saldo, 2, '.', ',') }}</td>
+                            <td>
+                                <div class="resultados-cuenta" style="--cuenta-nivel: {{ max(0, min(6, $plan->nivel - 1)) }};">
+                                    @if ($plan->nivel <= 3)
+                                        <i class="fa fa-folder me-2" aria-hidden="true"></i>
+                                        @endif
+                                        {{ $plan->nombre }}
+                                </div>
+                            </td>
+                            <td class="text-end resultados-money {{ (float) $plan->saldo < 0 ? 'text-danger' : '' }}">
+                                $ {{ number_format((float) $plan->saldo, 2, '.', ',') }}
+                            </td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" class="text-center py-5"><i class="fa fa-search fa-2x text-muted mb-3 d-block" aria-hidden="true"></i><h5>No hay cuentas para estos filtros</h5><p class="text-muted mb-0">Revisa el período o selecciona todas las cuentas.</p></td></tr>
+                        <tr>
+                            <td colspan="3" class="text-center py-5"><i class="fa fa-search fa-2x text-muted mb-3 d-block" aria-hidden="true"></i>
+                                <h5>No hay cuentas para estos filtros</h5>
+                                <p class="text-muted mb-0">Revisa el período o selecciona todas las cuentas.</p>
+                            </td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>
