@@ -60,7 +60,7 @@ class SolicitudPagosCreditos extends Component
     {
         $this->reset(['registro', 'detallePagos', 'letraSeleccionada', 'aplicarInteresMora',
             'interesMoraOriginal', 'totalCheque', 'totalTransferencia', 'totalEfectivo', 'totalOtros',
-            'totalRecibido', 'totalAprobar']);
+            'totalRecibido', 'totalAprobar', 'calculoCuota']);
         $this->dispatchBrowserEvent('close-modal-pagos');
     }
     public $detallePagos = [];
@@ -78,6 +78,7 @@ class SolicitudPagosCreditos extends Component
 
     public $totalRecibido = 0;
     public $totalAprobar = 0;
+    public $calculoCuota = [];
     //public $observacionRechazo = '';
 
     public function updatingBuscarCedula()
@@ -171,7 +172,24 @@ class SolicitudPagosCreditos extends Component
             }
 
             $this->actualizarTotalAprobar();
+            $moraAplicada = $this->aplicarInteresMora ? $this->interesMoraOriginal : 0;
+            $totalCuota = $this->importeCuota($cuota, $moraAplicada);
+            $this->calculoCuota = [
+                'base' => (float) $cuota->valor_cuota,
+                'faltante' => (float) $cuota->faltante_anterior_cuota,
+                'abono' => (float) $cuota->saldo_anterior_cuota,
+                'mora' => $moraAplicada,
+                'sinMora' => $this->importeCuota($cuota, 0),
+                'conMora' => $this->importeCuota($cuota, $this->interesMoraOriginal),
+                'total' => $totalCuota,
+                'diferencia' => round($this->totalAprobar - $totalCuota, 2),
+            ];
         }
+    }
+
+    private function importeCuota(CreditFolderDetail $cuota, $mora): float
+    {
+        return round($cuota->valor_cuota + $mora + $cuota->faltante_anterior_cuota - $cuota->saldo_anterior_cuota, 2);
     }
 
     public function actualizarTotalAprobar()
@@ -268,7 +286,7 @@ class SolicitudPagosCreditos extends Component
             $interesMora = $cuota->interes_mora ?? 0; // Usamos el valor que ya tenga la cuota
 
             // Lógica de cálculo idéntica a tu realizarPago()
-            $pagoTotalReq = (float) round(($cuota->valor_cuota + $interesMora + $cuota->faltante_anterior_cuota - $cuota->saldo_anterior_cuota), 2);
+            $pagoTotalReq = $this->importeCuota($cuota, $interesMora);
 
             // Determinamos el CASO
             $caso = 1;

@@ -31,29 +31,49 @@
                         <div class="col-12 col-lg-6"><h5 class="credit-payments-section"><i class="fa fa-user me-2" aria-hidden="true"></i> Cliente y crédito</h5><dl class="row g-2"><dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ $registro->apellidos }} {{ $registro->nombres }}</dd><dt class="col-sm-4">Identificación</dt><dd class="col-sm-8">{{ $registro->numero_documento }}</dd><dt class="col-sm-4">Crédito</dt><dd class="col-sm-8">#{{ $registro->codeFolderHeader }}</dd><dt class="col-sm-4">Cuota</dt><dd class="col-sm-8">{{ $registro->numeroCuota }}</dd></dl></div>
                         <div class="col-12 col-lg-6"><h5 class="credit-payments-section"><i class="fa fa-calendar-check me-2" aria-hidden="true"></i> Registro y revisión</h5><dl class="row g-2"><dt class="col-sm-4">Registrado por</dt><dd class="col-sm-8">{{ $registro->user_name ?: 'No disponible' }}</dd><dt class="col-sm-4">Fecha</dt><dd class="col-sm-8">{{ $registro->date_create }} {{ $registro->hour_create }}</dd><dt class="col-sm-4">Revisado por</dt><dd class="col-sm-8">{{ $registro->usuario_solicitud ?: 'Sin revisar' }}</dd><dt class="col-sm-4">Fecha de revisión</dt><dd class="col-sm-8">{{ $registro->fecha_solicitud ?: 'Sin revisar' }}</dd></dl></div>
                     </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><span class="text-muted">Total recibido</span><h3 class="mb-0 credit-payments-money">$ {{ number_format((float) $totalRecibido, 2, '.', ',') }}</h3></div></div>
-                        <div class="col-12 col-md-6">
-                            <div class="credit-payments-summary border {{ $aplicarInteresMora ? 'border-warning' : 'border-success' }}">
-                                <div class="form-check mb-2">
-                                    <input id="chkInteresMora" class="form-check-input" type="checkbox" wire:model="aplicarInteresMora" aria-describedby="estadoInteresMora" {{ (int) $registro->status !== 3 ? 'disabled' : '' }}>
-                                    <label class="form-check-label" for="chkInteresMora">Aplicar interés de mora</label>
-                                </div>
-                                <div id="estadoInteresMora" role="status" aria-live="polite">
-                                    <span class="badge {{ $aplicarInteresMora ? 'bg-warning text-dark' : 'bg-success' }} mb-2">
-                                        <i class="fa {{ $aplicarInteresMora ? 'fa-check-circle' : 'fa-ban' }} me-1" aria-hidden="true"></i>
-                                        {{ $aplicarInteresMora ? 'Se cobrará interés de mora' : 'No se cobrará interés de mora' }}
-                                    </span>
-                                    <small class="d-block text-muted">Mora a cobrar al aprobar</small>
-                                    <h3 class="mb-0 credit-payments-money">$ {{ number_format($aplicarInteresMora ? (float) $interesMoraOriginal : 0, 2, '.', ',') }}</h3>
-                                    @if(!$aplicarInteresMora)
-                                        <small class="text-muted d-block mt-1">Mora exonerada: $ {{ number_format((float) $interesMoraOriginal, 2, '.', ',') }}. El dinero recibido se mantiene y el excedente se aplica a las próximas cuotas.</small>
-                                    @endif
-                                </div>
-                                <small wire:loading wire:target="aplicarInteresMora" class="text-muted" role="status">Actualizando mora...</small>
+                    @if((int) $registro->status === 3)
+                    <section class="credit-payments-summary border mb-4" aria-labelledby="calculoCuotaTitulo">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <h5 id="calculoCuotaTitulo" class="mb-0">Cálculo de la cuota</h5>
+                            <div class="form-check form-switch">
+                                <input id="chkInteresMora" class="form-check-input" type="checkbox" role="switch" wire:model="aplicarInteresMora" wire:loading.attr="disabled" wire:target="aplicarInteresMora,aprobarSolicitud,rechazarSolicitud" aria-controls="estadoInteresMora">
+                                <label class="form-check-label" for="chkInteresMora">Aplicar interés de mora</label>
                             </div>
                         </div>
+                        <div class="row g-3" id="estadoInteresMora" aria-live="polite">
+                            <div class="col-12 col-md-6">
+                                <dl class="row g-2 mb-0">
+                                    <dt class="col-7 fw-normal">Cuota base</dt><dd class="col-5 text-end mb-0 credit-payments-money">$ {{ number_format($calculoCuota['base'], 2) }}</dd>
+                                    <dt class="col-7 fw-normal">Faltante anterior</dt><dd class="col-5 text-end mb-0 credit-payments-money">+ $ {{ number_format($calculoCuota['faltante'], 2) }}</dd>
+                                    <dt class="col-7 fw-normal">Abono anterior</dt><dd class="col-5 text-end mb-0 credit-payments-money">− $ {{ number_format($calculoCuota['abono'], 2) }}</dd>
+                                    <dt class="col-7 fw-normal">Mora aplicada</dt><dd class="col-5 text-end mb-0 credit-payments-money">+ $ {{ number_format($calculoCuota['mora'], 2) }}</dd>
+                                    <dt class="col-7 border-top pt-2">Cuota a cubrir</dt><dd class="col-5 border-top pt-2 text-end mb-0 fw-bold credit-payments-money">$ {{ number_format($calculoCuota['total'], 2) }}</dd>
+                                </dl>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge {{ $aplicarInteresMora ? 'bg-warning text-dark' : 'bg-light text-dark' }}">Con mora · $ {{ number_format($calculoCuota['conMora'], 2) }}</span>
+                                    <span class="badge {{ $aplicarInteresMora ? 'bg-light text-dark' : 'bg-primary' }}">Sin mora · $ {{ number_format($calculoCuota['sinMora'], 2) }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between gap-2 mb-2"><span>Total recibido</span><strong class="credit-payments-money">$ {{ number_format((float) $totalAprobar, 2) }}</strong></div>
+                                @php($diferencia = $calculoCuota['diferencia'])
+                                <div class="alert {{ $diferencia < 0 ? 'alert-warning' : 'alert-success' }} py-2 mb-0">
+                                    @if($diferencia === 0.0)
+                                        El pago cubre exactamente la cuota.
+                                    @else
+                                        {{ $diferencia < 0 ? 'Faltante' : 'Excedente' }} <strong class="credit-payments-money">$ {{ number_format(abs($diferencia), 2) }}</strong>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <small wire:loading wire:target="aplicarInteresMora" class="text-muted mt-2" role="status">Actualizando cálculo…</small>
+                    </section>
+                    @else
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><span class="text-muted">Total recibido</span><h3 class="mb-0 credit-payments-money">$ {{ number_format((float) $totalRecibido, 2, '.', ',') }}</h3></div></div>
+                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><span class="text-muted">Mora registrada en la cuota</span><h3 class="mb-0 credit-payments-money">$ {{ number_format((float) $interesMoraOriginal, 2) }}</h3></div></div>
                     </div>
+                    @endif
                     <h5 class="credit-payments-section"><i class="fa fa-wallet me-2" aria-hidden="true"></i> Formas de pago</h5>
                     <div class="table-responsive"><table class="table table-hover align-middle credit-payments-table"><thead><tr><th>Forma de pago</th><th class="text-end">Valor</th><th>Banco</th><th>Comprobante</th><th>Fecha del comprobante</th></tr></thead><tbody>
                         @foreach($detallePagos as $pago)<tr wire:key="detalle-pago-{{ $pago->id }}"><td>{{ $pago->forma_pago }}</td><td class="text-end credit-payments-money">$ {{ number_format((float) $pago->valor, 2, '.', ',') }}</td><td>{{ $pago->banco->nombre ?? 'No aplica' }}</td><td>{{ $pago->numero_comprobante ?: 'No registrado' }}</td><td>{{ $pago->fecha_comprobante }} {{ $pago->hora_comprobante }}</td></tr>@endforeach

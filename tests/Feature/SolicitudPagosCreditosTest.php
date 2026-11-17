@@ -207,6 +207,28 @@ class SolicitudPagosCreditosTest extends TestCase
         $this->assertEquals(0, $component->interesMoraOriginal);
     }
 
+    public function testLateInterestSwitchUpdatesInstallmentComparison()
+    {
+        CreditFolderDetail::where('id', 1)->update([
+            'interes_mora' => 10,
+            'faltante_anterior_cuota' => 5,
+            'saldo_anterior_cuota' => 2,
+        ]);
+        $this->payment(108);
+        $component = new SolicitudPagosCreditos;
+        $component->cargarDatosPago(1);
+
+        $this->assertEquals(113, $component->calculoCuota['total']);
+        $this->assertEquals(-5, $component->calculoCuota['diferencia']);
+
+        $component->aplicarInteresMora = false;
+        $component->updatedAplicarInteresMora();
+
+        $this->assertEquals(103, $component->calculoCuota['total']);
+        $this->assertEquals(5, $component->calculoCuota['diferencia']);
+        $this->assertEquals(108, $component->totalAprobar);
+    }
+
     public function testRejectedPaymentsAppearInHistoryFilter()
     {
         $this->payment(); $component = new SolicitudPagosCreditos;
