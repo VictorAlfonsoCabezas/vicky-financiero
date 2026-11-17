@@ -101,7 +101,7 @@
                     @if($letrasVencidas->total())
                     <tfoot>
                         <tr class="fw-bold">
-                            <th scope="row" colspan="4">Totales del período</th>
+                            <th scope="row" colspan="5">Totales del período</th>
                             @foreach([$letrasVencidasPagadasSuma, $letrasVencidasPagadas->sum('capital_amortizado'), $componentesSuma, $letrasVencidasPagadas->sum('interes_periodo'), $letrasVencidasPagadas->sum('interes_mora'), $gastosCobranzaSumado, $letrasVencidasPagadas->sum('valor_pagado')] as $total)
                             <td class="text-end">$ {{ number_format($total, 2, '.', ',') }}</td>
                             @endforeach
