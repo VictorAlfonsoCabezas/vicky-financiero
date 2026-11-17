@@ -65,9 +65,12 @@ class PortalActionsController extends Controller
     {
         $customer = $this->customer($request);
         $input = $request->validate([
-            'id' => 'nullable|integer', 'cuenta' => 'required|integer', 'banco' => 'required|integer',
+            'id' => 'nullable|integer',
+            'cuenta' => 'required|integer',
+            'banco' => 'required|integer',
             'valor' => 'required|numeric|min:0.01|max:99999|regex:/^\d+(\.\d{1,2})?$/',
-            'numero_deposito' => 'required|digits_between:1,60', 'observacion' => 'nullable|string|max:255',
+            'numero_deposito' => 'required|digits_between:1,60',
+            'observacion' => 'nullable|string|max:255',
             'archivo' => ($request->filled('id') ? 'nullable' : 'required') . '|file|mimes:pdf,jpg,jpeg,png|max:1024',
         ]);
         $account = $this->accounts($customer)->findOrFail($input['cuenta']);
@@ -75,10 +78,17 @@ class PortalActionsController extends Controller
         DB::transaction(function () use ($request, $customer, $input, $account) {
             $row = $request->filled('id') ? $this->owned(CustomerMovimientoSolicitud::class, $customer)
                 ->where('estado', 'PENDIENTE')->lockForUpdate()->findOrFail($input['id']) : new CustomerMovimientoSolicitud();
-            $row->fill(['company_id' => $customer->company_id, 'customer_id' => $customer->id,
-                'user_id' => $request->user()->id, 'customer_tipo_ahorro_id' => $account->id,
-                'banco_id' => $input['banco'], 'valor' => $input['valor'], 'numero_deposito' => $input['numero_deposito'],
-                'observacion' => $input['observacion'] ?? '', 'estado' => 'PENDIENTE']);
+            $row->fill([
+                'company_id' => $customer->company_id,
+                'customer_id' => $customer->id,
+                'user_id' => $request->user()->id,
+                'customer_tipo_ahorro_id' => $account->id,
+                'banco_id' => $input['banco'],
+                'valor' => $input['valor'],
+                'numero_deposito' => $input['numero_deposito'],
+                'observacion' => $input['observacion'] ?? '',
+                'estado' => 'PENDIENTE'
+            ]);
             if (!$row->exists) $row->fecha_creacion = now();
             if ($request->hasFile('archivo')) {
                 // Retain the previous attachment until the replacement has been saved successfully.
@@ -123,9 +133,14 @@ class PortalActionsController extends Controller
     public function transfer(Request $request)
     {
         $customer = $this->customer($request);
-        $input = $request->validate(['cuenta' => 'required|integer', 'destino' => 'required|string|max:100',
+        $input = $request->validate([
+            'cuenta' => 'required|integer',
+            'destino' => 'required|string|max:100',
             'valor' => 'required|numeric|min:0.01|max:99999|regex:/^\d+(\.\d{1,2})?$/',
-            'descripcion' => 'required|string|max:255', 'operacion' => 'required|uuid', 'confirmar' => 'accepted']);
+            'descripcion' => 'required|string|max:255',
+            'operacion' => 'required|uuid',
+            'confirmar' => 'accepted'
+        ]);
         $reference = app(PortalTransfer::class)->send($customer, $request->user(), $input);
         return redirect()->route('portal.transfers')->with('message', 'Transferencia procesada. Referencia: ' . $reference);
     }
@@ -187,9 +202,14 @@ class PortalActionsController extends Controller
     {
         $customer = $this->customer($request);
         $credit = $this->owned(CreditFolderHeader::class, $customer)->findOrFail($id);
-        $input = $request->validate(['banco' => 'required|integer', 'numero_comprobante' => 'required|string|max:100',
-            'fecha_comprobante' => 'required|date_format:Y-m-d|before_or_equal:today', 'hora_comprobante' => 'required|date_format:H:i',
-            'archivo' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120']);
+        $input = $request->validate([
+            'banco' => 'required|integer',
+            'numero_comprobante' => 'required|string|max:100',
+            'fecha_comprobante' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'hora_comprobante' => 'required|date_format:H:i',
+            'valor' => ['required', 'numeric', 'min:0.01', 'max:999999.99', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'archivo' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120'
+        ]);
         $this->banks($customer)->whereIn('tipo_cuenta_id', [1, 2])->findOrFail($input['banco']);
         $paymentType = FormasPago::where('nombre', 'TRANSFERENCIA')->first();
         if (!$paymentType) throw ValidationException::withMessages(['banco' => 'La caja debe configurar la forma de pago TRANSFERENCIA.']);
@@ -198,20 +218,38 @@ class PortalActionsController extends Controller
                 ->lockForUpdate()->findOrFail($detail);
             if ($row->status !== 'PENDIENTE') throw ValidationException::withMessages(['archivo' => 'Esta cuota ya fue pagada o tiene un comprobante en revisión.']);
             if (CreditFolderDetail::where('company_id', $customer->company_id)->where('banco_id', $input['banco'])
-                ->where('numero_comprobante', $input['numero_comprobante'])->where('id', '!=', $row->id)->exists()) {
+                ->where('numero_comprobante', $input['numero_comprobante'])->where('id', '!=', $row->id)->exists()
+            ) {
                 throw ValidationException::withMessages(['numero_comprobante' => 'Ese comprobante ya se registró para otra cuota.']);
             }
             $interest = $row->date_vencimiento < date('Y-m-d') ? BaseController::calculoInteresMoraLetraValorMensual($row->id) : 0;
             $path = $request->file('archivo')->store('uploads/comprobantes_pagos', 'public');
-            RegistroFormasPago::create(['company_id' => $customer->company_id, 'customer_id' => $customer->id,
-                'letra_id' => $row->id, 'prestamo_id' => $credit->id, 'forma_pago_id' => $paymentType->id,
-                'forma_pago' => 'TRANSFERENCIA', 'banco_id' => $input['banco'], 'valor' => round($row->valor_cuota + $interest, 2),
-                'numero_comprobante' => $input['numero_comprobante'], 'fecha_comprobante' => $input['fecha_comprobante'],
-                'hora_comprobante' => $input['hora_comprobante'], 'date_create' => date('Y-m-d'), 'hour_create' => date('H:i:s'),
-                'user_id' => $request->user()->id, 'user_name' => trim($request->user()->firstname . ' ' . $request->user()->lastname),
-                'status' => 3, 'solicitado' => 3]);
-            $row->status = 'STAND BY'; $row->tipo_pago = 'TRANSFERENCIA'; $row->banco_id = $input['banco'];
-            $row->numero_comprobante = $input['numero_comprobante']; $row->interes_mora = $interest; $row->path = $path; $row->save();
+            RegistroFormasPago::create([
+                'company_id' => $customer->company_id,
+                'customer_id' => $customer->id,
+                'letra_id' => $row->id,
+                'prestamo_id' => $credit->id,
+                'forma_pago_id' => $paymentType->id,
+                'forma_pago' => 'TRANSFERENCIA',
+                'banco_id' => $input['banco'],
+                'valor' => $input['valor'],
+                'numero_comprobante' => $input['numero_comprobante'],
+                'fecha_comprobante' => $input['fecha_comprobante'],
+                'hora_comprobante' => $input['hora_comprobante'],
+                'date_create' => date('Y-m-d'),
+                'hour_create' => date('H:i:s'),
+                'user_id' => $request->user()->id,
+                'user_name' => trim($request->user()->firstname . ' ' . $request->user()->lastname),
+                'status' => 3,
+                'solicitado' => 3
+            ]);
+            $row->status = 'STAND BY';
+            $row->tipo_pago = 'TRANSFERENCIA';
+            $row->banco_id = $input['banco'];
+            $row->numero_comprobante = $input['numero_comprobante'];
+            $row->interes_mora = $interest;
+            $row->path = $path;
+            $row->save();
         });
         return redirect()->route('portal.credit', $credit->id)->with('message', 'Comprobante enviado. El pago queda pendiente de revisión por la caja.');
     }
@@ -222,8 +260,11 @@ class PortalActionsController extends Controller
         if ($request->isMethod('post')) {
             $input = $request->validate(['actual' => 'required|string', 'password' => 'required|string|min:8|max:100|confirmed']);
             if (!Hash::check($input['actual'], $request->user()->password)) throw ValidationException::withMessages(['actual' => 'La contraseña actual no coincide.']);
-            $user = $request->user(); $user->password = Hash::make($input['password']);
-            $user->token = ''; $user->remember_token = Str::random(60); $user->save();
+            $user = $request->user();
+            $user->password = Hash::make($input['password']);
+            $user->token = '';
+            $user->remember_token = Str::random(60);
+            $user->save();
             $request->session()->regenerate();
             return redirect()->route('portal.password')->with('message', 'Contraseña actualizada.');
         }
@@ -236,8 +277,12 @@ class PortalActionsController extends Controller
         $products = Prestamos::where('company_id', $customer->company_id)->where('status', 'A')->get();
         $rows = [];
         if ($request->isMethod('post')) {
-            $input = $request->validate(['producto' => 'required|integer', 'valor' => 'required|numeric|min:1|max:99999',
-                'cuotas' => 'required|integer|min:1|max:360', 'fecha' => 'required|date_format:Y-m-d']);
+            $input = $request->validate([
+                'producto' => 'required|integer',
+                'valor' => 'required|numeric|min:1|max:99999',
+                'cuotas' => 'required|integer|min:1|max:360',
+                'fecha' => 'required|date_format:Y-m-d'
+            ]);
             $product = $products->firstWhere('id', $input['producto']);
             abort_unless($product, 404);
             $period = RecurrenciaPrestamos::where('company_id', $customer->company_id)->find($product->periodo_id);
@@ -247,8 +292,10 @@ class PortalActionsController extends Controller
             }
             // Use the source calculation routines only. Never invoke its credit-creation or client-selection actions.
             $simulator = new CustomerSimuladorComponent();
-            $simulator->prestamo_simulador = $product->id; $simulator->valor_simulador = $input['valor'];
-            $simulator->cuotas_simulador = $input['cuotas']; $simulator->fecha_prestamo = $input['fecha'];
+            $simulator->prestamo_simulador = $product->id;
+            $simulator->valor_simulador = $input['valor'];
+            $simulator->cuotas_simulador = $input['cuotas'];
+            $simulator->fecha_prestamo = $input['fecha'];
             if ($product->calculo_simple) $simulator->generarSimple();
             elseif ($product->diario) $simulator->generarDiario();
             else $simulator->generarNormal();
@@ -263,10 +310,17 @@ class PortalActionsController extends Controller
         $terms = TerminosUso::where('company_id', $customer->company_id)->where('status', true)->get();
         if ($request->isMethod('post')) {
             $input = $request->validate(['termino' => 'required|integer', 'aceptar' => 'accepted']);
-            $term = $terms->firstWhere('id', $input['termino']); abort_unless($term, 404);
-            TerminosUsoClientes::firstOrCreate(['company_id' => $customer->company_id, 'customer_id' => $customer->id,
-                'user_id' => $request->user()->id, 'terminos_usos_id' => $term->id],
-                ['periodo' => date('Y'), 'date_create' => date('Y-m-d'), 'hour_create' => date('H:i:s')]);
+            $term = $terms->firstWhere('id', $input['termino']);
+            abort_unless($term, 404);
+            TerminosUsoClientes::firstOrCreate(
+                [
+                    'company_id' => $customer->company_id,
+                    'customer_id' => $customer->id,
+                    'user_id' => $request->user()->id,
+                    'terminos_usos_id' => $term->id
+                ],
+                ['periodo' => date('Y'), 'date_create' => date('Y-m-d'), 'hour_create' => date('H:i:s')]
+            );
             return redirect()->route('portal.terms')->with('message', 'Aceptación registrada.');
         }
         $accepted = $this->owned(TerminosUsoClientes::class, $customer)->where('user_id', $request->user()->id)->pluck('terminos_usos_id')->all();

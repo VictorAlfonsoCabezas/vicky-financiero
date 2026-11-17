@@ -94,6 +94,25 @@ class PortalActionsTest extends TestCase
         $this->post('/livewire/message/customer-transferencias.customer-transferencias-component', [])->assertForbidden();
     }
 
+    public function testCreditDetailShowsInstallmentAmountsAndConfirmedPayment()
+    {
+        CreditFolderDetail::findOrFail(1)->update([
+            'numero_cuota' => 1, 'interes_mora' => 7, 'faltante_anterior_cuota' => 4,
+            'saldo_anterior_cuota' => 2, 'valor_pagado' => 61, 'date_pay' => '2025-02-03',
+            'status' => 'STAND BY',
+        ]);
+
+        $this->get('/mi-cuenta/prestamos/1')->assertOk()
+            ->assertSee('Valor cuota')->assertSee('Total a pagar')->assertSee('Valor pagado')
+            ->assertSee('$ 59.00')->assertSee('Comprobante en revisión')
+            ->assertDontSee('$ 61.00')->assertDontSee('2025-02-03');
+
+        CreditFolderDetail::findOrFail(1)->update(['status' => 'PAGADA']);
+
+        $this->get('/mi-cuenta/prestamos/1')->assertOk()
+            ->assertSee('$ 61.00')->assertSee('2025-02-03')->assertSee('Descargar comprobante');
+    }
+
     public function testTransferRollsBackWhenSecondLedgerWriteFails()
     {
         CartolaDetail::creating(function () { throw new \RuntimeException('Test rollback'); });
@@ -137,14 +156,17 @@ class PortalActionsTest extends TestCase
     {
         Storage::fake('public');
         FormasPago::create(['nombre' => 'TRANSFERENCIA']);
-        $input = ['banco' => 1, 'numero_comprobante' => 'ABC123', 'fecha_comprobante' => date('Y-m-d'),
+        $this->get('/mi-cuenta/prestamos/1')->assertOk()->assertSee('value="50.00"', false);
+        $input = ['banco' => 1, 'valor' => '42.75', 'numero_comprobante' => 'ABC123', 'fecha_comprobante' => date('Y-m-d'),
             'hora_comprobante' => '12:00', 'archivo' => UploadedFile::fake()->create('pago.pdf', 20, 'application/pdf')];
         $this->post('/mi-cuenta/prestamos/1/cuotas/2/pago', $input)->assertNotFound();
+        $this->post('/mi-cuenta/prestamos/1/cuotas/1/pago', array_replace($input, ['valor' => '42.755']))
+            ->assertSessionHasErrors('valor');
         $this->withoutExceptionHandling();
         $this->post('/mi-cuenta/prestamos/1/cuotas/1/pago', $input)->assertSessionHasNoErrors()->assertRedirect('/mi-cuenta/prestamos/1');
         $this->withExceptionHandling();
         $this->assertSame('STAND BY', CreditFolderDetail::find(1)->status);
-        $this->assertEquals(50, RegistroFormasPago::first()->valor);
+        $this->assertEquals(42.75, RegistroFormasPago::first()->valor);
         $this->assertEquals(3, RegistroFormasPago::first()->solicitado);
         $this->post('/mi-cuenta/prestamos/1/cuotas/1/pago', $input)->assertSessionHasErrors('archivo');
         $this->assertSame(1, RegistroFormasPago::count());
