@@ -33,7 +33,26 @@
                     </div>
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-6"><div class="credit-payments-summary"><span class="text-muted">Total recibido</span><h3 class="mb-0 credit-payments-money">$ {{ number_format((float) $totalRecibido, 2, '.', ',') }}</h3></div></div>
-                        <div class="col-12 col-md-6"><div class="credit-payments-summary"><div class="form-check mb-2"><input id="chkInteresMora" class="form-check-input" type="checkbox" wire:model="aplicarInteresMora" {{ (int) $registro->status !== 3 ? 'disabled' : '' }}><label class="form-check-label" for="chkInteresMora">Aplicar interés de mora</label></div><span class="credit-payments-money">$ {{ number_format((float) $interesMoraOriginal, 2, '.', ',') }}</span><small class="text-muted d-block mt-1">Al exonerar la mora, el dinero recibido se mantiene. El excedente se aplica a las próximas cuotas.</small></div></div>
+                        <div class="col-12 col-md-6">
+                            <div class="credit-payments-summary border {{ $aplicarInteresMora ? 'border-warning' : 'border-success' }}">
+                                <div class="form-check mb-2">
+                                    <input id="chkInteresMora" class="form-check-input" type="checkbox" wire:model="aplicarInteresMora" aria-describedby="estadoInteresMora" {{ (int) $registro->status !== 3 ? 'disabled' : '' }}>
+                                    <label class="form-check-label" for="chkInteresMora">Aplicar interés de mora</label>
+                                </div>
+                                <div id="estadoInteresMora" role="status" aria-live="polite">
+                                    <span class="badge {{ $aplicarInteresMora ? 'bg-warning text-dark' : 'bg-success' }} mb-2">
+                                        <i class="fa {{ $aplicarInteresMora ? 'fa-check-circle' : 'fa-ban' }} me-1" aria-hidden="true"></i>
+                                        {{ $aplicarInteresMora ? 'Se cobrará interés de mora' : 'No se cobrará interés de mora' }}
+                                    </span>
+                                    <small class="d-block text-muted">Mora a cobrar al aprobar</small>
+                                    <h3 class="mb-0 credit-payments-money">$ {{ number_format($aplicarInteresMora ? (float) $interesMoraOriginal : 0, 2, '.', ',') }}</h3>
+                                    @if(!$aplicarInteresMora)
+                                        <small class="text-muted d-block mt-1">Mora exonerada: $ {{ number_format((float) $interesMoraOriginal, 2, '.', ',') }}. El dinero recibido se mantiene y el excedente se aplica a las próximas cuotas.</small>
+                                    @endif
+                                </div>
+                                <small wire:loading wire:target="aplicarInteresMora" class="text-muted" role="status">Actualizando mora...</small>
+                            </div>
+                        </div>
                     </div>
                     <h5 class="credit-payments-section"><i class="fa fa-wallet me-2" aria-hidden="true"></i> Formas de pago</h5>
                     <div class="table-responsive"><table class="table table-hover align-middle credit-payments-table"><thead><tr><th>Forma de pago</th><th class="text-end">Valor</th><th>Banco</th><th>Comprobante</th><th>Fecha del comprobante</th></tr></thead><tbody>
