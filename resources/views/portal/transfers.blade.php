@@ -1,10 +1,12 @@
 @extends('portal.layout')
+@section('title', 'Transferencias')
 @section('content')
 <h1 class="page-header">Transferencias entre cuentas de la caja</h1>
-<div class="card mb-3"><div class="card-body"><form method="GET" class="d-flex gap-2" action="{{ route('portal.transfers') }}"><label class="visually-hidden" for="buscar">Buscar destinatario</label><input class="form-control" id="buscar" name="buscar" placeholder="Nombre, apellido o código de cuenta (mínimo 3 caracteres)" minlength="3" maxlength="100" value="{{ request('buscar') }}" required><button class="btn btn-outline-primary">Buscar</button></form>
+<div class="card mb-3 portal-form"><div class="card-body"><form method="GET" action="{{ route('portal.transfers') }}"><label class="form-label" for="buscar">Buscar destinatario</label><div class="input-group"><input class="form-control" id="buscar" name="buscar" placeholder="Nombre, apellido o código de cuenta" minlength="3" maxlength="100" value="{{ request('buscar') }}" required><button class="btn btn-outline-primary">Buscar</button></div></form>
 @if(request()->filled('buscar'))<ul class="list-group mt-3">@forelse($destinations as $destination)<li class="list-group-item d-flex justify-content-between align-items-center"><span>{{ $destination->nombres }} {{ $destination->apellidos }} · {{ $destination->codigo }}</span><a class="btn btn-sm btn-outline-primary" href="{{ route('portal.transfers', ['destino' => $destination->codigo]) }}">Seleccionar cuenta</a></li>@empty<li class="list-group-item">No se encontraron cuentas activas.</li>@endforelse</ul>@endif
 </div></div>
-<div class="card"><form class="card-body" method="POST" action="{{ route('portal.transfers.send') }}">
+<div class="card portal-form"><form class="card-body" method="POST" action="{{ route('portal.transfers.send') }}">
+<h2 class="h5 mb-3">Datos de la transferencia</h2>
 @csrf<input type="hidden" name="operacion" value="{{ old('operacion', $operation) }}">
 <div class="mb-3"><label class="form-label" for="cuenta">Cuenta de origen</label><select class="form-select" name="cuenta" id="cuenta" required><option value="">Selecciona una cuenta</option>@foreach($accounts as $account)<option value="{{ $account->id }}" {{ old('cuenta') == $account->id ? 'selected' : '' }}>{{ $account->codigo }} · Saldo {{ number_format($account->balance, 2) }}</option>@endforeach</select></div>
 <div class="mb-3"><label class="form-label" for="destino">Código exacto de la cuenta de destino</label><input class="form-control" id="destino" name="destino" value="{{ old('destino', request('destino')) }}" maxlength="100" required></div>

@@ -1,4 +1,5 @@
 @extends('portal.layout')
+@section('title', 'Detalle del préstamo')
 @section('content')
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <h1 class="page-header mb-0">Préstamo {{ $credit->code }} <small>{{ $credit->status }}</small></h1>
@@ -7,14 +8,14 @@
         <strong class="fs-5">$ {{ number_format((float) $credit->valor_solicitado, 2) }}</strong>
     </div>
 </div>
-<div class="card border-0 shadow-sm">
+<div class="card">
     <div class="card-header bg-white py-3">
         <h2 class="h4 mb-1">Cuotas del préstamo</h2>
         <p class="text-muted mb-0">Los comprobantes enviados quedan en revisión hasta que se confirme el pago.</p>
     </div>
     <div class="card-body">
         <div class="table-responsive" tabindex="0" role="region" aria-label="Detalle de cuotas del préstamo">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" aria-label="Cuotas del préstamo">
                 <thead class="table-light">
                     <tr>
                         <th scope="col">N.º de cuota</th>
@@ -69,7 +70,7 @@
                         <td>
                             @if($detail->path || $detail->status === 'PAGADA')<a class="btn btn-sm btn-outline-primary mb-2" href="{{ route('portal.credit.attachment', [$credit->id, $detail->id]) }}">Descargar comprobante</a>@endif
                             @if($detail->status === 'PENDIENTE')
-                            <details {{ $errors->any() && (string) old('cuota_id') === (string) $detail->id ? 'open' : '' }}>
+                            <details class="portal-proof" {{ $errors->any() && (string) old('cuota_id') === (string) $detail->id ? 'open' : '' }}>
                                 <summary class="text-primary fw-semibold">Subir comprobante</summary>
                                 <form class="mt-3" method="POST" action="{{ route('portal.credit.pay', [$credit->id, $detail->id]) }}" enctype="multipart/form-data">@csrf
                                     <input type="hidden" name="cuota_id" value="{{ $detail->id }}">

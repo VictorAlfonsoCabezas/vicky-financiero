@@ -40,6 +40,10 @@ class PortalActionsTest extends TestCase
         Schema::table('credit_folder_details', function (Blueprint $t) {
             $t->integer('banco_id')->nullable(); $t->string('numero_comprobante')->nullable();
         });
+        Schema::create('tipo_ahorros', function (Blueprint $t) {
+            $t->increments('id');
+            $t->string('name');
+        });
         DB::table('users')->insert(['id' => 1, 'company_id' => 1, 'status' => true, 'username' => 'cliente',
             'firstname' => 'Ana', 'lastname' => 'Uno', 'password' => bcrypt('secreto123'), 'token' => 'legacy']);
         Company::create(['id' => 1, 'company_name' => 'Caja']);
@@ -63,6 +67,13 @@ class PortalActionsTest extends TestCase
     {
         return ['cuenta' => 1, 'destino' => 'A2', 'valor' => '25.10', 'descripcion' => 'Prueba',
             'operacion' => (string) Str::uuid(), 'confirmar' => 1];
+    }
+
+    public function testPortalHomeLinksToAccountMovementsAndCreditDetails()
+    {
+        $this->get('/mi-cuenta')->assertOk()
+            ->assertSee('Mis cuentas de ahorro')->assertSee(route('portal.movements', 1))
+            ->assertSee('Mis créditos')->assertSee(route('portal.credit', 1));
     }
 
     public function testTransferPostsBothLegsAndRetryDoesNotDebitTwice()
