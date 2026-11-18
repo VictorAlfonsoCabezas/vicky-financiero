@@ -248,11 +248,14 @@
                                             <i class="fa fa-comment" aria-hidden="true"></i>
                                             <span class="badge bg-white">{{ $det->total }}</span>
                                         </a>
+                                        <!--
                                         <a class="btn btn-default btn-sm"
                                             href="{{ URL::to('historial/transacciones/movimientos/' . $det->id) }}"
                                             title="Transacción" style="color: white;">
                                             <i class="fas fa-print" style="color: black;"></i>
                                         </a>
+-->
+
                                         <a class="btn btn-danger btn-sm" onclick="imprimirCartilla({{ $det->id }})"
                                             title="Transacción" style="color: white;">
                                             <i class="fas fa-print" style="color: white;"></i>
