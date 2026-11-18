@@ -633,80 +633,6 @@ class CreditosComponet extends Component
         }
     }
 
-    public function validarEncajeCuenta()
-    {
-        $customer = Customer::find($this->customerID);
-        $prestamos = Prestamos::find($this->prestamo_simulador);
-        $valorSolicitado = $this->valor_simulador;
-        $cuentaDescargo = CustomerTipoAhorros::select('customer_tipo_ahorros.*')
-            ->join('tipo_ahorros', 'customer_tipo_ahorros.tipo_ahorros_id', 'tipo_ahorros.id')
-            ->where('tipo_ahorros.descargo_creditos', true)
-            ->where('customer_tipo_ahorros.company_id', Auth::user()->company_id)
-            ->where('customer_tipo_ahorros.customer_id', $customer->id)
-            ->first();
-
-        if ($prestamos->encaje) {
-            if ($prestamos->encaje_credito_cuenta == 'CUENTA') {
-                if (!$cuentaDescargo) {
-                    $color = 'danger';
-                    $mensaje = 'No dispone de una cuenta de descargo para realizar la revisión de valores.';
-                    $data = [
-                        'titulo' => 'Notificación',
-                        'color' => $color,
-                        'mensaje' => $mensaje
-                    ];
-                    $this->dispatchBrowserEvent('alerta', $data);
-                    $this->pararTodo = 1;
-                    return;
-                }
-
-                $ingresos = CustomerHistorial::join('type_transactions', 'customer_historials.type_transaction_id', '=', 'type_transactions.id')
-                    ->whereIn('type_transactions.name_corto', ['IN', 'SC', 'SOL', 'PVP', 'IFN'])
-                    ->where('customer_historials.customer_tipo_ahorro_id', $cuentaDescargo->id)
-                    ->where('customer_historials.status', true)
-                    ->sum('customer_historials.valor_movimiento');
-                $egresos = CustomerHistorial::join('type_transactions', 'customer_historials.type_transaction_id', '=', 'type_transactions.id')
-                    ->whereIn('type_transactions.name_corto', ['EG', 'DEA', 'CVN'])
-                    ->where('customer_historials.customer_tipo_ahorro_id', $cuentaDescargo->id)
-                    ->where('customer_historials.status', true)
-                    ->sum('customer_historials.valor_movimiento');
-                $valorCuenta = $ingresos - $egresos;
-
-                switch ($prestamos->encaje_porcentaje_valor) {
-                    case 'VALOR':
-                        if ($prestamos->encaje_cantidad > $valorCuenta) {
-                            $color = 'danger';
-                            $mensaje = 'No dispone de los valores de encaje en su cuenta de descargos de creditos número: ' . $cuentaDescargo->codigo;
-                            $data = [
-                                'titulo' => 'Notificación',
-                                'color' => $color,
-                                'mensaje' => $mensaje
-                            ];
-                            $this->dispatchBrowserEvent('alerta', $data);
-                            $this->pararTodo = 1;
-                            return;
-                        }
-                        break;
-                    case 'PORCENTAJE':
-                        $porcentajeCredito = $this->valor_simulador * ($prestamos->encaje_cantidad / 100);
-                        if ($porcentajeCredito > $valorCuenta) {
-                            $color = 'danger';
-                            $mensaje = 'No dispone de los valores de encaje en su cuenta de descargos de creditos número: ' . $cuentaDescargo->codigo;
-                            $data = [
-                                'titulo' => 'Notificación',
-                                'color' => $color,
-                                'mensaje' => $mensaje
-                            ];
-                            $this->dispatchBrowserEvent('alerta', $data);
-                            $this->pararTodo = 1;
-                            return;
-                        }
-                        break;
-                }
-            }
-        }
-    }
-
     public function verificarValorEncaje()
     {
         $prestamos = Prestamos::find($this->prestamo_simulador);
@@ -1346,7 +1272,6 @@ class CreditosComponet extends Component
         $this->pararTodo = 0;
         $this->validarEdad();
         $this->validarValorPrestamo();
-        $this->validarEncajeCuenta();
         $this->verificarValorEncaje();
         $this->verificarGaranteCruzado();
 
