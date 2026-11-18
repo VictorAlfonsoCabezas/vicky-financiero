@@ -17,7 +17,9 @@
     </div>
 
     <div class="panel panel-inverse mb-4">
-        <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtros del reporte</h4></div>
+        <div class="panel-heading">
+            <h4 class="panel-title"><i class="fa fa-filter me-2" aria-hidden="true"></i> Filtros del reporte</h4>
+        </div>
         <div class="panel-body">
             <div class="row g-3">
                 <div class="col-6 col-md-4">
@@ -48,16 +50,42 @@
             <div class="px-3 py-2 border-bottom text-muted balance-legend"><i class="fa fa-layer-group me-1" aria-hidden="true"></i> Las filas destacadas agrupan cuentas. Sus saldos incluyen las cuentas de niveles inferiores.</div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 balance-table">
-                    <thead><tr><th scope="col">Código</th><th scope="col">Cuenta</th><th scope="col" class="text-end">Saldo acumulado</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Cuenta</th>
+                            <th scope="col" class="text-end">Saldo acumulado</th>
+                            <th scope="col" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($planCuentas as $plan)
                         <tr wire:key="balance-cuenta-{{ $plan->id }}" class="{{ $plan->nivel <= 3 ? 'balance-nivel-' . $plan->nivel : '' }}">
                             <td class="text-nowrap"><span class="fw-bold">{{ $plan->codigo }}</span></td>
-                            <td><div class="balance-cuenta" style="--cuenta-nivel: {{ max(0, min(6, $plan->nivel - 1)) }};">@if ($plan->nivel <= 3)<i class="fa fa-folder me-2" aria-hidden="true"></i>@endif{{ $plan->nombre }}</div></td>
+                            <td>
+                                <div class="balance-cuenta" style="--cuenta-nivel: {{ max(0, min(6, $plan->nivel - 1)) }};">
+                                    @if ($plan->nivel <= 3)
+                                        <i class="fa fa-folder me-2" aria-hidden="true"></i>
+                                    @endif 
+                                    {{ $plan->nombre }}
+                                </div>
+                            </td>
                             <td class="text-end balance-money {{ (float) $plan->saldo < 0 ? 'text-danger' : '' }}">$ {{ number_format((float) $plan->saldo, 2, '.', ',') }}</td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-white" wire:click="abrirDetalleBalance({{ $plan->id }})"
+                                    wire:loading.attr="disabled" wire:target="abrirDetalleBalance" aria-haspopup="dialog"
+                                    aria-label="Ver detalle de {{ $plan->codigo }} {{ $plan->nombre }}">
+                                    <i class="fa fa-list-alt me-1" aria-hidden="true"></i> Ver detalle
+                                </button>
+                            </td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" class="text-center py-5"><i class="fa fa-search fa-2x text-muted mb-3 d-block" aria-hidden="true"></i><h5>No hay cuentas para estos filtros</h5><p class="text-muted mb-0">Revisa el período o selecciona todas las cuentas.</p></td></tr>
+                        <tr>
+                            <td colspan="4" class="text-center py-5"><i class="fa fa-search fa-2x text-muted mb-3 d-block" aria-hidden="true"></i>
+                                <h5>No hay cuentas para estos filtros</h5>
+                                <p class="text-muted mb-0">Revisa el período o selecciona todas las cuentas.</p>
+                            </td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -68,4 +96,6 @@
             </div>
         </div>
     </div>
+    @include('livewire.balance-general.detalle-cuenta')
+
 </div>

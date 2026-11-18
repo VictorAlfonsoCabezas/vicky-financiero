@@ -32,3 +32,22 @@
 @section('content')
     <livewire:balance-general.balance-general-component />
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:load', function () {
+        const modal = document.getElementById('balance-detalle-modal');
+        let detalleTrigger;
+
+        window.addEventListener('balance-detalle-abrir', function () {
+            detalleTrigger = document.activeElement;
+            bootstrap.Modal.getOrCreateInstance(modal).show();
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            Livewire.emit('cerrarDetalleBalance');
+            detalleTrigger?.focus();
+        });
+    });
+</script>
+@endpush
