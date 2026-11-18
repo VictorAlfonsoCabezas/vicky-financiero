@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CustomerMovimiento extends Model
 {
+    public const ACREDITACION_ENCAJE = 'ACREDITACIÓN DE ENCAJE DEL CRÉDITO ';
 
     protected $table = 'customer_movimientos';
     protected $fillable = [

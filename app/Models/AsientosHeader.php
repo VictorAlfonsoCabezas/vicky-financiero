@@ -107,11 +107,97 @@ class AsientosHeader extends Model
             return ['code' => '404', 'msg' => 'No existe la empresa de la operacion.'];
         }
 
+        if (!$general && $table === 'customer_movimientos' && $origen->credit_folder_header_id
+            && $origen->customer_tipo_ahorro_id
+            && strpos((string) $origen->observation, CustomerMovimiento::ACREDITACION_ENCAJE) === 0) {
+            return self::contabilizarAcreditacionEncaje($origen);
+        }
+
         $resultado = self::recalcularAsientosConfigurados($id, $table, $general, $typeTransaction);
         if (in_array($resultado['code'] ?? null, ['201', '202', '204', '500'], true)) {
             return self::crearAsientoPendiente($id, $table, $resultado['msg'], $general);
         }
         return $resultado;
+    }
+
+    private static function contabilizarAcreditacionEncaje(CustomerMovimiento $movimiento): array
+    {
+        return DB::transaction(function () use ($movimiento) {
+            $companyId = $movimiento->company_id;
+            $cuentasCartera = AsientosDetalle::query()
+                ->join('asientos_header as cabecera', 'cabecera.id', '=', 'asientos_detalle.asientos_header_id')
+                ->join('customer_movimientos as entrega', 'entrega.id', '=', 'cabecera.customer_movimiento_id')
+                ->join('type_transactions as tipo', 'tipo.id', '=', 'entrega.type_transaction_id')
+                ->where('cabecera.company_id', $companyId)->where('cabecera.status', true)
+                ->where('entrega.company_id', $companyId)
+                ->where(function ($query) {
+                    $query->where('entrega.status', true)->orWhereNull('entrega.status');
+                })
+                ->where('entrega.credit_folder_header_id', $movimiento->credit_folder_header_id)
+                ->where('tipo.company_id', $companyId)->where('tipo.name_corto', 'ENC')
+                ->where('asientos_detalle.company_id', $companyId)
+                ->where('asientos_detalle.debe_haber', true)->where('asientos_detalle.status', true)
+                ->distinct()->pluck('asientos_detalle.plan_cuentas_id');
+
+            $configuracion = ConfigPlanHeader::where('company_id', $companyId)->where('status', true)
+                ->where('type_transaction_id', $movimiento->type_transaction_id)->orderBy('id')->first();
+            $cuentasEncaje = $configuracion
+                ? $configuracion->detalles()->join('plan_cuentas', 'plan_cuentas.id', '=', 'config_plan_detalle.plan_cuentas_id')
+                    ->where('config_plan_detalle.company_id', $companyId)->where('config_plan_detalle.status', true)
+                    ->where('config_plan_detalle.debe_haber', false)
+                    ->where('plan_cuentas.company_id', $companyId)->where('plan_cuentas.status', true)
+                    ->distinct()->pluck('plan_cuentas.id')
+                : collect();
+
+            $asiento = self::firstOrNew([
+                'company_id' => $companyId,
+                'customer_movimiento_id' => $movimiento->id,
+                'status' => true,
+            ]);
+            $asiento->fill([
+                'manual' => false,
+                'fecha_contable' => $movimiento->date_created . ' ' . $movimiento->hour_created,
+                'fecha_creacion' => date('Y-m-d H:i:s'),
+                'user_created' => $movimiento->user_created_id,
+                'concepto_id' => optional($configuracion)->concepto_id,
+                'config_plan_header_id' => optional($configuracion)->id,
+                'descripcion' => $movimiento->observation,
+            ]);
+            $asiento->save();
+            $asiento->detalles()->delete();
+
+            if ($cuentasCartera->count() !== 1 || $cuentasEncaje->count() !== 1
+                || (int) $cuentasCartera->first() === (int) $cuentasEncaje->first()) {
+                return self::advertirRevision($asiento, 'Se requiere una cuenta de cartera en la entrega y una cuenta Haber distinta en la configuración contable de Nota de crédito (DNC).');
+            }
+
+            $datosDetalle = self::datosDetalleAcreditacionEncaje($asiento, $movimiento);
+            $asiento->detalles()->createMany([
+                [
+                    'plan_cuentas_id' => $cuentasCartera->first(),
+                    'debe_haber' => true,
+                ] + $datosDetalle,
+                [
+                    'plan_cuentas_id' => $cuentasEncaje->first(),
+                    'debe_haber' => false,
+                ] + $datosDetalle,
+            ]);
+
+            return ['code' => '200', 'msg' => 'Se contabilizó la acreditación del encaje.'];
+        });
+    }
+
+    private static function datosDetalleAcreditacionEncaje(self $asiento, CustomerMovimiento $movimiento): array
+    {
+        return [
+            'company_id' => $asiento->company_id,
+            'valor' => $movimiento->valor_movimiento,
+            'fecha_contable' => $asiento->fecha_contable,
+            'fecha_creacion' => $asiento->fecha_creacion,
+            'user_created' => $asiento->user_created,
+            'observacion' => $movimiento->observation,
+            'status' => true,
+        ];
     }
 
     private static function recalcularAsientosConfigurados($id, $table, $general, $typeTransaction)

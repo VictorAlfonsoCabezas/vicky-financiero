@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\AdvertirAsientosDescuadrados;
+use App\Http\Livewire\Creditos\CreditosComponet;
+use App\Models\{CartolaDetail, CartolaHeader, CreditFolderAudit, CustomerTipoAhorros, FormasPago, TipoAhorros};
 use App\Models\{AsientosDetalle, AsientosHeader, Company, Conceptos, ConfigPlanDetalle, ConfigPlanHeader, CreditFolderDetail, CreditFolderHeader, Customer, CustomerHistorial, CustomerMovimiento, CustomerMovimientoSolicitud, DescargoBovedasHeader, Gastos, GastosFormaPagos, GastosPlanCuentas, PlanCuentas, Prestamos, TypeTransaction, Utilidad, WhaEnvios};
 use App\User;
 use Illuminate\Database\Schema\Blueprint;
@@ -13,6 +15,88 @@ use Tests\TestCase;
 
 class AsientosDescuadradosTest extends TestCase
 {
+    public function testEntregaConEncajeEnCuentaAcreditaElValorRetenidoUnaVezPorCredito()
+    {
+        foreach ([CartolaDetail::class, CartolaHeader::class, CreditFolderAudit::class, CustomerTipoAhorros::class, FormasPago::class, TipoAhorros::class] as $class) {
+            $model = new $class;
+            Schema::create($model->getTable(), function (Blueprint $table) use ($model) {
+                $table->increments('id');
+                foreach (array_diff($model->getFillable(), ['id']) as $field) {
+                    $table->string($field)->nullable();
+                }
+                $table->timestamps();
+            });
+        }
+        Company::create(['id' => 10, 'contabilidad' => 1, 'fecha_inicio_contable' => '2020-01-01', 'cartola_a' => 10]);
+        $cliente = Customer::create(['company_id' => 10, 'nombres' => 'Ana', 'code' => 'SOC-1']);
+        $prestamo = Prestamos::create(['company_id' => 10, 'lleva_contabilidad' => 1, 'plan_cuenta_id' => 1]);
+        $forma = FormasPago::create(['company_id' => 10, 'credito_descargo_boveda' => 0]);
+        $tipoDescargo = TipoAhorros::create(['company_id' => 10, 'descargo_creditos' => 1, 'status' => 1]);
+        $descargo = CustomerTipoAhorros::create(['company_id' => 10, 'customer_id' => $cliente->id,
+            'tipo_ahorros_id' => $tipoDescargo->id, 'codigo' => '0000000001', 'status' => 1]);
+        PlanCuentas::where('id', 2)->update(['banco_id' => 4, 'codigo' => '1.1.03.01', 'status' => 1]);
+        $pasivo = PlanCuentas::create(['company_id' => 10, 'codigo' => '2.1.01', 'status' => 1]);
+        TypeTransaction::create(['id' => 1, 'company_id' => 10, 'name_corto' => 'ENC', 'action' => 'R', 'afecta' => 'E', 'status' => 1]);
+        TypeTransaction::create(['id' => 2, 'company_id' => 10, 'name_corto' => 'SE', 'status' => 1]);
+        TypeTransaction::create(['id' => 3, 'company_id' => 10, 'name_corto' => 'DNC', 'action' => 'S', 'afecta' => 'C', 'status' => 1]);
+        $config = ConfigPlanHeader::create(['company_id' => 10, 'type_transaction_id' => 3, 'status' => 1]);
+        ConfigPlanDetalle::create(['company_id' => 10, 'config_plan_header_id' => $config->id,
+            'plan_cuentas_id' => $pasivo->id, 'debe_haber' => 0, 'status' => 1]);
+
+        $datosCredito = ['company_id' => 10, 'customer_id' => $cliente->id, 'tipo_prestamo' => $prestamo->id,
+            'status' => 'APROBADO', 'valor_solicitado' => 500, 'encaje' => 1,
+            'encaje_credito_cuenta' => 'CUENTA', 'encaje_valor' => 80, 'cuenta_contable_id' => 1];
+        $credito = CreditFolderHeader::create($datosCredito + ['code' => 'CR-01']);
+        $componente = new class extends CreditosComponet {
+            public function descargarBalorBoveda($id) {}
+            public function seleccionarCliente($id) {}
+        };
+        $componente->formaPagoEntregaCredito = $forma->id;
+        $componente->cuenta_credito = $descargo->id;
+        $componente->banco_id = 4;
+        $componente->documento_desembolso = 'BANCO-01';
+        $componente->creditoDineroEntregar = $credito->id;
+
+        $componente->entregarDinero();
+        $this->assertSame('APROBADO', $credito->fresh()->status);
+        $this->assertSame(0, CustomerMovimiento::count());
+
+        TipoAhorros::create(['company_id' => 20, 'cuenta_encaje' => 1, 'status' => 1]);
+        $encaje = TipoAhorros::create(['company_id' => 10, 'cuenta_encaje' => 1, 'status' => 1]);
+
+        DB::unprepared("CREATE TRIGGER rechazar_cartola BEFORE INSERT ON cartola_details
+            BEGIN SELECT RAISE(ABORT, 'Error de cartola simulado'); END");
+        $componente->entregarDinero();
+        $this->assertSame('APROBADO', $credito->fresh()->status);
+        $this->assertSame(0, CustomerMovimiento::count());
+        $this->assertSame(0, CustomerTipoAhorros::where('tipo_ahorros_id', $encaje->id)->count());
+        DB::unprepared('DROP TRIGGER rechazar_cartola');
+
+        $componente->entregarDinero();
+        $this->assertSame('ENTREGADO', $credito->fresh()->status);
+        $cuenta = CustomerTipoAhorros::where('tipo_ahorros_id', $encaje->id)->firstOrFail();
+        $this->assertEquals($cliente->id, $cuenta->customer_id);
+        $this->assertSame('0000000002', $cuenta->codigo);
+        $this->assertEquals(420, CustomerMovimiento::where('type_transaction_id', 1)->value('valor_movimiento'));
+
+        $abono = CustomerMovimiento::where('type_transaction_id', 3)->firstOrFail();
+        $this->assertEquals($cuenta->id, $abono->customer_tipo_ahorro_id);
+        $this->assertEquals(80, CustomerHistorial::where('customer_tipo_ahorro_id', $cuenta->id)->value('valor_movimiento'));
+        $this->assertEquals(80, CartolaDetail::where('customer_movimientos_id', $abono->id)->value('saldo_transaction'));
+        $asiento = AsientosHeader::where('customer_movimiento_id', $abono->id)->firstOrFail();
+        AsientosHeader::recalcularAsientos($abono->id);
+        $this->assertTrue(AsientosHeader::estaCuadrado($asiento->id));
+        $this->assertEquals($pasivo->id, $asiento->detalles()->where('debe_haber', false)->value('plan_cuentas_id'));
+
+        $componente->entregarDinero();
+        $this->assertSame(1, CustomerMovimiento::where('type_transaction_id', 3)->count());
+        $otroCredito = CreditFolderHeader::create($datosCredito + ['code' => 'CR-02']);
+        $componente->creditoDineroEntregar = $otroCredito->id;
+        $componente->entregarDinero();
+        $this->assertSame(1, CustomerTipoAhorros::where('tipo_ahorros_id', $encaje->id)->count());
+        $this->assertEquals(160, CustomerHistorial::where('customer_tipo_ahorro_id', $cuenta->id)->sum('valor_movimiento'));
+    }
+
     public function testGuardarAsientoCorrigeLaPalabraReestructuracion()
     {
         $asiento = AsientosHeader::create(['company_id' => 10, 'manual' => 1,

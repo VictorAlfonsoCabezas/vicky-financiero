@@ -9,6 +9,25 @@
 @endsection
 @section('scripts')
     <script>
-       
+        window.addEventListener('aviso-desembolso-credito', function ({ detail }) {
+            const modal = document.getElementById('modalGeneral6');
+            const modalAbierto = modal && modal.classList.contains('show');
+            const exito = detail.color === 'success';
+            const mostrar = function () {
+                Swal.fire({
+                    titleText: detail.titulo,
+                    text: detail.mensaje,
+                    icon: exito ? 'success' : 'error',
+                    confirmButtonText: 'Aceptar',
+                    target: modalAbierto && !exito ? modal : document.body
+                });
+            };
+
+            if (exito && modalAbierto) {
+                modal.addEventListener('hidden.bs.modal', mostrar, { once: true });
+            } else {
+                mostrar();
+            }
+        });
     </script>
 @stop

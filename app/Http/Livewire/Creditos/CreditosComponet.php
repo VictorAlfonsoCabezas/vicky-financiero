@@ -24,6 +24,8 @@ use App\Models\Bovedas;
 use App\Models\CustomerFile;
 use App\Models\FormasPago;
 use App\Models\CustomerTipoAhorros;
+use App\Models\TipoAhorros;
+use App\Http\Controllers\Cuentas\CuentasController;
 use App\Models\WhaEnvios;
 use App\Models\Cajas;
 use App\Models\Country;
@@ -2615,6 +2617,17 @@ class CreditosComponet extends Component
         );
 
         $id = $this->creditoDineroEntregar;
+        $companyId = Auth::user()->company_id;
+        $credito = CreditFolderHeader::where('company_id', $companyId)->find($id);
+        if (!$credito) {
+            $this->dispatchBrowserEvent('aviso-desembolso-credito', [
+                'titulo' => 'Error',
+                'color' => 'danger',
+                'mensaje' => 'No existe el crédito seleccionado para desembolso.',
+            ]);
+            return;
+        }
+
         if ($cuentaAcreditar == 0) {
             $respuesta = $this->verficarExisteCuentaDescargos($id, $this->cuenta_credito);
             if (!$respuesta) {
@@ -2625,32 +2638,11 @@ class CreditosComponet extends Component
                     'color' => $color,
                     'mensaje' => $mensaje
                 ];
-                $this->dispatchBrowserEvent('alerta', $data);
+                $this->dispatchBrowserEvent('aviso-desembolso-credito', $data);
                 $this->generarListadeCreditos();
                 return;
             }
         }
-        $credito = CreditFolderHeader::find($id);
-        if (!$credito) {
-            $this->dispatchBrowserEvent('alerta', [
-                'titulo' => 'Error',
-                'color' => 'danger',
-                'mensaje' => 'No existe el credito seleccionado para desembolso.'
-            ]);
-            return;
-        }
-
-        $prestamo = Prestamos::find($credito->tipo_prestamo);
-        if (!$prestamo) {
-            $this->dispatchBrowserEvent('alerta', [
-                'titulo' => 'Error',
-                'color' => 'danger',
-                'mensaje' => 'El credito no tiene un tipo de prestamo valido configurado.'
-            ]);
-            return;
-        }
-
-        $llevaContabilidad = (bool) $prestamo->lleva_contabilidad;
         $cuentaContableHaber = 0;
 
         if ($esEfectivo) {
@@ -2663,9 +2655,22 @@ class CreditosComponet extends Component
 
         DB::beginTransaction();
         try {
+            $credito = CreditFolderHeader::where('company_id', $companyId)->lockForUpdate()->findOrFail($id);
+            if ($credito->status !== 'APROBADO') {
+                throw new \DomainException('Solo se puede desembolsar un crédito aprobado y pendiente de entrega.');
+            }
+
+            $tipoPrestamo = Prestamos::where('company_id', $companyId)->find($credito->tipo_prestamo);
+            if (!$tipoPrestamo) {
+                throw new \DomainException('El crédito no tiene un tipo de préstamo válido configurado.');
+            }
+            $llevaContabilidad = (bool) $tipoPrestamo->lleva_contabilidad;
+
+            $requiereEncajeEnCuenta = $credito->encaje && $credito->encaje_credito_cuenta === 'CUENTA';
+            $destinoEncaje = $requiereEncajeEnCuenta ? $this->prepararEncajeDelDesembolso($credito) : null;
+
             // --- INICIO LOGICA CONTABLE ---
             $creditoHeader = $credito; // Reuse found record
-            $tipoPrestamo = $prestamo; // Reuse found record
 
             // 1. Obtener Cuenta DEBE (Cartera)
             $cuentaDebeId = $creditoHeader->cuenta_contable_id;
@@ -2738,10 +2743,13 @@ class CreditosComponet extends Component
 
             // 1. Generar Movimientos
             $movimiento = null;
+            $movimientoCliente = null;
             //dd($movimiento, $esEfectivo, $id, $llevaContabilidad, $cuentaContableHaber);
             if ($esEfectivo) {
                 $movimiento = $this->movimientoCreditoCuentaEmpresa($id, $llevaContabilidad, $cuentaContableHaber);
-                $this->movimientoCreditoCuentaCliente($id, $this->cuenta_credito);
+                $movimientoCliente = $this->movimientoCreditoCuentaCliente(
+                    $id, $this->cuenta_credito, $requiereEncajeEnCuenta ? $credito->encaje_valor : 0
+                );
             } else {
                 $this->descargarBalorBoveda($id);
                 $movimiento = $this->movimientoCreditoCuentaEmpresa($id, $llevaContabilidad, $cuentaContableHaber);
@@ -2757,8 +2765,6 @@ class CreditosComponet extends Component
             $credito->save();
 
             $this->contabilizarMovimientoSiDiferido($credito->id, $llevaContabilidad);
-            $this->seleccionarCliente($this->id_seleccionado);
-            $this->dispatchBrowserEvent('closeModal');
 
 
             // 2. Lógica Contable (Vinculada al Movimiento)
@@ -2830,6 +2836,10 @@ class CreditosComponet extends Component
                 }
             }
 
+            if ($destinoEncaje) {
+                $this->acreditarEncajeDelDesembolso($credito, $destinoEncaje);
+            }
+
             $this->contabilizarInteresesGeneradosCredito(
                 $creditoHeader,
                 $tipoPrestamo,
@@ -2838,17 +2848,115 @@ class CreditosComponet extends Component
             );
 
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             $data = [
                 'titulo' => 'Error',
                 'color' => 'danger',
                 'mensaje' => $e->getMessage()
             ];
-            $this->dispatchBrowserEvent('alerta', $data);
+            $this->dispatchBrowserEvent('aviso-desembolso-credito', $data);
             return;
         }
+        foreach (array_filter([$movimiento, $movimientoCliente]) as $movimientoNotificar) {
+            try {
+                BaseController::enviarMail($movimientoNotificar);
+            } catch (\Throwable $error) {
+                report($error);
+            }
+        }
+        $this->dispatchBrowserEvent('aviso-desembolso-credito', [
+            'titulo' => 'Notificación',
+            'color' => 'success',
+            'mensaje' => $destinoEncaje ? 'Crédito entregado y encaje acreditado en la cuenta del socio.' : 'El crédito salió correctamente.',
+        ]);
+        $this->seleccionarCliente($this->id_seleccionado);
         $this->dispatchBrowserEvent('closeModal');
+    }
+
+    private function prepararEncajeDelDesembolso(CreditFolderHeader $credito): ?array
+    {
+        $companyId = $credito->company_id;
+        Company::query()->lockForUpdate()->findOrFail($companyId);
+
+        $tiposEncaje = TipoAhorros::where('company_id', $companyId)
+            ->where('status', true)->where('cuenta_encaje', true)
+            ->orderBy('id')->lockForUpdate()->pluck('id');
+        if ($tiposEncaje->isEmpty()) {
+            throw new \DomainException('Antes de entregar el crédito, configura un tipo de ahorro activo con «Cuenta de encaje» en /tipo-ahorros.');
+        }
+
+        if ((float) $credito->encaje_valor <= 0) {
+            return null;
+        }
+
+        if (CustomerMovimiento::where('company_id', $companyId)
+            ->where('credit_folder_header_id', $credito->id)
+            ->where('observation', 'like', CustomerMovimiento::ACREDITACION_ENCAJE . '%')
+            ->where('status', true)->exists()) {
+            throw new \DomainException('El encaje de este crédito ya está acreditado.');
+        }
+
+        $transaccion = TypeTransaction::where('company_id', $companyId)
+            ->where('name_corto', 'DNC')->where('action', 'S')->where('afecta', 'C')
+            ->where('status', true)->orderBy('id')->first();
+        if (!$transaccion) {
+            throw new \DomainException('Activa el tipo de transacción Nota de crédito (DNC) para acreditar el encaje.');
+        }
+
+        $cliente = Customer::where('company_id', $companyId)->findOrFail($credito->customer_id);
+        $cuenta = CustomerTipoAhorros::where('company_id', $companyId)
+            ->where('customer_id', $cliente->id)->where('status', true)
+            ->whereIn('tipo_ahorros_id', $tiposEncaje)
+            ->orderBy('id')->lockForUpdate()->first();
+
+        if (!$cuenta) {
+            $cuenta = CustomerTipoAhorros::create([
+                'company_id' => $companyId,
+                'customer_id' => $cliente->id,
+                'tipo_ahorros_id' => $tiposEncaje->first(),
+                'codigo' => CuentasController::buscarNumeroCuenta(),
+                'status' => true,
+            ]);
+        }
+
+        return compact('cliente', 'cuenta', 'transaccion');
+    }
+
+    private function acreditarEncajeDelDesembolso(CreditFolderHeader $credito, array $destino): void
+    {
+        ['cliente' => $cliente, 'cuenta' => $cuenta, 'transaccion' => $transaccion] = $destino;
+        $valor = $credito->encaje_valor;
+        $fecha = date('Y-m-d');
+        $movimiento = CustomerMovimiento::create([
+            'company_id' => $credito->company_id,
+            'code' => BaseController::generarCodigo('customer_movimientos', 9),
+            'customer_id' => $cliente->id,
+            'customer_code' => $cliente->code,
+            'customer_name' => $cliente->nombres . ' ' . $cliente->apellidos,
+            'customer_ruc' => $cliente->numero_documento,
+            'customer_address' => $cliente->direccion,
+            'customer_telefono' => $cliente->telefono,
+            'customer_tipo_ahorro_id' => $cuenta->id,
+            'credit_folder_header_id' => $credito->id,
+            'type_transaction_id' => $transaccion->id,
+            'type_transaction_name' => $transaccion->name,
+            'type_transaction_action' => $transaccion->action,
+            'afecta' => $transaccion->afecta,
+            'valor_movimiento' => $valor,
+            'saldo_general' => BaseController::valorTotal() + $valor,
+            'observation' => CustomerMovimiento::ACREDITACION_ENCAJE . $credito->code,
+            'user_created_id' => Auth::id(),
+            'date_created' => $fecha,
+            'hour_created' => date('H:i:s'),
+            'automatico' => true,
+            'status' => true,
+        ]);
+
+        CustomerHistorialController::guardarHistorialAutomatica(
+            $movimiento->code, $transaccion->id, $valor, $cliente->code, $movimiento->saldo_general, $fecha, $cuenta->id
+        );
+        BaseController::guardarValoresCartola($cuenta->id, $cliente->id, $movimiento, $transaccion);
     }
 
     private function contabilizarInteresesGeneradosCredito($creditoHeader, $tipoPrestamo, $company, $fechaContable): void
@@ -3629,19 +3737,10 @@ class CreditosComponet extends Component
         ];
         $movimientos = CustomerMovimiento::create($data);
         CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $dineroEntregar, $customer->code, $movimientos->saldo_general, date('Y-m-d'));
-        BaseController::enviarMail($movimientos);
-        $color = 'success';
-        $mensaje = 'El crédito salio correctamente';
-        $data = [
-            'titulo' => 'Notificación',
-            'color' => $color,
-            'mensaje' => $mensaje
-        ];
-        $this->dispatchBrowserEvent('alerta', $data);
         return $movimientos;
     }
 
-    public function movimientoCreditoCuentaCliente($credito_id, $idCuenta)
+    public function movimientoCreditoCuentaCliente($credito_id, $idCuenta, $encajeRetenido = 0)
     {
         $credito = CreditFolderHeader::find($credito_id);
         $customer = Customer::find($credito->customer_id);
@@ -3685,6 +3784,10 @@ class CreditosComponet extends Component
                 */
         }
 
+        if ($encajeRetenido > 0) {
+            $dineroEntregar = round($dineroEntregar - $encajeRetenido, 2);
+        }
+
         $data = [
             "code" => $code,
             "customer_id" => $customer->id,
@@ -3713,7 +3816,6 @@ class CreditosComponet extends Component
         //dd('entra , movimiento creado');
         CustomerHistorialController::guardarHistorialAutomatica($movimientos->code, $transaction->id, $dineroEntregar, $customer->code, $movimientos->saldo_general, date('Y-m-d'), $movimientos->customer_tipo_ahorro_id);
         BaseController::guardarValoresCartola($cuenta->id, $customer->id, $movimientos, $transaction);
-        BaseController::enviarMail($movimientos);
 
         $whatsappEnviar = 'Estimad@, *' . $customer->nombres . ' ' . $customer->apellidos . '* tu transacción ha sido procesada exitosamente, por el monto de: *' . $dineroEntregar . '$* Gracias por usar nuestros servicios de .' . Auth::user()->company->comercial_name;
         $whatsapp = new WhaEnvios();
@@ -3734,14 +3836,7 @@ class CreditosComponet extends Component
         $whatsapp->fecha_envio = date('Y-m-d H:i:s');
         $whatsapp->save();
 
-        $color = 'success';
-        $mensaje = 'El valor fue acreditado correctamente';
-        $data = [
-            'titulo' => 'Notificación',
-            'color' => $color,
-            'mensaje' => $mensaje
-        ];
-        $this->dispatchBrowserEvent('alerta', $data);
+        return $movimientos;
     }
 
     public function descargarBalorBoveda($id)
