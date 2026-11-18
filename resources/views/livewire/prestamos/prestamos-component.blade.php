@@ -324,7 +324,7 @@
                                 <section class="col-12 col-md-6">
                                     <div class="form-group">
                                         <label for="segundo_gasto">{{ $company->nombre_segundo_gasto_credito}}</label>
-                                        <input type="number" class="form-control text-uppercase" id="segundo_gasto" name="segundo_gasto" placeholder="0.00" wire:model="segundo_gasto">
+                                        <input step="0.01" type="number" class="form-control text-uppercase" id="segundo_gasto" name="segundo_gasto" placeholder="0.00" wire:model="segundo_gasto">
                                     </div>
                                 </section>
                             </div>
@@ -344,7 +344,7 @@
                                 <section class="col-12 col-md-6">
                                     <div class="form-group">
                                         <label for="tercer_gasto">{{ $company->nombre_tercer_gasto_credito}}</label>
-                                        <input type="number" class="form-control text-uppercase" id="tercer_gasto" name="tercer_gasto" placeholder="0.00" wire:model="tercer_gasto">
+                                        <input step="0.01" type="number" class="form-control text-uppercase" id="tercer_gasto" name="tercer_gasto" placeholder="0.00" wire:model="tercer_gasto">
                                     </div>
                                 </section>
                             </div>
