@@ -168,7 +168,7 @@
                 <td style="text-align: left;"><b>Forma de Pago: </b> {{$formasPago}}</td>
             </tr>
             <tr>
-                <td style="text-align: left;"><b>Valor Pagadop a la fecha: </b>{{$letrasPagadas}}</td>
+                <td style="text-align: left;"><b>Valor pagado a la fecha: </b>{{$letrasPagadas}}</td>
             </tr>
             <tr>
                 <td style="text-align: left;"><b>Fecha de próximo vencimiento: </b> {{$letraSiguienteFecha}} </td>
