@@ -379,6 +379,7 @@ Route::group(['middleware' => [Authenticate::class, CheckInactivity::class]], fu
 // CREDITOS LIVEWERE
 Route::group(['middleware' => [Authenticate::class, CheckInactivity::class]], function () {
     Route::get('creditos/{id}', 'Creditos\CreditosController@creditos');
+    Route::get('calificacion-socios', 'CalificacionSocios\CalificacionSociosController@index')->name('calificacion-socios.index');
     Route::get("/creditos/pdfLetras/{valor}/{cuota}/{fecha}/{tipo}/{prestamo}/{genera}/{customer}/{codigo}", 'Creditos\CreditosController@pdfLetras')->name('credito.pdfLetras');
 });
 

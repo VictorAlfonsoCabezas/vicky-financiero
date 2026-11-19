@@ -158,6 +158,14 @@
                     <div class="menu-item {{ request()->is('onix') ? 'active' : '' }}">
                         <a href="{{ route('onix.dashboard') }}" class="menu-link"><div class="menu-icon"><i class="fa fa-chart-line"></i></div><div class="menu-text">Panel financiero</div></a>
                     </div>
+                    @if (Auth::user()->company_id)
+                        <div class="menu-item {{ request()->routeIs('calificacion-socios.index') ? 'active' : '' }}">
+                            <a href="{{ route('calificacion-socios.index') }}" class="menu-link">
+                                <div class="menu-icon"><i class="fa fa-star"></i></div>
+                                <div class="menu-text">Calificación de socios</div>
+                            </a>
+                        </div>
+                    @endif
                     <div class="menu-item {{ request()->is('reporte-movimientos-transacciones') ? 'active' : '' }}">
                         <a href="{{ route('reporte-movimientos-transacciones.index') }}" class="menu-link"><div class="menu-icon"><i class="fa fa-exchange-alt"></i></div><div class="menu-text">Movimientos por transacción</div></a>
                     </div>
