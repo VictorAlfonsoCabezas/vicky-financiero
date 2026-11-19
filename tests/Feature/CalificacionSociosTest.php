@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Livewire\CalificacionSocios\CalificacionSociosComponent;
-use App\Models\{CreditFolderDetail, CreditFolderHeader, Customer, CustomerMovimiento, TypeTransaction};
+use App\Models\{Company, CreditFolderDetail, CreditFolderHeader, Customer, CustomerMovimiento, TypeTransaction};
 use App\Services\CalificacionCrediticia;
 use App\User;
 use Carbon\CarbonImmutable;
@@ -23,6 +23,7 @@ class CalificacionSociosTest extends TestCase
             'database.connections.score_test' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''],
         ]);
         $campos = [
+            Company::class => ['comercial_name', 'company_name'],
             Customer::class => ['company_id', 'code', 'nombres', 'apellidos', 'numero_documento'],
             CreditFolderHeader::class => ['company_id', 'customer_id', 'code', 'status'],
             CreditFolderDetail::class => ['company_id', 'code_folder_header', 'numero_cuota', 'status', 'date_vencimiento',
@@ -90,6 +91,13 @@ class CalificacionSociosTest extends TestCase
         $this->assertEquals(125, $resultado['factores']['liquidacion']['puntos']);
         $this->assertSame(731, $resultado['score']);
         $this->assertFalse($resultado['provisional']);
+
+        DB::table('company')->insert(['id' => 10, 'comercial_name' => 'Cooperativa de prueba']);
+        DB::table('customer')->insert(['id' => 9, 'company_id' => 10, 'nombres' => 'Ana', 'apellidos' => 'Lopez']);
+        Livewire::test(CalificacionSociosComponent::class)
+            ->call('seleccionarSocio', 9)
+            ->call('imprimirPdf')
+            ->assertFileDownloaded('calificacion-socio-9-' . CarbonImmutable::today()->toDateString() . '.pdf');
     }
 
     public function testLivewireBuscaPorNombreYMuestraLaFaltaDeHistorial(): void
@@ -100,10 +108,14 @@ class CalificacionSociosTest extends TestCase
         ]);
 
         Livewire::test(CalificacionSociosComponent::class)
+            ->assertDontSee('Imprimir PDF')
             ->set('buscar', 'Ana Lopez')
             ->assertSee('Ana Lopez')
             ->assertDontSee('Lopez externa')
             ->call('seleccionarSocio', 9)
-            ->assertSee('Sin historial suficiente');
+            ->assertSee('Sin historial suficiente')
+            ->assertSee('Imprimir PDF')
+            ->call('imprimirPdf')
+            ->assertFileDownloaded('calificacion-socio-9-' . CarbonImmutable::today()->toDateString() . '.pdf');
     }
 }

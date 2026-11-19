@@ -38,7 +38,18 @@
             @else
                 <div wire:key="calificacion-detalle-{{ $socio->id }}">
                     <section class="panel panel-inverse mb-3">
-                        <div class="panel-heading"><h2 class="panel-title">{{ $socio->nombres }} {{ $socio->apellidos }}</h2></div>
+                        <div class="panel-heading gap-2 flex-wrap">
+                            <h2 class="panel-title">{{ $socio->nombres }} {{ $socio->apellidos }}</h2>
+                            <button type="button" class="btn btn-sm btn-white" wire:click="imprimirPdf"
+                                wire:loading.attr="disabled" wire:target="imprimirPdf,seleccionarSocio">
+                                <span wire:loading.remove wire:target="imprimirPdf">
+                                    <i class="far fa-file-pdf me-1" aria-hidden="true"></i> Imprimir PDF
+                                </span>
+                                <span wire:loading wire:target="imprimirPdf" role="status">
+                                    <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"></i> Generando PDF…
+                                </span>
+                            </button>
+                        </div>
                         <div class="panel-body">
                             <div class="row gy-3 align-items-center">
                                 <div class="col-md">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\CalificacionSocios;
 
+use App\Models\Company;
 use App\Models\Customer;
 use App\Services\CalificacionCrediticia;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,6 +32,22 @@ class CalificacionSociosComponent extends Component
     private function socios()
     {
         return Customer::where('company_id', app(CalificacionCrediticia::class)->empresaId());
+    }
+
+    public function imprimirPdf()
+    {
+        $socio = $this->socios()->findOrFail($this->socioId);
+        $resultado = app(CalificacionCrediticia::class)->calcular($socio->id);
+        $empresa = Company::find($socio->company_id, ['comercial_name', 'company_name']);
+        $pdf = app('dompdf.wrapper')->loadView('calificacion-socios.pdf', [
+            'socio' => $socio,
+            'resultado' => $resultado,
+            'empresa' => optional($empresa)->comercial_name ?: optional($empresa)->company_name,
+        ])->setPaper('a4', 'portrait');
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, 'calificacion-socio-' . $socio->id . '-' . $resultado['corte'] . '.pdf');
     }
 
     public function render()
