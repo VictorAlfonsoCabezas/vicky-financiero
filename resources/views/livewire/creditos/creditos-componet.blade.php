@@ -647,7 +647,7 @@
                                                                 <i class="fas fa-print"></i>
                                                             </a>
 
-                                                            <a class="btn btn-primary btn-sm" title="Entregar Valores" wire:click="imprimirTicket({{ $detalle->id }})"
+                                                            <a class="btn btn-primary btn-sm" title="Imprimir Ticket" wire:click="imprimirTicket({{ $detalle->id }})"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalGeneral7">
                                                                 <i class="fas fa-print" style="color: white;"></i>

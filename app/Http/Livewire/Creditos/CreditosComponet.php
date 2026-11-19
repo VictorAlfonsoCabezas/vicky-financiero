@@ -2673,7 +2673,9 @@ class CreditosComponet extends Component
             if ($esEfectivo) {
                 $movimiento = $this->movimientoCreditoCuentaEmpresa($id, $llevaContabilidad, $cuentaContableHaber);
                 $movimientoCliente = $this->movimientoCreditoCuentaCliente(
-                    $id, $this->cuenta_credito, $requiereEncajeEnCuenta ? $credito->encaje_valor : 0
+                    $id,
+                    $this->cuenta_credito,
+                    $requiereEncajeEnCuenta ? $credito->encaje_valor : 0
                 );
             } else {
                 $this->descargarBalorBoveda($id);
@@ -2818,7 +2820,8 @@ class CreditosComponet extends Component
         if (CustomerMovimiento::where('company_id', $companyId)
             ->where('credit_folder_header_id', $credito->id)
             ->where('observation', 'like', CustomerMovimiento::ACREDITACION_ENCAJE . '%')
-            ->where('status', true)->exists()) {
+            ->where('status', true)->exists()
+        ) {
             throw new \DomainException('El encaje de este crédito ya está acreditado.');
         }
 
@@ -2879,7 +2882,13 @@ class CreditosComponet extends Component
         ]);
 
         CustomerHistorialController::guardarHistorialAutomatica(
-            $movimiento->code, $transaccion->id, $valor, $cliente->code, $movimiento->saldo_general, $fecha, $cuenta->id
+            $movimiento->code,
+            $transaccion->id,
+            $valor,
+            $cliente->code,
+            $movimiento->saldo_general,
+            $fecha,
+            $cuenta->id
         );
         BaseController::guardarValoresCartola($cuenta->id, $cliente->id, $movimiento, $transaccion);
     }

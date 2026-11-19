@@ -103,7 +103,7 @@
                 <td style="text-align: left;" colspan="2"><b>Capital Prestado:</b> {{$cabecera->valor_solicitado}}</td>
             </tr>
             <tr>
-                <td style="text-align: left;" colspan="2"><b>Valor total adeudado:</b> {{$letrasPendientes}}</td>
+                <td style="text-align: left;" colspan="2"><b>Saldo a la fecha:</b> {{$letrasPendientes}}</td>
             </tr>
         </tbody>
     </table>
@@ -168,7 +168,7 @@
                 <td style="text-align: left;"><b>Forma de Pago: </b> {{$formasPago}}</td>
             </tr>
             <tr>
-                <td style="text-align: left;"><b>Saldo Cuota Actual: </b>{{$letrasPagadas}}</td>
+                <td style="text-align: left;"><b>Valor Pagadop a la fecha: </b>{{$letrasPagadas}}</td>
             </tr>
             <tr>
                 <td style="text-align: left;"><b>Fecha de próximo vencimiento: </b> {{$letraSiguienteFecha}} </td>
